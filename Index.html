@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Text‑to‑Speech Synthesizer (Web Audio API - Corrected)</title>
+    <style>
+        /* CSS styles preserved from original */
+        :root { --primary-color:#007bff;--secondary-color:#6c757d;--success-color:#28a745;--error-color:#dc3545;--warning-color:#ffc107;--info-bg:#e2e3e5;--info-text:#383d41;--light-bg:#f8f9fa;--dark-text:#343a40;--light-text:#ffffff;--border-color:#dee2e6;--shadow-color:rgba(0,0,0,.1);--font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Open Sans","Helvetica Neue",sans-serif }
+        body{font-family:var(--font-family);max-width:800px;margin:2rem auto;padding:1rem;background:var(--light-bg);color:var(--dark-text)}h1{text-align:center;color:var(--primary-color);font-weight:600}h2{margin:0;}
+        .container{background:var(--light-text);border-radius:12px;padding:2rem;box-shadow:0 4px 12px var(--shadow-color)}.section{margin-bottom:1.5rem}.section-title{font-weight:600;margin-bottom:.5rem;color:var(--primary-color);border-bottom:1px solid var(--border-color);padding-bottom:.25rem}
+        textarea{width:100%;min-height:150px;padding:.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:1rem;line-height:1.5;resize:vertical;box-sizing:border-box}
+        textarea:focus{outline:none;border-color:var(--primary-color);box-shadow:0 0 0 2px rgba(0,123,255,.25)}
+        .options-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-top:1rem}
+        select,button{padding:.6rem 1rem;border-radius:6px;font-size:1rem;border:1px solid var(--border-color)}select{width:100%;appearance:none;background:var(--light-text) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") no-repeat right .75rem center;background-size:16px 12px}button{background:var(--primary-color);color:#fff;border:none;cursor:pointer;transition:transform .1s,background .2s;margin-right:.5rem}button:hover:not(:disabled){background:#0056b3;transform:translateY(-1px)}button:disabled{background:#a0c7e8;cursor:not-allowed;transform:none}
+        #download-button{background:var(--success-color)}#download-button:hover:not(:disabled){background:#218838}
+        #stop-button{background:var(--error-color);display:none;}#stop-button:hover:not(:disabled){background:#c82333}
+        .char-counter{font-size:.85rem;color:var(--secondary-color);margin-left:auto}.char-counter.warning{color:var(--warning-color);font-weight:500}.char-counter.danger{color:var(--error-color);font-weight:bold}
+        .feedback-area{margin-top:1rem;padding:.75rem;border-radius:6px;font-size:.95rem;text-align:center}.status.info{background:var(--info-bg);color:var(--info-text)}.status.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}.status.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}.status.warning{background:#fff3cd;color:#856404;border:1px solid #ffeeba}
+        .loading{display:flex;gap:.5rem;align-items:center;color:var(--secondary-color)}.loading-spinner{width:20px;height:20px;border:3px solid #f3f3f3;border-top:3px solid var(--primary-color);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+        .progress-container{width:100%;height:8px;background:#e9ecef;border-radius:4px;overflow:hidden;margin-top:.5rem}.progress-bar{height:100%;width:0;background:var(--primary-color);transition:width .2s}
+        .progress-info{font-size:.85rem;text-align:center;margin-top:.5rem;color:var(--secondary-color)} /* Fixed: Added closing brace */
+        #api-key-container{margin-bottom:1rem;padding:0.75rem;border-radius:6px;background-color:#f8f9fa;border:1px solid var(--border-color)}
+        #api-key-input{width:calc(100% - 110px);padding:0.5rem;margin-right:0.5rem;border-radius:4px;border:1px solid var(--border-color)}
+        #api-key-save{padding:0.5rem 1rem;background:var(--primary-color);color:white;border:none;border-radius:4px;cursor:pointer}
+        #api-key-save:hover{background:#0056b3}
+        .collapsed{height:0;overflow:hidden;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-width:0;transition:all 0.3s ease}
+        .expanded{height:auto;overflow:visible;transition:all 0.3s ease; padding-top: 0.75rem; padding-bottom: 0.75rem; margin-bottom: 1rem;}
+        #api-key-toggle{background:none;border:none;color:var(--primary-color);cursor:pointer;margin-bottom:0.5rem;padding:0;font-size:0.9rem;display:flex;align-items:center;gap:0.25rem}
+        #api-key-toggle:hover{text-decoration:underline}
+        .footnote{font-size:0.75rem;color:var(--secondary-color);margin-top:1rem}
+    </style>
+</head>
+<body>
+    <h1>Live Text‑to‑Speech Synthesizer</h1>
+    <div class="container">
+        <div id="api-key-section" class="section">
+            <button id="api-key-toggle">
+                <span class="toggle-icon">▶</span>&nbsp;Show API Key Settings
+            </button>
+            <div id="api-key-container" class="collapsed">
+                <p><strong>Google Cloud Text-to-Speech API Key:</strong></p>
+                <input type="password" id="api-key-input" placeholder="Enter your Google Cloud API key">
+                <button id="api-key-save">Save Key</button>
+                <p class="footnote">Your API key is stored only in your browser's local storage and never transmitted to any server other than Google Cloud.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Input</h2>
+            <div class="char-counter-container" style="display:flex;align-items:center">
+                <span id="char-counter" class="char-counter">0 chars</span>
+            </div>
+            <textarea id="text-input" placeholder="Enter text here …"></textarea>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Options</h2>
+            <div class="options-grid">
+                <div>
+                    <label for="voice-select">Voice</label>
+                    <select id="voice-select"><option value="">Loading voices …</option></select>
+                </div>
+                <div>
+                    <label for="speed-select">Speed</label>
+                    <select id="speed-select">
+                        <option value="0.5">0.5×</option>
+                        <option value="0.75">0.75×</option>
+                        <option value="1" selected>1×</option>
+                        <option value="1.25">1.25×</option>
+                        <option value="1.5">1.5×</option>
+                        <option value="2">2×</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="pitch-select">Pitch</label>
+                    <select id="pitch-select">
+                        <option value="-10">-10</option>
+                        <option value="-5">-5</option>
+                        <option value="0" selected>0</option>
+                        <option value="5">+5</option>
+                        <option value="10">+10</option>
+                        <option value="20">+20</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="chunk-size-select">Chunk size</label>
+                    <select id="chunk-size-select">
+                        <option value="0">No chunking (Max 5k)</option>
+                        <option value="1000">1000</option>
+                        <option value="2000">2000</option>
+                        <option value="3000">3000</option>
+                        <option value="4500" selected>4500</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="chunk-break-select">Split at</label>
+                    <select id="chunk-break-select">
+                        <option value="sentence" selected>Sentence</option>
+                        <option value="paragraph">Paragraph</option>
+                        <option value="exact">Exact</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Generate & Play</h2>
+            <button id="speak-button" disabled>Generate & Play</button>
+            <button id="stop-button">Stop</button>
+            <button id="download-button" disabled>Download MP3</button>
+            <div id="loading" class="loading" style="display:none">
+                <div class="loading-spinner"></div>
+                <span>Generating …</span>
+            </div>
+            <div id="progress-container" class="progress-container" style="display:none">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <div id="progress-info" class="progress-info" style="display:none"></div>
+            <div id="generation-status" class="feedback-area status info" style="display:none"></div>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const API_URL = 'https://texttospeech.googleapis.com/v1';
+        const API_LIMIT = 5000; // hard limit per request
+        const MIN_INTERVAL = 350; // Milliseconds between API calls
+        const PREFERRED_VOICE = 'en-US-Chirp3-HD-Charon'; // <-- Make sure it's this
+        const API_KEY_STORAGE_KEY = 'tts_api_key';
+
+        // DOM Elements
+        const el = id => document.getElementById(id);
+        const textInput = el('text-input');
+        const voiceSelect = el('voice-select');
+        const speedSelect = el('speed-select');
+        const pitchSelect = el('pitch-select');
+        const chunkSizeSel = el('chunk-size-select');
+        const chunkBreakSel = el('chunk-break-select');
+        const speakBtn = el('speak-button');
+        const stopBtn = el('stop-button');
+        const downloadBtn = el('download-button');
+        const loading = el('loading');
+        const progCont = el('progress-container');
+        const progBar = el('progress-bar');
+        const progInfo = el('progress-info');
+        const genStatus = el('generation-status');
+        const charCounter = el('char-counter');
+        const apiKeyInput = el('api-key-input');
+        const apiKeySaveBtn = el('api-key-save');
+        const apiKeyToggle = el('api-key-toggle');
+        const apiKeyContainer = el('api-key-container');
+
+        // State variables
+        let lastRequestTime = 0;
+        let audioContext = null;
+        let audioBufferQueue = [];
+        let currentSourceNode = null;
+        let nextStartTime = 0;
+        let isPlaying = false;
+        let isGenerating = false;
+        let collectedRawBuffers = [];
+        let apiKey = ''; // Will be loaded from storage
+
+        // --- API Key Management ---
+
+        function loadApiKey() {
+            const savedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+            if (savedKey) {
+                apiKey = savedKey;
+                apiKeyInput.value = '••••••••••••••••••••••'; // Mask the actual key in the input field
+                apiKeyInput.placeholder = 'API Key saved. Enter new key to replace.';
+                return true;
+            }
+            apiKeyInput.placeholder = 'Enter your Google Cloud API key';
+            return false;
+        }
+
+        function saveApiKey() {
+            const newKey = apiKeyInput.value.trim();
+            // Check if the input is the mask; if so, treat it as empty unless user intended to clear
+            if (newKey === '••••••••••••••••••••••' || newKey === '') {
+                // If user wants to clear the key
+                if (confirm("Clear saved API key? You will need to enter it again later.")) {
+                    apiKey = '';
+                    localStorage.removeItem(API_KEY_STORAGE_KEY);
+                    apiKeyInput.value = ''; // Clear the input field
+                    apiKeyInput.placeholder = 'Enter your Google Cloud API key';
+                    showStatus('API key cleared.', 'warning');
+                    updateCharCount(); // Update button states
+                    loadVoices(); // Attempt reload (will show API key required)
+                } else {
+                     // User cancelled clearing, restore mask if key exists
+                     if(apiKey) apiKeyInput.value = '••••••••••••••••••••••';
+                     else apiKeyInput.value = '';
+                }
+                return false;
+            }
+
+            // Saving a new, non-empty key
+            apiKey = newKey;
+            localStorage.setItem(API_KEY_STORAGE_KEY, newKey);
+            apiKeyInput.value = '••••••••••••••••••••••'; // Mask after saving
+            apiKeyInput.placeholder = 'API Key saved. Enter new key to replace.';
+            showStatus('API key saved successfully!', 'success');
+            loadVoices(); // Try loading voices with the new key
+            // Note: updateCharCount() is called within loadVoices(), so no need to call it directly here.
+            return true;
+        }
+
+        function toggleApiKeyContainer() {
+            const isCollapsed = apiKeyContainer.classList.contains('collapsed');
+            const iconSpan = apiKeyToggle.querySelector('.toggle-icon');
+
+            if (isCollapsed) {
+                apiKeyContainer.classList.remove('collapsed');
+                apiKeyContainer.classList.add('expanded');
+                 // Update text more robustly
+                 apiKeyToggle.innerHTML = `<span class="toggle-icon">▼</span>&nbsp;Hide API Key Settings`;
+            } else {
+                apiKeyContainer.classList.remove('expanded');
+                apiKeyContainer.classList.add('collapsed');
+                 apiKeyToggle.innerHTML = `<span class="toggle-icon">▶</span>&nbsp;Show API Key Settings`;
+            }
+             // Restore mask if needed when collapsing
+             if (!isCollapsed && apiKey && apiKeyInput.value !== '••••••••••••••••••••••') {
+                 apiKeyInput.value = '••••••••••••••••••••••';
+             }
+        }
+
+        function checkApiKeyAvailability() {
+            if (!apiKey) {
+                showStatus('Please provide a Google Cloud API key to use this application', 'warning');
+                if (apiKeyContainer.classList.contains('collapsed')) {
+                    toggleApiKeyContainer(); // Auto-expand if collapsed and key missing
+                }
+                apiKeyInput.focus(); // Focus the input field
+                return false;
+            }
+            return true;
+        }
+
+        // --- Core Application Logic ---
+
+        async function loadVoices() {
+            if (!apiKey) {
+                voiceSelect.innerHTML = '<option value="">API key required</option>';
+                speakBtn.disabled = true;
+                updateCharCount();
+                return;
+            }
+
+            voiceSelect.innerHTML = '<option value="">Loading voices …</option>';
+            speakBtn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/voices?key=${apiKey}`);
+
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    const errorMsg = errorData?.error?.message || `Status: ${res.status} ${res.statusText}`;
+                    if (res.status === 400 && errorMsg.includes('API key not valid')) {
+                         throw new Error(`API key is not valid. Please check it. (${errorMsg})`);
+                    } else if (res.status === 403) {
+                         throw new Error(`Permission denied. Ensure the Text-to-Speech API is enabled for this key. (${errorMsg})`);
+                    }
+                    throw new Error(`Failed to fetch voices: ${errorMsg}`);
+                }
+
+                const { voices } = await res.json();
+                if (!voices || !Array.isArray(voices) || voices.length === 0) {
+                    throw new Error('No voices returned from API. Check API key permissions.');
+                }
+
+                const byLang = {};
+                voices.forEach(v => { const l = v.languageCodes[0]; (byLang[l] = byLang[l] || []).push(v); });
+                voiceSelect.innerHTML = '<option value="">-- Select Voice --</option>';
+                Object.keys(byLang).sort().forEach(lang => {
+                    const optg = document.createElement('optgroup');
+                    optg.label = lang;
+                    byLang[lang].sort((a, b) => a.name.localeCompare(b.name)).forEach(v => {
+                        const o = document.createElement('option');
+                        o.value = v.name;
+                        o.dataset.lang = lang;
+                        const short = v.name.startsWith(lang + '-') ? v.name.substring(lang.length + 1) : v.name;
+                        o.textContent = `${short} (${v.ssmlGender})`;
+                        optg.appendChild(o);
+                    });
+                    voiceSelect.appendChild(optg);
+                });
+
+                const preferredOption = voiceSelect.querySelector(`option[value="${PREFERRED_VOICE}"]`);
+                if (preferredOption) voiceSelect.value = PREFERRED_VOICE;
+                else {
+                    const firstEnUS = voiceSelect.querySelector('optgroup[label="en-US"] option');
+                    if (firstEnUS) voiceSelect.value = firstEnUS.value;
+                    else {
+                        const firstOption = voiceSelect.querySelector('option:not([value=""])');
+                        if (firstOption) voiceSelect.value = firstOption.value;
+                    }
+                }
+                showStatus('Voices loaded successfully!', 'success');
+
+            } catch (e) {
+                console.error("Voice loading failed:", e);
+                voiceSelect.innerHTML = '<option value="">Error loading voices</option>';
+                showStatus(`Voice loading error: ${e.message}`, 'error');
+            } finally {
+                updateCharCount();
+            }
+        }
+
+        function updateCharCount() {
+            const len = textInput.value.length;
+            charCounter.textContent = `${len.toLocaleString()} chars`;
+            charCounter.classList.remove('warning', 'danger');
+
+            const chunkSize = parseInt(chunkSizeSel.value, 10);
+            const needsChunking = chunkSize > 0;
+            let isOverLimit = false;
+
+            if (!needsChunking && len > API_LIMIT) {
+                charCounter.classList.add('danger');
+                isOverLimit = true;
+                if (!genStatus.classList.contains('error')) {
+                     showStatus(`Text exceeds ${API_LIMIT.toLocaleString()} characters and chunking is disabled. Enable chunking or shorten text.`, 'warning');
+                }
+            } else if (len > API_LIMIT * 0.8 && !needsChunking) {
+                charCounter.classList.add('warning');
+            }
+
+            const hasText = textInput.value.trim().length > 0;
+            const hasVoice = voiceSelect.value !== '';
+            const hasApiKey = apiKey !== '';
+
+            speakBtn.disabled = isGenerating || !hasText || !hasVoice || !hasApiKey || isOverLimit;
+        }
+
+        function showStatus(msg, cls = 'info') {
+            genStatus.textContent = msg;
+            genStatus.className = `feedback-area status ${cls}`;
+            genStatus.style.display = 'block';
+
+            if (cls === 'success') {
+                setTimeout(() => {
+                    if (genStatus.textContent === msg) {
+                        hideStatus();
+                    }
+                }, 5000);
+            }
+        }
+
+        function hideStatus() {
+            genStatus.style.display = 'none';
+        }
+
+        function splitChunks(text, size, method) {
+             if (size <= 0 || text.length <= size) return [text.trim()];
+            const out = [];
+            let remaining = text;
+            const sentenceRe = /([.!?])\s+/g;
+            const paragraphRe = /\n\s*\n+/g;
+            while (remaining.length > 0) {
+                let chunk;
+                let splitIndex = Math.min(size, remaining.length);
+                if (remaining.length > size && method !== 'exact') {
+                    const head = remaining.substring(0, size);
+                    const re = method === 'paragraph' ? paragraphRe : sentenceRe;
+                    let lastMatchIndex = -1;
+                    let match;
+                    re.lastIndex = 0;
+                    while ((match = re.exec(head)) !== null) {
+                        lastMatchIndex = match.index + match[0].length;
+                    }
+                    if (lastMatchIndex > 0) {
+                        splitIndex = lastMatchIndex;
+                    } else {
+                        const lastSpace = head.lastIndexOf(' ');
+                        if (lastSpace > size * 0.5) {
+                            splitIndex = lastSpace + 1;
+                        }
+                    }
+                }
+                chunk = remaining.substring(0, splitIndex).trim();
+                if (chunk) out.push(chunk);
+                remaining = remaining.substring(splitIndex);
+            }
+            return out;
+        }
+
+        function initAudioContext() {
+            try {
+                if (!audioContext || audioContext.state === 'closed') {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    nextStartTime = 0;
+                    console.log("AudioContext initialized.");
+                }
+                 if (audioContext.state === 'suspended') {
+                    audioContext.resume().catch(e => {
+                        console.error("AudioContext resume failed:", e);
+                        showStatus("Failed to resume audio playback. Click 'Generate' again.", 'error');
+                    });
+                }
+                 if (audioContext.state !== 'running') {
+                     showStatus("Audio playback unavailable. Ensure browser allows audio.", 'warning');
+                     return false;
+                 }
+                return true;
+            } catch (e) {
+                console.error("AudioContext initialization failed:", e);
+                showStatus("Your browser doesn't support Web Audio API or permission denied.", 'error');
+                return false;
+            }
+        }
+
+        async function synthesizeChunk(text, opts) {
+            const body = {
+                input: { text },
+                voice: { languageCode: opts.lang, name: opts.name },
+                audioConfig: {
+                    audioEncoding: 'MP3',
+                    speakingRate: opts.speed,
+                    pitch: opts.pitch
+                }
+            };
+            const now = Date.now();
+            const timeSinceLastRequest = now - lastRequestTime;
+            if (timeSinceLastRequest < MIN_INTERVAL) {
+                await new Promise(resolve => setTimeout(resolve, MIN_INTERVAL - timeSinceLastRequest));
+            }
+            lastRequestTime = Date.now();
+            try {
+                const response = await fetch(`${API_URL}/text:synthesize?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMsg = errorData?.error?.message || `Status: ${response.status} ${response.statusText}`;
+                     if (response.status === 400 && errorMsg.includes('API key not valid')) {
+                         throw new Error(`API key is not valid. Please check it. (${errorMsg})`);
+                     } else if (response.status === 403) {
+                         throw new Error(`Permission denied. Check API key permissions/billing. (${errorMsg})`);
+                     }
+                    throw new Error(`TTS API Error: ${errorMsg}`);
+                }
+                const data = await response.json();
+                if (!data.audioContent) {
+                    throw new Error('TTS API Error: Received empty audio content');
+                }
+                const binaryString = window.atob(data.audioContent);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
+                return bytes.buffer;
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    throw new Error('Network error during synthesis. Please check connection.');
+                }
+                throw error;
+            }
+        }
+
+        async function decodeAudioDataAsync(arrayBuffer) {
+            if (!audioContext) throw new Error("AudioContext not available for decoding");
+            const bufferCopy = arrayBuffer.slice(0);
+            try {
+                return await audioContext.decodeAudioData(bufferCopy);
+            } catch (err) {
+                 console.error("decodeAudioData error:", err);
+                 const errorMsg = err && err.message ? err.message : "Failed to decode audio data";
+                 throw new Error(`Audio Decoding Error: ${errorMsg}`);
+            }
+        }
+
+        function scheduleNextChunk() {
+            if (!audioContext || audioContext.state !== 'running') {
+                 if (!initAudioContext()) {
+                    stopPlaybackAndGeneration();
+                    console.warn("Cannot schedule chunk: AudioContext not running.");
+                    return;
+                 }
+            }
+            if (!isPlaying && audioBufferQueue.length > 0) {
+                isPlaying = true;
+                const bufferToPlay = audioBufferQueue.shift();
+                const currentTime = audioContext.currentTime;
+                const startTime = Math.max(currentTime, nextStartTime);
+                currentSourceNode = audioContext.createBufferSource();
+                currentSourceNode.buffer = bufferToPlay;
+                currentSourceNode.connect(audioContext.destination);
+                let endHandlerCalled = false;
+                currentSourceNode.onended = () => {
+                    if (endHandlerCalled) return;
+                    endHandlerCalled = true;
+                    isPlaying = false;
+                    const stoppedNode = currentSourceNode;
+                    currentSourceNode = null;
+                     if (stoppedNode) stoppedNode.disconnect();
+                    if (isGenerating || audioBufferQueue.length > 0) {
+                        scheduleNextChunk();
+                    } else {
+                        console.log("Playback finished naturally");
+                        if (!isGenerating && stopBtn.style.display !== 'none') {
+                             showStatus('Playback complete', 'success');
+                             updateCharCount();
+                             stopBtn.style.display = 'none';
+                        }
+                    }
+                };
+                try {
+                    currentSourceNode.start(startTime);
+                    nextStartTime = startTime + bufferToPlay.duration;
+                    console.log(`Scheduled chunk: start=${startTime.toFixed(2)}s, duration=${bufferToPlay.duration.toFixed(2)}s, next=${nextStartTime.toFixed(2)}s`);
+                } catch (e) {
+                    console.error("Error starting audio playback:", e);
+                     if (currentSourceNode) {
+                        currentSourceNode.onended = null;
+                        currentSourceNode.disconnect();
+                    }
+                    isPlaying = false;
+                    currentSourceNode = null;
+                    endHandlerCalled = true;
+                     showStatus(`Playback error: ${e.message}`, 'error');
+                     stopPlaybackAndGeneration();
+                }
+            } else if (!isGenerating && audioBufferQueue.length === 0 && !isPlaying) {
+                 console.log("Queue empty and nothing playing, generation stopped.");
+                 if (stopBtn.style.display !== 'none') {
+                     updateCharCount();
+                     stopBtn.style.display = 'none';
+                     if (!genStatus.classList.contains('error') && !genStatus.classList.contains('warning')) {
+                         showStatus('Generation and playback complete', 'success');
+                     }
+                 }
+            }
+        }
+
+        async function startGeneration() {
+            if (isGenerating || speakBtn.disabled) return;
+            if (!checkApiKeyAvailability()) return;
+            const text = textInput.value.trim();
+            if (!text) { showStatus("Please enter some text", 'warning'); return; }
+            if (!voiceSelect.value) { showStatus("Please select a voice", 'warning'); return; }
+            if (!initAudioContext()) return;
+
+            stopPlaybackAndGeneration(true);
+            isGenerating = true;
+            collectedRawBuffers = [];
+            audioBufferQueue = [];
+            nextStartTime = audioContext.currentTime;
+
+            hideStatus();
+            loading.style.display = 'flex';
+            progCont.style.display = 'none';
+            progInfo.style.display = 'none';
+            progBar.style.width = '0%';
+            speakBtn.disabled = true;
+            stopBtn.style.display = 'inline-block';
+            downloadBtn.disabled = true;
+
+            const selectedOption = voiceSelect.selectedOptions[0];
+            const options = { name: selectedOption.value, lang: selectedOption.dataset.lang, speed: parseFloat(speedSelect.value), pitch: parseFloat(pitchSelect.value) };
+            const chunkSize = parseInt(chunkSizeSel.value, 10);
+            const chunkMethod = chunkBreakSel.value;
+            const chunks = splitChunks(text, chunkSize || API_LIMIT, chunkMethod);
+            if (chunks.length > 1) { progCont.style.display = 'block'; progInfo.style.display = 'block'; }
+
+            let hasError = false;
+            try {
+                for (let i = 0; i < chunks.length; i++) {
+                    if (!isGenerating) { console.log("Generation loop stopped externally"); break; }
+                    const currentChunkText = chunks[i];
+                     if (currentChunkText.length > API_LIMIT) {
+                         showStatus(`Error: Chunk ${i + 1} exceeds API limit of ${API_LIMIT} chars (${currentChunkText.length}).`, 'error');
+                         hasError = true; break;
+                     }
+                     if (chunks.length > 1) {
+                        progBar.style.width = `${Math.round((i + 1) / chunks.length * 100)}%`;
+                        progInfo.textContent = `Processing chunk ${i + 1} / ${chunks.length}`;
+                    } else if (!progInfo.style.display || progInfo.style.display === 'none') {
+                        progInfo.textContent = `Processing text...`; progInfo.style.display = 'block';
+                    }
+                    try {
+                        console.log(`Synthesizing chunk ${i + 1}/${chunks.length}...`);
+                        const rawBuffer = await synthesizeChunk(currentChunkText, options);
+                        collectedRawBuffers.push(rawBuffer);
+                        console.log(`Decoding chunk ${i + 1}...`);
+                        const decodedBuffer = await decodeAudioDataAsync(rawBuffer.slice(0));
+                        audioBufferQueue.push(decodedBuffer);
+                        if (i === 0 || !isPlaying) scheduleNextChunk();
+                    } catch (e) {
+                        console.error(`Failed on chunk ${i + 1}:`, e);
+                        showStatus(`Error on chunk ${i + 1}: ${e.message}`, 'error');
+                        hasError = true; break;
+                    }
+                }
+            } catch (e) {
+                console.error("Unhandled error during generation loop:", e);
+                showStatus(`Unexpected generation error: ${e.message}`, 'error');
+                hasError = true;
+            } finally {
+                isGenerating = false;
+                loading.style.display = 'none';
+                 if (hasError) {
+                    progInfo.textContent = 'Generation stopped due to error';
+                    stopPlaybackAndGeneration();
+                 } else if (stopBtn.style.display === 'none') {
+                     console.log("Generation loop finished after stop signal received.");
+                 } else {
+                    progInfo.textContent = 'Generation complete. Playing...';
+                    downloadBtn.disabled = collectedRawBuffers.length === 0;
+                    if (audioBufferQueue.length === 0 && !isPlaying) {
+                        console.log("Generation finished, playback already complete.");
+                         if (!genStatus.classList.contains('error') && !genStatus.classList.contains('warning')) { showStatus('Generation and playback complete', 'success'); }
+                        updateCharCount(); stopBtn.style.display = 'none';
+                    } else { console.log("Generation finished, playback continues..."); }
+                 }
+                 setTimeout(scheduleNextChunk, 100); // Final check
+            }
+        }
+
+        function stopPlaybackAndGeneration(isInternalReset = false) {
+            console.log(`Stopping playback and generation... (Internal Reset: ${isInternalReset})`);
+            isGenerating = false;
+            if (currentSourceNode) {
+                try {
+                    currentSourceNode.onended = null;
+                    currentSourceNode.stop(0);
+                    currentSourceNode.disconnect();
+                    console.log("Stopped and disconnected current audio source node");
+                } catch (e) { console.warn("Could not stop/disconnect source node:", e.message); }
+                currentSourceNode = null;
+            }
+            audioBufferQueue = [];
+            isPlaying = false;
+            nextStartTime = audioContext ? audioContext.currentTime : 0;
+            loading.style.display = 'none';
+            updateCharCount(); // Always update button state after stop
+            stopBtn.style.display = 'none';
+            downloadBtn.disabled = collectedRawBuffers.length === 0;
+            if (!isInternalReset && !genStatus.classList.contains('error')) {
+                showStatus('Stopped', 'warning');
+            } else if (isInternalReset) {
+                 hideStatus();
+             }
+        }
+
+        function downloadAudio() {
+            if (collectedRawBuffers.length === 0 || downloadBtn.disabled) {
+                showStatus("No audio data to download", "warning"); return;
+            }
+            try {
+                const finalBlob = new Blob(collectedRawBuffers, { type: 'audio/mp3' });
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const textPreview = textInput.value.trim().substring(0, 25).replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+                const filename = `speech_${textPreview || 'audio'}_${timestamp}.mp3`;
+                const url = URL.createObjectURL(finalBlob);
+                const a = document.createElement('a');
+                a.style.display = 'none'; a.href = url; a.download = filename;
+                document.body.appendChild(a); a.click();
+                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                showStatus(`Downloaded "${filename}"`, 'success');
+            } catch (e) {
+                console.error("Download creation failed:", e);
+                showStatus(`Download failed: ${e.message}`, 'error');
+            }
+        }
+
+        // --- Event Listeners & Initialization ---
+
+        textInput.addEventListener('input', updateCharCount);
+        speakBtn.addEventListener('click', startGeneration);
+        stopBtn.addEventListener('click', () => stopPlaybackAndGeneration(false)); // Corrected: Ensure user stop passes false
+        downloadBtn.addEventListener('click', downloadAudio);
+        apiKeySaveBtn.addEventListener('click', saveApiKey);
+        apiKeyToggle.addEventListener('click', toggleApiKeyContainer);
+        // Corrected: Wrap stop calls in arrow functions for change events
+        voiceSelect.addEventListener('change', () => { updateCharCount(); stopPlaybackAndGeneration(false); });
+        speedSelect.addEventListener('change', () => stopPlaybackAndGeneration(false));
+        pitchSelect.addEventListener('change', () => stopPlaybackAndGeneration(false));
+        chunkSizeSel.addEventListener('change', () => { updateCharCount(); stopPlaybackAndGeneration(false); });
+        chunkBreakSel.addEventListener('change', () => stopPlaybackAndGeneration(false));
+
+        window.addEventListener('error', (event) => {
+            console.error('Global error caught:', event.error, 'Message:', event.message);
+            if (isGenerating || isPlaying) {
+                showStatus(`An unexpected error occurred: ${event.message || 'Unknown error'}. Stopping operation.`, 'error');
+                stopPlaybackAndGeneration();
+            }
+        });
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+             if (isGenerating || isPlaying) {
+                showStatus(`An unexpected async error occurred: ${event.reason?.message || 'Unknown rejection'}. Stopping operation.`, 'error');
+                stopPlaybackAndGeneration();
+             }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            stopPlaybackAndGeneration(true);
+            if (audioContext && audioContext.state !== 'closed') {
+                try { audioContext.close().then(() => console.log("AudioContext closed on page unload.")); }
+                catch (e) { console.warn("Could not close AudioContext cleanly:", e); }
+            }
+        });
+
+        // Initial setup
+        loadApiKey();
+        updateCharCount();
+        if (apiKey) {
+            loadVoices();
+        } else {
+            checkApiKeyAvailability(); // Prompt for key if missing on load
+        }
+
+    </script>
+</body>
+</html>
