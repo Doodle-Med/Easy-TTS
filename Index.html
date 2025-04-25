@@ -1,720 +1,907 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Text‑to‑Speech Synthesizer (Web Audio API - Corrected)</title>
-    <style>
-        /* CSS styles preserved from original */
-        :root { --primary-color:#007bff;--secondary-color:#6c757d;--success-color:#28a745;--error-color:#dc3545;--warning-color:#ffc107;--info-bg:#e2e3e5;--info-text:#383d41;--light-bg:#f8f9fa;--dark-text:#343a40;--light-text:#ffffff;--border-color:#dee2e6;--shadow-color:rgba(0,0,0,.1);--font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Open Sans","Helvetica Neue",sans-serif }
-        body{font-family:var(--font-family);max-width:800px;margin:2rem auto;padding:1rem;background:var(--light-bg);color:var(--dark-text)}h1{text-align:center;color:var(--primary-color);font-weight:600}h2{margin:0;}
-        .container{background:var(--light-text);border-radius:12px;padding:2rem;box-shadow:0 4px 12px var(--shadow-color)}.section{margin-bottom:1.5rem}.section-title{font-weight:600;margin-bottom:.5rem;color:var(--primary-color);border-bottom:1px solid var(--border-color);padding-bottom:.25rem}
-        textarea{width:100%;min-height:150px;padding:.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:1rem;line-height:1.5;resize:vertical;box-sizing:border-box}
-        textarea:focus{outline:none;border-color:var(--primary-color);box-shadow:0 0 0 2px rgba(0,123,255,.25)}
-        .options-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-top:1rem}
-        select,button{padding:.6rem 1rem;border-radius:6px;font-size:1rem;border:1px solid var(--border-color)}select{width:100%;appearance:none;background:var(--light-text) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") no-repeat right .75rem center;background-size:16px 12px}button{background:var(--primary-color);color:#fff;border:none;cursor:pointer;transition:transform .1s,background .2s;margin-right:.5rem}button:hover:not(:disabled){background:#0056b3;transform:translateY(-1px)}button:disabled{background:#a0c7e8;cursor:not-allowed;transform:none}
-        #download-button{background:var(--success-color)}#download-button:hover:not(:disabled){background:#218838}
-        #stop-button{background:var(--error-color);display:none;}#stop-button:hover:not(:disabled){background:#c82333}
-        .char-counter{font-size:.85rem;color:var(--secondary-color);margin-left:auto}.char-counter.warning{color:var(--warning-color);font-weight:500}.char-counter.danger{color:var(--error-color);font-weight:bold}
-        .feedback-area{margin-top:1rem;padding:.75rem;border-radius:6px;font-size:.95rem;text-align:center}.status.info{background:var(--info-bg);color:var(--info-text)}.status.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}.status.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}.status.warning{background:#fff3cd;color:#856404;border:1px solid #ffeeba}
-        .loading{display:flex;gap:.5rem;align-items:center;color:var(--secondary-color)}.loading-spinner{width:20px;height:20px;border:3px solid #f3f3f3;border-top:3px solid var(--primary-color);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-        .progress-container{width:100%;height:8px;background:#e9ecef;border-radius:4px;overflow:hidden;margin-top:.5rem}.progress-bar{height:100%;width:0;background:var(--primary-color);transition:width .2s}
-        .progress-info{font-size:.85rem;text-align:center;margin-top:.5rem;color:var(--secondary-color)} /* Fixed: Added closing brace */
-        #api-key-container{margin-bottom:1rem;padding:0.75rem;border-radius:6px;background-color:#f8f9fa;border:1px solid var(--border-color)}
-        #api-key-input{width:calc(100% - 110px);padding:0.5rem;margin-right:0.5rem;border-radius:4px;border:1px solid var(--border-color)}
-        #api-key-save{padding:0.5rem 1rem;background:var(--primary-color);color:white;border:none;border-radius:4px;cursor:pointer}
-        #api-key-save:hover{background:#0056b3}
-        .collapsed{height:0;overflow:hidden;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-width:0;transition:all 0.3s ease}
-        .expanded{height:auto;overflow:visible;transition:all 0.3s ease; padding-top: 0.75rem; padding-bottom: 0.75rem; margin-bottom: 1rem;}
-        #api-key-toggle{background:none;border:none;color:var(--primary-color);cursor:pointer;margin-bottom:0.5rem;padding:0;font-size:0.9rem;display:flex;align-items:center;gap:0.25rem}
-        #api-key-toggle:hover{text-decoration:underline}
-        .footnote{font-size:0.75rem;color:var(--secondary-color);margin-top:1rem}
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Google Cloud TTS Playground</title>
+<style>
+:root{--c1:#4285f4;--c2:#34a853;--c3:#ea4335;--c4:#fbbc04;--bg:#fdfdfd;--fg:#202124;--bd:#dadce0;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{background:var(--bg);color:var(--fg);padding:1rem;max-width:1200px;margin:auto}
+h1{font-size:clamp(1.7rem,2.5vw,3rem);text-align:center;margin-bottom:1rem;background:linear-gradient(90deg,var(--c1),var(--c2),var(--c4),var(--c3));-webkit-background-clip:text;color:transparent;font-weight:800}
+.grid{display:grid;gap:1rem}.two{grid-template-columns:1fr 1fr}@media(max-width:800px){.two{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 4px 12px rgba(0,0,0,.05);padding:1.2rem;position:relative}
+.card:hover::after{box-shadow:inset 0 0 0 2px var(--c1)}
+label{font-weight:600;margin:.6rem 0 .3rem;display:block}
+input,select,textarea,button{width:100%;padding:.55rem .65rem;border:1px solid var(--bd);border-radius:6px;font-size:1rem;margin-bottom:.8rem}
+input:focus,select:focus,textarea:focus{border-color:var(--c1);outline:none}
+textarea{resize:vertical;min-height:140px}
+button{cursor:pointer;background:var(--c1);color:#fff;border:none;font-weight:600}
+button:not(:disabled):hover{background:#3367d6}
+button:disabled{background:var(--bd)}
+.small-btn{width:auto}
+.toggle{display:flex;gap:.5rem;margin:.6rem 0}.toggle button{flex:1;background:var(--bg);border:1px solid var(--bd)}
+.toggle .active{background:var(--c2);color:#fff;border-color:var(--c2)}
+.status{min-height:1.4em;font-size:.95rem;margin:.5rem 0}.error{color:var(--c3);font-weight:700}
+.bar{height:12px;background:var(--bd);border-radius:6px;overflow:hidden;cursor:pointer;margin:.8rem 0}
+.fill{height:100%;background:linear-gradient(90deg,var(--c1),var(--c2));width:0}
+.audio{display:flex;align-items:center;gap:.6rem}
+.audio button{width:44px;border-radius:50%;aspect-ratio:1/1;font-size:1.1rem;display:grid;place-items:center}
+.time{font-family:monospace;margin-left:auto}
+.text-box{background:#fff;border:1px solid var(--bd);border-radius:var(--r);padding:1rem;max-height:340px;overflow:auto;line-height:1.6}
+.word{display:inline-block;cursor:pointer;border-radius:3px;padding:1px 2px}
+.word:hover{background:#f1f3f4}
+.word.active{background:rgba(66,133,244,.25);color:var(--c1);font-weight:700}
+.word.loading{background:#f1f3f4;cursor:wait;opacity:0.6}
+.unloadable{opacity:0.5;cursor:not-allowed}
+.debug{font-family:monospace;font-size:12px;background:#f5f5f5;border-radius:4px;padding:10px;margin-top:10px;max-height:100px;overflow:auto}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.1);border-radius:50%;border-top-color:var(--c1);animation:spin 0.8s linear infinite;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none}
+</style>
 </head>
 <body>
-    <h1>Live Text‑to‑Speech Synthesizer</h1>
-    <div class="container">
-        <div id="api-key-section" class="section">
-            <button id="api-key-toggle">
-                <span class="toggle-icon">▶</span>&nbsp;Show API Key Settings
-            </button>
-            <div id="api-key-container" class="collapsed">
-                <p><strong>Google Cloud Text-to-Speech API Key:</strong></p>
-                <input type="password" id="api-key-input" placeholder="Enter your Google Cloud API key">
-                <button id="api-key-save">Save Key</button>
-                <p class="footnote">Your API key is stored only in your browser's local storage and never transmitted to any server other than Google Cloud.</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 class="section-title">Input</h2>
-            <div class="char-counter-container" style="display:flex;align-items:center">
-                <span id="char-counter" class="char-counter">0 chars</span>
-            </div>
-            <textarea id="text-input" placeholder="Enter text here …"></textarea>
-        </div>
-
-        <div class="section">
-            <h2 class="section-title">Options</h2>
-            <div class="options-grid">
-                <div>
-                    <label for="voice-select">Voice</label>
-                    <select id="voice-select"><option value="">Loading voices …</option></select>
-                </div>
-                <div>
-                    <label for="speed-select">Speed</label>
-                    <select id="speed-select">
-                        <option value="0.5">0.5×</option>
-                        <option value="0.75">0.75×</option>
-                        <option value="1" selected>1×</option>
-                        <option value="1.25">1.25×</option>
-                        <option value="1.5">1.5×</option>
-                        <option value="2">2×</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="pitch-select">Pitch</label>
-                    <select id="pitch-select">
-                        <option value="-10">-10</option>
-                        <option value="-5">-5</option>
-                        <option value="0" selected>0</option>
-                        <option value="5">+5</option>
-                        <option value="10">+10</option>
-                        <option value="20">+20</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="chunk-size-select">Chunk size</label>
-                    <select id="chunk-size-select">
-                        <option value="0">No chunking (Max 5k)</option>
-                        <option value="1000">1000</option>
-                        <option value="2000">2000</option>
-                        <option value="3000">3000</option>
-                        <option value="4500" selected>4500</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="chunk-break-select">Split at</label>
-                    <select id="chunk-break-select">
-                        <option value="sentence" selected>Sentence</option>
-                        <option value="paragraph">Paragraph</option>
-                        <option value="exact">Exact</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 class="section-title">Generate & Play</h2>
-            <button id="speak-button" disabled>Generate & Play</button>
-            <button id="stop-button">Stop</button>
-            <button id="download-button" disabled>Download MP3</button>
-            <div id="loading" class="loading" style="display:none">
-                <div class="loading-spinner"></div>
-                <span>Generating …</span>
-            </div>
-            <div id="progress-container" class="progress-container" style="display:none">
-                <div id="progress-bar" class="progress-bar"></div>
-            </div>
-            <div id="progress-info" class="progress-info" style="display:none"></div>
-            <div id="generation-status" class="feedback-area status info" style="display:none"></div>
-        </div>
+<h1>Google Cloud TTS Playground</h1>
+<div class="grid two">
+  <div class="card">
+    <h2>🎛️ Config</h2>
+    <label>API Key</label>
+    <input id="k" type="password"/>
+    <button class="small-btn" id="ld">Load Voices</button>
+    <div id="loading" class="status hidden"><span class="spinner"></span>Loading voices...</div>
+    
+    <label>Text</label>
+    <textarea id="txt" placeholder="Type or paste…"></textarea>
+    
+    <label>Voice</label>
+    <select id="v" disabled></select>
+    
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:.8rem">
+      <div>
+        <label>Pitch <span id="pitVal">0</span></label>
+        <input id="pit" type="range" min="-20" max="20" value="0"/>
+      </div>
+      <div>
+        <label>Rate <span id="ratVal">1</span></label>
+        <input id="rat" type="range" min="0.25" max="4" step="0.05" value="1"/>
+      </div>
     </div>
+    
+    <label>Chunk Size <span id="chkVal">800</span></label>
+    <input id="chk" type="range" min="500" max="4500" step="500" value="800"/>
+    
+    <div class="toggle" id="method">
+      <button data-m="sentence">Sentence</button>
+      <button data-m="paragraph" class="active">Paragraph</button>
+      <button data-m="exact">Exact</button>
+    </div>
+    
+    <button id="gen" disabled>🎤 Generate & Play</button>
+    <div id="stat" class="status"></div>
+    <div id="debug" class="debug hidden"></div>
+  </div>
+  
+  <div class="card">
+    <h2>🔊 Playback</h2>
+    <div id="text" class="text-box"><p style="opacity:.6">Words will appear here…</p></div>
+    
+    <div class="bar" id="prog">
+      <div class="fill" id="fill"></div>
+    </div>
+    
+    <div class="audio">
+      <button class="small-btn" id="play" disabled title="Replay">▶</button>
+      <button class="small-btn" id="pause" disabled title="Pause">⏸</button>
+      <button class="small-btn" id="stop" disabled title="Stop">⏹</button>
+      <span class="time" id="time">00:00 / 00:00</span>
+    </div>
+    <label><input type="checkbox" id="showDebug"> Show Debug Info</label>
+  </div>
+</div>
 
-    <script>
-        // Constants
-        const API_URL = 'https://texttospeech.googleapis.com/v1';
-        const API_LIMIT = 5000; // hard limit per request
-        const MIN_INTERVAL = 350; // Milliseconds between API calls
-        const PREFERRED_VOICE = 'en-US-Chirp3-HD-Charon'; // <-- Make sure it's this
-        const API_KEY_STORAGE_KEY = 'tts_api_key';
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  // API endpoints & DOM elements
+  const VO = 'https://texttospeech.googleapis.com/v1/voices';
+  const SY = 'https://texttospeech.googleapis.com/v1/text:synthesize';
+  const Q = id => document.getElementById(id);
+  const E = {
+    key: Q('k'),
+    load: Q('ld'),
+    loading: Q('loading'),
+    txt: Q('txt'),
+    voice: Q('v'),
+    pit: Q('pit'),
+    rat: Q('rat'),
+    pitVal: Q('pitVal'),
+    ratVal: Q('ratVal'),
+    chk: Q('chk'),
+    chkVal: Q('chkVal'),
+    gen: Q('gen'),
+    stat: Q('stat'),
+    methodBtns: [...Q('method').children],
+    textBox: Q('text'),
+    play: Q('play'),
+    pause: Q('pause'),
+    stop: Q('stop'),
+    prog: Q('prog'),
+    fill: Q('fill'),
+    time: Q('time'),
+    debug: Q('debug'),
+    showDebug: Q('showDebug')
+  };
 
-        // DOM Elements
-        const el = id => document.getElementById(id);
-        const textInput = el('text-input');
-        const voiceSelect = el('voice-select');
-        const speedSelect = el('speed-select');
-        const pitchSelect = el('pitch-select');
-        const chunkSizeSel = el('chunk-size-select');
-        const chunkBreakSel = el('chunk-break-select');
-        const speakBtn = el('speak-button');
-        const stopBtn = el('stop-button');
-        const downloadBtn = el('download-button');
-        const loading = el('loading');
-        const progCont = el('progress-container');
-        const progBar = el('progress-bar');
-        const progInfo = el('progress-info');
-        const genStatus = el('generation-status');
-        const charCounter = el('char-counter');
-        const apiKeyInput = el('api-key-input');
-        const apiKeySaveBtn = el('api-key-save');
-        const apiKeyToggle = el('api-key-toggle');
-        const apiKeyContainer = el('api-key-container');
+  // App state
+  let API = '';
+  let ctx;
+  let voices = [];
+  let buffers = [];
+  let rawBuffers = []; // For downloading if added later
+  let audioSources = []; // Track all audio sources
+  let wordElements = []; // Store word elements for efficient lookup
+  let wordOffsets = []; // Track which chunk each word belongs to
+  let totalDuration = 0; // Total final duration
+  let loadedDuration = 0; // Duration of loaded chunks so far
+  let startTime = 0; // When playback started
+  let pausedAt = 0; // Where we paused
+  let playbackId = 0; // Used to cancel stale playback
+  let playing = false;
+  let paused = false;
+  let method = 'paragraph';
+  let currentWordIndex = -1;
+  let loadingComplete = false;
+  let chunksReceived = 0;
+  let totalChunks = 0;
 
-        // State variables
-        let lastRequestTime = 0;
-        let audioContext = null;
-        let audioBufferQueue = [];
-        let currentSourceNode = null;
-        let nextStartTime = 0;
-        let isPlaying = false;
-        let isGenerating = false;
-        let collectedRawBuffers = [];
-        let apiKey = ''; // Will be loaded from storage
-
-        // --- API Key Management ---
-
-        function loadApiKey() {
-            const savedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-            if (savedKey) {
-                apiKey = savedKey;
-                apiKeyInput.value = '••••••••••••••••••••••'; // Mask the actual key in the input field
-                apiKeyInput.placeholder = 'API Key saved. Enter new key to replace.';
-                return true;
-            }
-            apiKeyInput.placeholder = 'Enter your Google Cloud API key';
-            return false;
+  // Utilities
+  const fmt = s => `${String(Math.floor(s/60)).padStart(2, '0')}:${String(Math.floor(s%60)).padStart(2, '0')}`;
+  
+  const status = (m, e) => {
+    E.stat.textContent = m;
+    E.stat.className = 'status' + (e ? ' error' : '');
+    log(e ? `Error: ${m}` : m);
+  };
+  
+  const log = (message, data) => {
+    console.log(message, data || '');
+    
+    if (E.showDebug.checked) {
+      const time = new Date().toLocaleTimeString();
+      const logLine = document.createElement('div');
+      logLine.textContent = `[${time}] ${message}`;
+      E.debug.appendChild(logLine);
+      
+      // Keep max 50 lines
+      while (E.debug.childElementCount > 50) {
+        E.debug.removeChild(E.debug.firstChild);
+      }
+      
+      E.debug.scrollTop = E.debug.scrollHeight;
+      E.debug.classList.remove('hidden');
+    }
+  };
+  
+  // JSON fetch helper with error handling
+  const fetchJSON = async (url, opts) => {
+    try {
+      const r = await fetch(url, opts);
+      if (!r.ok) {
+        let m = `HTTP ${r.status}`;
+        try {
+          const errorData = await r.json();
+          m = errorData.error?.message || m;
+          log('API Error', errorData);
+        } catch (e) {
+          log('Failed to parse error response', e);
         }
+        throw new Error(m);
+      }
+      return r.json();
+    } catch (e) {
+      log('Fetch error:', e);
+      throw e;
+    }
+  };
 
-        function saveApiKey() {
-            const newKey = apiKeyInput.value.trim();
-            // Check if the input is the mask; if so, treat it as empty unless user intended to clear
-            if (newKey === '••••••••••••••••••••••' || newKey === '') {
-                // If user wants to clear the key
-                if (confirm("Clear saved API key? You will need to enter it again later.")) {
-                    apiKey = '';
-                    localStorage.removeItem(API_KEY_STORAGE_KEY);
-                    apiKeyInput.value = ''; // Clear the input field
-                    apiKeyInput.placeholder = 'Enter your Google Cloud API key';
-                    showStatus('API key cleared.', 'warning');
-                    updateCharCount(); // Update button states
-                    loadVoices(); // Attempt reload (will show API key required)
-                } else {
-                     // User cancelled clearing, restore mask if key exists
-                     if(apiKey) apiKeyInput.value = '••••••••••••••••••••••';
-                     else apiKeyInput.value = '';
-                }
-                return false;
-            }
+  // UI event binding
+  ['pit', 'rat', 'chk'].forEach(id => {
+    E[id].addEventListener('input', e => {
+      const span = E[`${id}Val`];
+      if (span) {
+        const val = id === 'rat' ? parseFloat(e.target.value).toFixed(2) : e.target.value;
+        span.textContent = val;
+      }
+    });
+  });
 
-            // Saving a new, non-empty key
-            apiKey = newKey;
-            localStorage.setItem(API_KEY_STORAGE_KEY, newKey);
-            apiKeyInput.value = '••••••••••••••••••••••'; // Mask after saving
-            apiKeyInput.placeholder = 'API Key saved. Enter new key to replace.';
-            showStatus('API key saved successfully!', 'success');
-            loadVoices(); // Try loading voices with the new key
-            // Note: updateCharCount() is called within loadVoices(), so no need to call it directly here.
-            return true;
-        }
-
-        function toggleApiKeyContainer() {
-            const isCollapsed = apiKeyContainer.classList.contains('collapsed');
-            const iconSpan = apiKeyToggle.querySelector('.toggle-icon');
-
-            if (isCollapsed) {
-                apiKeyContainer.classList.remove('collapsed');
-                apiKeyContainer.classList.add('expanded');
-                 // Update text more robustly
-                 apiKeyToggle.innerHTML = `<span class="toggle-icon">▼</span>&nbsp;Hide API Key Settings`;
-            } else {
-                apiKeyContainer.classList.remove('expanded');
-                apiKeyContainer.classList.add('collapsed');
-                 apiKeyToggle.innerHTML = `<span class="toggle-icon">▶</span>&nbsp;Show API Key Settings`;
-            }
-             // Restore mask if needed when collapsing
-             if (!isCollapsed && apiKey && apiKeyInput.value !== '••••••••••••••••••••••') {
-                 apiKeyInput.value = '••••••••••••••••••••••';
-             }
-        }
-
-        function checkApiKeyAvailability() {
-            if (!apiKey) {
-                showStatus('Please provide a Google Cloud API key to use this application', 'warning');
-                if (apiKeyContainer.classList.contains('collapsed')) {
-                    toggleApiKeyContainer(); // Auto-expand if collapsed and key missing
-                }
-                apiKeyInput.focus(); // Focus the input field
-                return false;
-            }
-            return true;
-        }
-
-        // --- Core Application Logic ---
-
-        async function loadVoices() {
-            if (!apiKey) {
-                voiceSelect.innerHTML = '<option value="">API key required</option>';
-                speakBtn.disabled = true;
-                updateCharCount();
-                return;
-            }
-
-            voiceSelect.innerHTML = '<option value="">Loading voices …</option>';
-            speakBtn.disabled = true;
-
-            try {
-                const res = await fetch(`${API_URL}/voices?key=${apiKey}`);
-
-                if (!res.ok) {
-                    const errorData = await res.json().catch(() => ({}));
-                    const errorMsg = errorData?.error?.message || `Status: ${res.status} ${res.statusText}`;
-                    if (res.status === 400 && errorMsg.includes('API key not valid')) {
-                         throw new Error(`API key is not valid. Please check it. (${errorMsg})`);
-                    } else if (res.status === 403) {
-                         throw new Error(`Permission denied. Ensure the Text-to-Speech API is enabled for this key. (${errorMsg})`);
-                    }
-                    throw new Error(`Failed to fetch voices: ${errorMsg}`);
-                }
-
-                const { voices } = await res.json();
-                if (!voices || !Array.isArray(voices) || voices.length === 0) {
-                    throw new Error('No voices returned from API. Check API key permissions.');
-                }
-
-                const byLang = {};
-                voices.forEach(v => { const l = v.languageCodes[0]; (byLang[l] = byLang[l] || []).push(v); });
-                voiceSelect.innerHTML = '<option value="">-- Select Voice --</option>';
-                Object.keys(byLang).sort().forEach(lang => {
-                    const optg = document.createElement('optgroup');
-                    optg.label = lang;
-                    byLang[lang].sort((a, b) => a.name.localeCompare(b.name)).forEach(v => {
-                        const o = document.createElement('option');
-                        o.value = v.name;
-                        o.dataset.lang = lang;
-                        const short = v.name.startsWith(lang + '-') ? v.name.substring(lang.length + 1) : v.name;
-                        o.textContent = `${short} (${v.ssmlGender})`;
-                        optg.appendChild(o);
-                    });
-                    voiceSelect.appendChild(optg);
-                });
-
-                const preferredOption = voiceSelect.querySelector(`option[value="${PREFERRED_VOICE}"]`);
-                if (preferredOption) voiceSelect.value = PREFERRED_VOICE;
-                else {
-                    const firstEnUS = voiceSelect.querySelector('optgroup[label="en-US"] option');
-                    if (firstEnUS) voiceSelect.value = firstEnUS.value;
-                    else {
-                        const firstOption = voiceSelect.querySelector('option:not([value=""])');
-                        if (firstOption) voiceSelect.value = firstOption.value;
-                    }
-                }
-                showStatus('Voices loaded successfully!', 'success');
-
-            } catch (e) {
-                console.error("Voice loading failed:", e);
-                voiceSelect.innerHTML = '<option value="">Error loading voices</option>';
-                showStatus(`Voice loading error: ${e.message}`, 'error');
-            } finally {
-                updateCharCount();
-            }
-        }
-
-        function updateCharCount() {
-            const len = textInput.value.length;
-            charCounter.textContent = `${len.toLocaleString()} chars`;
-            charCounter.classList.remove('warning', 'danger');
-
-            const chunkSize = parseInt(chunkSizeSel.value, 10);
-            const needsChunking = chunkSize > 0;
-            let isOverLimit = false;
-
-            if (!needsChunking && len > API_LIMIT) {
-                charCounter.classList.add('danger');
-                isOverLimit = true;
-                if (!genStatus.classList.contains('error')) {
-                     showStatus(`Text exceeds ${API_LIMIT.toLocaleString()} characters and chunking is disabled. Enable chunking or shorten text.`, 'warning');
-                }
-            } else if (len > API_LIMIT * 0.8 && !needsChunking) {
-                charCounter.classList.add('warning');
-            }
-
-            const hasText = textInput.value.trim().length > 0;
-            const hasVoice = voiceSelect.value !== '';
-            const hasApiKey = apiKey !== '';
-
-            speakBtn.disabled = isGenerating || !hasText || !hasVoice || !hasApiKey || isOverLimit;
-        }
-
-        function showStatus(msg, cls = 'info') {
-            genStatus.textContent = msg;
-            genStatus.className = `feedback-area status ${cls}`;
-            genStatus.style.display = 'block';
-
-            if (cls === 'success') {
-                setTimeout(() => {
-                    if (genStatus.textContent === msg) {
-                        hideStatus();
-                    }
-                }, 5000);
-            }
-        }
-
-        function hideStatus() {
-            genStatus.style.display = 'none';
-        }
-
-        function splitChunks(text, size, method) {
-             if (size <= 0 || text.length <= size) return [text.trim()];
-            const out = [];
-            let remaining = text;
-            const sentenceRe = /([.!?])\s+/g;
-            const paragraphRe = /\n\s*\n+/g;
-            while (remaining.length > 0) {
-                let chunk;
-                let splitIndex = Math.min(size, remaining.length);
-                if (remaining.length > size && method !== 'exact') {
-                    const head = remaining.substring(0, size);
-                    const re = method === 'paragraph' ? paragraphRe : sentenceRe;
-                    let lastMatchIndex = -1;
-                    let match;
-                    re.lastIndex = 0;
-                    while ((match = re.exec(head)) !== null) {
-                        lastMatchIndex = match.index + match[0].length;
-                    }
-                    if (lastMatchIndex > 0) {
-                        splitIndex = lastMatchIndex;
-                    } else {
-                        const lastSpace = head.lastIndexOf(' ');
-                        if (lastSpace > size * 0.5) {
-                            splitIndex = lastSpace + 1;
-                        }
-                    }
-                }
-                chunk = remaining.substring(0, splitIndex).trim();
-                if (chunk) out.push(chunk);
-                remaining = remaining.substring(splitIndex);
-            }
-            return out;
-        }
-
-        function initAudioContext() {
-            try {
-                if (!audioContext || audioContext.state === 'closed') {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    nextStartTime = 0;
-                    console.log("AudioContext initialized.");
-                }
-                 if (audioContext.state === 'suspended') {
-                    audioContext.resume().catch(e => {
-                        console.error("AudioContext resume failed:", e);
-                        showStatus("Failed to resume audio playback. Click 'Generate' again.", 'error');
-                    });
-                }
-                 if (audioContext.state !== 'running') {
-                     showStatus("Audio playback unavailable. Ensure browser allows audio.", 'warning');
-                     return false;
-                 }
-                return true;
-            } catch (e) {
-                console.error("AudioContext initialization failed:", e);
-                showStatus("Your browser doesn't support Web Audio API or permission denied.", 'error');
-                return false;
-            }
-        }
-
-        async function synthesizeChunk(text, opts) {
-            const body = {
-                input: { text },
-                voice: { languageCode: opts.lang, name: opts.name },
-                audioConfig: {
-                    audioEncoding: 'MP3',
-                    speakingRate: opts.speed,
-                    pitch: opts.pitch
-                }
-            };
-            const now = Date.now();
-            const timeSinceLastRequest = now - lastRequestTime;
-            if (timeSinceLastRequest < MIN_INTERVAL) {
-                await new Promise(resolve => setTimeout(resolve, MIN_INTERVAL - timeSinceLastRequest));
-            }
-            lastRequestTime = Date.now();
-            try {
-                const response = await fetch(`${API_URL}/text:synthesize?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    const errorMsg = errorData?.error?.message || `Status: ${response.status} ${response.statusText}`;
-                     if (response.status === 400 && errorMsg.includes('API key not valid')) {
-                         throw new Error(`API key is not valid. Please check it. (${errorMsg})`);
-                     } else if (response.status === 403) {
-                         throw new Error(`Permission denied. Check API key permissions/billing. (${errorMsg})`);
-                     }
-                    throw new Error(`TTS API Error: ${errorMsg}`);
-                }
-                const data = await response.json();
-                if (!data.audioContent) {
-                    throw new Error('TTS API Error: Received empty audio content');
-                }
-                const binaryString = window.atob(data.audioContent);
-                const len = binaryString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
-                return bytes.buffer;
-            } catch (error) {
-                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                    throw new Error('Network error during synthesis. Please check connection.');
-                }
-                throw error;
-            }
-        }
-
-        async function decodeAudioDataAsync(arrayBuffer) {
-            if (!audioContext) throw new Error("AudioContext not available for decoding");
-            const bufferCopy = arrayBuffer.slice(0);
-            try {
-                return await audioContext.decodeAudioData(bufferCopy);
-            } catch (err) {
-                 console.error("decodeAudioData error:", err);
-                 const errorMsg = err && err.message ? err.message : "Failed to decode audio data";
-                 throw new Error(`Audio Decoding Error: ${errorMsg}`);
-            }
-        }
-
-        function scheduleNextChunk() {
-            if (!audioContext || audioContext.state !== 'running') {
-                 if (!initAudioContext()) {
-                    stopPlaybackAndGeneration();
-                    console.warn("Cannot schedule chunk: AudioContext not running.");
-                    return;
-                 }
-            }
-            if (!isPlaying && audioBufferQueue.length > 0) {
-                isPlaying = true;
-                const bufferToPlay = audioBufferQueue.shift();
-                const currentTime = audioContext.currentTime;
-                const startTime = Math.max(currentTime, nextStartTime);
-                currentSourceNode = audioContext.createBufferSource();
-                currentSourceNode.buffer = bufferToPlay;
-                currentSourceNode.connect(audioContext.destination);
-                let endHandlerCalled = false;
-                currentSourceNode.onended = () => {
-                    if (endHandlerCalled) return;
-                    endHandlerCalled = true;
-                    isPlaying = false;
-                    const stoppedNode = currentSourceNode;
-                    currentSourceNode = null;
-                     if (stoppedNode) stoppedNode.disconnect();
-                    if (isGenerating || audioBufferQueue.length > 0) {
-                        scheduleNextChunk();
-                    } else {
-                        console.log("Playback finished naturally");
-                        if (!isGenerating && stopBtn.style.display !== 'none') {
-                             showStatus('Playback complete', 'success');
-                             updateCharCount();
-                             stopBtn.style.display = 'none';
-                        }
-                    }
-                };
-                try {
-                    currentSourceNode.start(startTime);
-                    nextStartTime = startTime + bufferToPlay.duration;
-                    console.log(`Scheduled chunk: start=${startTime.toFixed(2)}s, duration=${bufferToPlay.duration.toFixed(2)}s, next=${nextStartTime.toFixed(2)}s`);
-                } catch (e) {
-                    console.error("Error starting audio playback:", e);
-                     if (currentSourceNode) {
-                        currentSourceNode.onended = null;
-                        currentSourceNode.disconnect();
-                    }
-                    isPlaying = false;
-                    currentSourceNode = null;
-                    endHandlerCalled = true;
-                     showStatus(`Playback error: ${e.message}`, 'error');
-                     stopPlaybackAndGeneration();
-                }
-            } else if (!isGenerating && audioBufferQueue.length === 0 && !isPlaying) {
-                 console.log("Queue empty and nothing playing, generation stopped.");
-                 if (stopBtn.style.display !== 'none') {
-                     updateCharCount();
-                     stopBtn.style.display = 'none';
-                     if (!genStatus.classList.contains('error') && !genStatus.classList.contains('warning')) {
-                         showStatus('Generation and playback complete', 'success');
-                     }
-                 }
-            }
-        }
-
-        async function startGeneration() {
-            if (isGenerating || speakBtn.disabled) return;
-            if (!checkApiKeyAvailability()) return;
-            const text = textInput.value.trim();
-            if (!text) { showStatus("Please enter some text", 'warning'); return; }
-            if (!voiceSelect.value) { showStatus("Please select a voice", 'warning'); return; }
-            if (!initAudioContext()) return;
-
-            stopPlaybackAndGeneration(true);
-            isGenerating = true;
-            collectedRawBuffers = [];
-            audioBufferQueue = [];
-            nextStartTime = audioContext.currentTime;
-
-            hideStatus();
-            loading.style.display = 'flex';
-            progCont.style.display = 'none';
-            progInfo.style.display = 'none';
-            progBar.style.width = '0%';
-            speakBtn.disabled = true;
-            stopBtn.style.display = 'inline-block';
-            downloadBtn.disabled = true;
-
-            const selectedOption = voiceSelect.selectedOptions[0];
-            const options = { name: selectedOption.value, lang: selectedOption.dataset.lang, speed: parseFloat(speedSelect.value), pitch: parseFloat(pitchSelect.value) };
-            const chunkSize = parseInt(chunkSizeSel.value, 10);
-            const chunkMethod = chunkBreakSel.value;
-            const chunks = splitChunks(text, chunkSize || API_LIMIT, chunkMethod);
-            if (chunks.length > 1) { progCont.style.display = 'block'; progInfo.style.display = 'block'; }
-
-            let hasError = false;
-            try {
-                for (let i = 0; i < chunks.length; i++) {
-                    if (!isGenerating) { console.log("Generation loop stopped externally"); break; }
-                    const currentChunkText = chunks[i];
-                     if (currentChunkText.length > API_LIMIT) {
-                         showStatus(`Error: Chunk ${i + 1} exceeds API limit of ${API_LIMIT} chars (${currentChunkText.length}).`, 'error');
-                         hasError = true; break;
-                     }
-                     if (chunks.length > 1) {
-                        progBar.style.width = `${Math.round((i + 1) / chunks.length * 100)}%`;
-                        progInfo.textContent = `Processing chunk ${i + 1} / ${chunks.length}`;
-                    } else if (!progInfo.style.display || progInfo.style.display === 'none') {
-                        progInfo.textContent = `Processing text...`; progInfo.style.display = 'block';
-                    }
-                    try {
-                        console.log(`Synthesizing chunk ${i + 1}/${chunks.length}...`);
-                        const rawBuffer = await synthesizeChunk(currentChunkText, options);
-                        collectedRawBuffers.push(rawBuffer);
-                        console.log(`Decoding chunk ${i + 1}...`);
-                        const decodedBuffer = await decodeAudioDataAsync(rawBuffer.slice(0));
-                        audioBufferQueue.push(decodedBuffer);
-                        if (i === 0 || !isPlaying) scheduleNextChunk();
-                    } catch (e) {
-                        console.error(`Failed on chunk ${i + 1}:`, e);
-                        showStatus(`Error on chunk ${i + 1}: ${e.message}`, 'error');
-                        hasError = true; break;
-                    }
-                }
-            } catch (e) {
-                console.error("Unhandled error during generation loop:", e);
-                showStatus(`Unexpected generation error: ${e.message}`, 'error');
-                hasError = true;
-            } finally {
-                isGenerating = false;
-                loading.style.display = 'none';
-                 if (hasError) {
-                    progInfo.textContent = 'Generation stopped due to error';
-                    stopPlaybackAndGeneration();
-                 } else if (stopBtn.style.display === 'none') {
-                     console.log("Generation loop finished after stop signal received.");
-                 } else {
-                    progInfo.textContent = 'Generation complete. Playing...';
-                    downloadBtn.disabled = collectedRawBuffers.length === 0;
-                    if (audioBufferQueue.length === 0 && !isPlaying) {
-                        console.log("Generation finished, playback already complete.");
-                         if (!genStatus.classList.contains('error') && !genStatus.classList.contains('warning')) { showStatus('Generation and playback complete', 'success'); }
-                        updateCharCount(); stopBtn.style.display = 'none';
-                    } else { console.log("Generation finished, playback continues..."); }
-                 }
-                 setTimeout(scheduleNextChunk, 100); // Final check
-            }
-        }
-
-        function stopPlaybackAndGeneration(isInternalReset = false) {
-            console.log(`Stopping playback and generation... (Internal Reset: ${isInternalReset})`);
-            isGenerating = false;
-            if (currentSourceNode) {
-                try {
-                    currentSourceNode.onended = null;
-                    currentSourceNode.stop(0);
-                    currentSourceNode.disconnect();
-                    console.log("Stopped and disconnected current audio source node");
-                } catch (e) { console.warn("Could not stop/disconnect source node:", e.message); }
-                currentSourceNode = null;
-            }
-            audioBufferQueue = [];
-            isPlaying = false;
-            nextStartTime = audioContext ? audioContext.currentTime : 0;
-            loading.style.display = 'none';
-            updateCharCount(); // Always update button state after stop
-            stopBtn.style.display = 'none';
-            downloadBtn.disabled = collectedRawBuffers.length === 0;
-            if (!isInternalReset && !genStatus.classList.contains('error')) {
-                showStatus('Stopped', 'warning');
-            } else if (isInternalReset) {
-                 hideStatus();
-             }
-        }
-
-        function downloadAudio() {
-            if (collectedRawBuffers.length === 0 || downloadBtn.disabled) {
-                showStatus("No audio data to download", "warning"); return;
-            }
-            try {
-                const finalBlob = new Blob(collectedRawBuffers, { type: 'audio/mp3' });
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-                const textPreview = textInput.value.trim().substring(0, 25).replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
-                const filename = `speech_${textPreview || 'audio'}_${timestamp}.mp3`;
-                const url = URL.createObjectURL(finalBlob);
-                const a = document.createElement('a');
-                a.style.display = 'none'; a.href = url; a.download = filename;
-                document.body.appendChild(a); a.click();
-                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-                showStatus(`Downloaded "${filename}"`, 'success');
-            } catch (e) {
-                console.error("Download creation failed:", e);
-                showStatus(`Download failed: ${e.message}`, 'error');
-            }
-        }
-
-        // --- Event Listeners & Initialization ---
-
-        textInput.addEventListener('input', updateCharCount);
-        speakBtn.addEventListener('click', startGeneration);
-        stopBtn.addEventListener('click', () => stopPlaybackAndGeneration(false)); // Corrected: Ensure user stop passes false
-        downloadBtn.addEventListener('click', downloadAudio);
-        apiKeySaveBtn.addEventListener('click', saveApiKey);
-        apiKeyToggle.addEventListener('click', toggleApiKeyContainer);
-        // Corrected: Wrap stop calls in arrow functions for change events
-        voiceSelect.addEventListener('change', () => { updateCharCount(); stopPlaybackAndGeneration(false); });
-        speedSelect.addEventListener('change', () => stopPlaybackAndGeneration(false));
-        pitchSelect.addEventListener('change', () => stopPlaybackAndGeneration(false));
-        chunkSizeSel.addEventListener('change', () => { updateCharCount(); stopPlaybackAndGeneration(false); });
-        chunkBreakSel.addEventListener('change', () => stopPlaybackAndGeneration(false));
-
-        window.addEventListener('error', (event) => {
-            console.error('Global error caught:', event.error, 'Message:', event.message);
-            if (isGenerating || isPlaying) {
-                showStatus(`An unexpected error occurred: ${event.message || 'Unknown error'}. Stopping operation.`, 'error');
-                stopPlaybackAndGeneration();
-            }
+  // Load voices from Google TTS API
+  E.load.onclick = async () => {
+    API = E.key.value.trim();
+    if (!API) return status('API key required', true);
+    
+    E.loading.classList.remove('hidden');
+    E.load.disabled = true;
+    status('Loading voices...');
+    
+    try {
+      log(`Requesting voices from ${VO}`);
+      const d = await fetchJSON(`${VO}?key=${API}`);
+      voices = d.voices || [];
+      
+      if (!voices.length) throw new Error('No voices returned');
+      
+      log(`Loaded ${voices.length} voices`);
+      
+      // Group voices by language
+      const langMap = new Map();
+      voices.forEach(v => {
+        v.languageCodes.forEach(code => {
+          let name;
+          try {
+            name = new Intl.DisplayNames(['en'], { type: 'language' }).of(code);
+          } catch (e) {
+            name = code;
+          }
+          
+          if (!langMap.has(code)) {
+            langMap.set(code, { name, voices: [] });
+          }
+          langMap.get(code).voices.push(v);
         });
-        window.addEventListener('unhandledrejection', (event) => {
-            console.error('Unhandled promise rejection:', event.reason);
-             if (isGenerating || isPlaying) {
-                showStatus(`An unexpected async error occurred: ${event.reason?.message || 'Unknown rejection'}. Stopping operation.`, 'error');
-                stopPlaybackAndGeneration();
-             }
-        });
+      });
+      
+      // Sort languages by name
+      const sortedLangs = [...langMap.entries()]
+        .sort((a, b) => a[1].name.localeCompare(b[1].name));
+      
+      // Group options by language
+      const html = sortedLangs.map(([code, { name, voices }]) => {
+        const options = voices
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(v => `<option value="${v.name}" data-l="${code}">${v.name} (${v.ssmlGender})</option>`)
+          .join('');
+        
+        return `<optgroup label="${name}">${options}</optgroup>`;
+      }).join('');
+      
+      E.voice.innerHTML = html;
+      E.voice.disabled = false;
+      E.gen.disabled = false;
+      
+      status('Voices loaded successfully');
+    } catch (e) {
+      status(`Failed to load voices: ${e.message}`, true);
+    } finally {
+      E.loading.classList.add('hidden');
+      E.load.disabled = false;
+    }
+  };
 
-        window.addEventListener('beforeunload', () => {
-            stopPlaybackAndGeneration(true);
-            if (audioContext && audioContext.state !== 'closed') {
-                try { audioContext.close().then(() => console.log("AudioContext closed on page unload.")); }
-                catch (e) { console.warn("Could not close AudioContext cleanly:", e); }
-            }
-        });
+  // Configure chunk splitting method
+  E.methodBtns.forEach(b => b.onclick = () => {
+    E.methodBtns.forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    method = b.dataset.m;
+    log(`Splitting method changed to: ${method}`);
+  });
 
-        // Initial setup
-        loadApiKey();
-        updateCharCount();
-        if (apiKey) {
-            loadVoices();
+  // Split text into chunks based on selected method
+  const splitText = t => {
+    const m = +E.chk.value;
+    if (t.length <= m) return [t];
+    
+    if (method === 'exact') {
+      const a = [];
+      for (let i = 0; i < t.length; i += m) {
+        a.push(t.slice(i, i + m));
+      }
+      return a;
+    }
+    
+    const re = method === 'paragraph' ? /\n\s*\n/ : /([.!?]+["']?\s+)/;
+    const bits = t.split(re).filter(Boolean);
+    const out = [];
+    let cur = '';
+    
+    for (const p of bits) {
+      if ((cur + p).length > m) {
+        if (cur.trim()) out.push(cur.trim());
+        cur = '';
+        
+        if (p.length > m) {
+          let q = p;
+          while (q.length > m) {
+            out.push(q.slice(0, m));
+            q = q.slice(m);
+          }
+          cur = q;
         } else {
-            checkApiKeyAvailability(); // Prompt for key if missing on load
+          cur = p;
         }
+      } else {
+        cur += p;
+      }
+    }
+    
+    if (cur.trim()) out.push(cur.trim());
+    
+    log(`Split into ${out.length} chunks using ${method} method`, {
+      chunkSizes: out.map(c => c.length)
+    });
+    
+    return out;
+  };
 
-    </script>
+  // Decode audio buffer
+  const decodeBuffer = a => new Promise((res, rej) => ctx.decodeAudioData(a, res, rej));
+
+  // Prepare text display with clickable words
+  const prepareTextDisplay = (text, chunks) => {
+    E.textBox.innerHTML = '';
+    wordElements = [];
+    wordOffsets = [];
+    
+    let globalWordIndex = 0;
+    let currentChunk = 0;
+    let chunkStart = 0;
+    let chunkEnd = chunks[0]?.length || 0;
+    
+    // Split text into words and spaces
+    text.split(/(\s+)/).forEach((part, i) => {
+      if (part.trim()) {
+        // This is a word (not whitespace)
+        const span = document.createElement('span');
+        span.textContent = part;
+        span.className = 'word loading'; // Start as loading
+        span.dataset.index = globalWordIndex;
+        
+        // Track which chunk this word belongs to
+        while (i > chunkEnd && currentChunk < chunks.length - 1) {
+          currentChunk++;
+          chunkStart = chunkEnd;
+          chunkEnd += chunks[currentChunk].length;
+        }
+        
+        span.dataset.chunk = currentChunk;
+        wordOffsets[globalWordIndex] = currentChunk;
+        
+        span.addEventListener('click', () => {
+          if (span.classList.contains('loading')) {
+            status('That part is still loading...', false);
+            return;
+          }
+          seekToWord(globalWordIndex);
+        });
+        
+        wordElements.push(span);
+        E.textBox.appendChild(span);
+        globalWordIndex++;
+      } else {
+        // This is whitespace
+        E.textBox.appendChild(document.createTextNode(part));
+      }
+    });
+    
+    log(`Prepared text display with ${globalWordIndex} words`);
+  };
+
+  // Find which chunk and offset to play for a given time
+  const locateTimePosition = (time) => {
+    let currentTime = 0;
+    
+    // Handle case where time is beyond loaded duration
+    if (time >= loadedDuration) {
+      const lastIndex = buffers.findLastIndex(b => b);
+      return { chunk: lastIndex === -1 ? 0 : lastIndex, offset: 0 };
+    }
+    
+    // Find the chunk that contains this time
+    for (let i = 0; i < buffers.length; i++) {
+      const buffer = buffers[i];
+      if (!buffer) continue; // Skip unloaded chunks
+      
+      const duration = buffer.duration;
+      if (time < currentTime + duration) {
+        return { chunk: i, offset: time - currentTime };
+      }
+      
+      currentTime += duration;
+    }
+    
+    // Fallback to beginning of last loaded chunk
+    const lastLoaded = buffers.findLastIndex(b => b);
+    return { chunk: lastLoaded === -1 ? 0 : lastLoaded, offset: 0 };
+  };
+
+  // Seek to a specific time
+  const seekToTime = (time) => {
+    if (!buffers.some(b => b)) return;
+    
+    // Ensure time is within valid range
+    time = Math.max(0, Math.min(time, loadedDuration));
+    
+    log(`Seeking to ${time.toFixed(2)}s`);
+    
+    // Find the chunk this time belongs to
+    const { chunk, offset } = locateTimePosition(time);
+    
+    // Cancel any current playback
+    cancelPlayback();
+    
+    if (paused) {
+      // Just update the paused position
+      pausedAt = time;
+      updateUI(time);
+    } else {
+      // Start playback from this position
+      startPlayback(chunk, offset, time);
+    }
+  };
+
+  // Seek to a specific word
+  const seekToWord = (wordIndex) => {
+    if (!buffers.some(b => b) || wordIndex < 0 || wordIndex >= wordElements.length) return;
+    
+    // Make sure the corresponding chunk is loaded
+    const chunkIndex = wordOffsets[wordIndex];
+    if (chunkIndex === undefined || !buffers[chunkIndex]) {
+      log(`Word ${wordIndex} is in chunk ${chunkIndex} which is not loaded yet`);
+      return;
+    }
+    
+    // Calculate time based on word position in text
+    const time = estimateTimeForWord(wordIndex);
+    log(`Seeking to word ${wordIndex} at estimated time ${time.toFixed(2)}s`);
+    
+    seekToTime(time);
+  };
+
+  // Estimate time for a word
+  const estimateTimeForWord = (wordIndex) => {
+    if (wordIndex < 0 || wordIndex >= wordElements.length) return 0;
+    
+    // Get the chunk this word belongs to
+    const chunkIndex = wordOffsets[wordIndex];
+    if (chunkIndex === undefined) return 0;
+    
+    // Find all words in this chunk
+    const wordsInChunk = wordElements.filter((_, i) => wordOffsets[i] === chunkIndex);
+    if (!wordsInChunk.length) return 0;
+    
+    // Get base time (start of chunk)
+    let baseTime = 0;
+    for (let i = 0; i < chunkIndex; i++) {
+      if (buffers[i]) baseTime += buffers[i].duration;
+    }
+    
+    // If we don't have this chunk loaded, estimate based on overall
+    if (!buffers[chunkIndex]) {
+      return baseTime;
+    }
+    
+    // Find position of word within its chunk
+    const chunkWords = wordElements.filter((_, i) => wordOffsets[i] === chunkIndex);
+    const indexInChunk = chunkWords.findIndex(el => +el.dataset.index === wordIndex);
+    
+    if (indexInChunk === -1) return baseTime;
+    
+    // Calculate offset within chunk
+    const chunkDuration = buffers[chunkIndex].duration;
+    const offsetInChunk = chunkDuration * (indexInChunk / chunkWords.length);
+    
+    return baseTime + offsetInChunk;
+  };
+
+  // Start playback from a specific position
+  const startPlayback = (chunkIndex, offset = 0, absoluteTime = 0) => {
+    // Ensure audio context is initialized
+    ctx = ctx || new AudioContext();
+    
+    // Generate a new playback ID to track this session
+    playbackId = Date.now();
+    const currentPlayback = playbackId;
+    
+    // Update state
+    playing = true;
+    paused = false;
+    startTime = ctx.currentTime - absoluteTime;
+    
+    log(`Starting playback: chunk ${chunkIndex}, offset ${offset.toFixed(2)}s, abs time ${absoluteTime.toFixed(2)}s`);
+    
+    // Update UI
+    E.play.disabled = true;
+    E.pause.disabled = false;
+    E.stop.disabled = false;
+    
+    // Start playing from the specified position
+    playChunk(chunkIndex, offset, currentPlayback);
+    
+    // Start the update loop
+    requestAnimationFrame(updatePlayback);
+  };
+
+  // Play a specific chunk
+  const playChunk = (index, offset = 0, id) => {
+    // Check if this playback request is still valid
+    if (id !== playbackId) {
+      log(`Ignoring stale playback request: ${id} vs ${playbackId}`);
+      return;
+    }
+    
+    // Check if we've reached the end
+    if (index >= buffers.length) {
+      log('Reached end of audio');
+      stopPlayback();
+      return;
+    }
+    
+    // Get the audio buffer for this chunk
+    const buffer = buffers[index];
+    
+    // If the buffer isn't loaded yet, wait and retry
+    if (!buffer) {
+      log(`Chunk ${index} not loaded yet, waiting...`);
+      setTimeout(() => {
+        if (playing && id === playbackId) {
+          playChunk(index, offset, id);
+        }
+      }, 300);
+      return;
+    }
+    
+    log(`Playing chunk ${index} from offset ${offset.toFixed(2)}s`);
+    
+    // Create a new audio source
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    
+    // When this chunk ends, play the next one
+    source.onended = () => {
+      // Only proceed if this is still the active playback
+      if (playing && id === playbackId) {
+        log(`Chunk ${index} ended, playing next chunk`);
+        playChunk(index + 1, 0, id);
+      }
+    };
+    
+    // Save the source so we can stop it later
+    audioSources[index] = source;
+    
+    // Start playback with the specified offset
+    source.start(0, Math.min(offset, buffer.duration));
+  };
+
+  // Cancel any current playback
+  const cancelPlayback = () => {
+    // Stop all audio sources
+    audioSources.forEach(source => {
+      if (source) {
+        source.onended = null; // Remove callback
+        try { source.stop(); } catch (e) {}
+      }
+    });
+    
+    // Reset sources array
+    audioSources = [];
+    
+    // Generate a new playback ID to invalidate any pending callbacks
+    playbackId = Date.now();
+  };
+
+  // Pause playback
+  const pausePlayback = () => {
+    if (!playing) return;
+    
+    pausedAt = ctx.currentTime - startTime;
+    playing = false;
+    paused = true;
+    
+    log(`Pausing at ${pausedAt.toFixed(2)}s`);
+    
+    // Cancel current playback
+    cancelPlayback();
+    
+    // Update UI
+    E.play.disabled = false;
+    E.pause.disabled = true;
+    
+    status(`Paused at ${fmt(pausedAt)}`);
+  };
+
+  // Resume playback
+  const resumePlayback = () => {
+    if (!paused) return;
+    
+    log(`Resuming from ${pausedAt.toFixed(2)}s`);
+    
+    // Find the chunk to resume from
+    const { chunk, offset } = locateTimePosition(pausedAt);
+    
+    // Start playback from the pause position
+    startPlayback(chunk, offset, pausedAt);
+  };
+
+  // Stop playback
+  const stopPlayback = (silent = false) => {
+    // Cancel current playback
+    cancelPlayback();
+    
+    // Reset state
+    playing = false;
+    paused = false;
+    pausedAt = 0;
+    
+    // Clear word highlighting
+    if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
+      wordElements[currentWordIndex].classList.remove('active');
+    }
+    currentWordIndex = -1;
+    
+    if (!silent) {
+      log('Playback stopped');
+      
+      // Reset UI
+      E.fill.style.width = '0%';
+      E.time.textContent = `00:00 / ${fmt(totalDuration)}`;
+      E.play.disabled = false;
+      E.pause.disabled = true;
+      E.stop.disabled = false;
+    }
+  };
+
+  // Update playback UI (called on each animation frame)
+  const updatePlayback = () => {
+    if (!playing) return;
+    
+    // Calculate current time
+    const currentTime = ctx.currentTime - startTime;
+    
+    // Check if we've reached the end
+    if (currentTime >= totalDuration) {
+      stopPlayback();
+      return;
+    }
+    
+    // Update UI
+    updateUI(currentTime);
+    
+    // Continue updates
+    requestAnimationFrame(updatePlayback);
+  };
+
+  // Update UI with current time
+  const updateUI = (time) => {
+    // Update progress bar
+    const percentage = totalDuration > 0 ? (time / totalDuration) * 100 : 0;
+    E.fill.style.width = `${percentage}%`;
+    
+    // Update time display
+    E.time.textContent = `${fmt(time)} / ${fmt(totalDuration)}`;
+    
+    // Update word highlighting
+    updateWordHighlight(time);
+  };
+
+  // Update word highlighting
+  const updateWordHighlight = (time) => {
+    // Find the appropriate word based on time
+    let wordIndex = -1;
+    
+    // First try to find the word by chunk
+    const { chunk } = locateTimePosition(time);
+    const chunkWords = wordElements.filter((_, i) => wordOffsets[i] === chunk);
+    
+    if (chunkWords.length) {
+      // Find position within chunk
+      let chunkStart = 0;
+      for (let i = 0; i < chunk; i++) {
+        if (buffers[i]) chunkStart += buffers[i].duration;
+      }
+      
+      const chunkDuration = buffers[chunk]?.duration || 0;
+      const relativePosition = (time - chunkStart) / chunkDuration;
+      const indexInChunk = Math.floor(relativePosition * chunkWords.length);
+      
+      // Map back to global index
+      if (indexInChunk >= 0 && indexInChunk < chunkWords.length) {
+        wordIndex = parseInt(chunkWords[indexInChunk].dataset.index);
+      }
+    }
+    
+    // If no word found by chunk or it's invalid, use fallback
+    if (wordIndex < 0 || wordIndex >= wordElements.length) {
+      // Fallback to simple ratio
+      wordIndex = Math.floor((time / totalDuration) * wordElements.length);
+      wordIndex = Math.min(wordIndex, wordElements.length - 1);
+    }
+    
+    // Only update if it's a different word
+    if (wordIndex !== currentWordIndex) {
+      // Remove highlight from previous word
+      if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
+        wordElements[currentWordIndex].classList.remove('active');
+      }
+      
+      // Add highlight to current word
+      if (wordIndex >= 0 && wordIndex < wordElements.length) {
+        const wordEl = wordElements[wordIndex];
+        wordEl.classList.add('active');
+        
+        // Ensure word is visible
+        const container = E.textBox;
+        const wordTop = wordEl.offsetTop;
+        const wordBottom = wordTop + wordEl.offsetHeight;
+        const containerTop = container.scrollTop;
+        const containerBottom = containerTop + container.offsetHeight;
+        
+        if (wordTop < containerTop + 30) {
+          container.scrollTop = wordTop - 30;
+        } else if (wordBottom > containerBottom - 30) {
+          container.scrollTop = wordBottom - container.offsetHeight + 30;
+        }
+      }
+      
+      currentWordIndex = wordIndex;
+    }
+  };
+
+  // Progress bar click handler
+  E.prog.onclick = e => {
+    if (!totalDuration) return;
+    
+    const rect = E.prog.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    const targetTime = ratio * totalDuration;
+    
+    log(`Progress bar clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`);
+    seekToTime(targetTime);
+  };
+
+  // Playback control buttons
+  E.play.onclick = () => {
+    if (paused) {
+      resumePlayback();
+    } else {
+      startPlayback(0, 0, 0);
+    }
+  };
+  
+  E.pause.onclick = pausePlayback;
+  E.stop.onclick = stopPlayback;
+  
+  // Debug toggle
+  E.showDebug.addEventListener('change', e => {
+    E.debug.classList.toggle('hidden', !e.target.checked);
+  });
+
+  // Generate speech
+  E.gen.onclick = async () => {
+    if (!API) return status('Load voices first', true);
+    if (!E.voice.value) return status('Select a voice', true);
+    
+    // Initialize audio context and ensure it's running
+    ctx = ctx || new AudioContext();
+    await ctx.resume();
+    
+    const text = E.txt.value.trim();
+    if (!text) return status('Enter text', true);
+    
+    // Reset state
+    stopPlayback();
+    buffers = [];
+    audioSources = [];
+    totalDuration = 0;
+    loadedDuration = 0;
+    loadingComplete = false;
+    
+    // Split text into chunks
+    const chunks = splitText(text);
+    if (!chunks.length) return status('Failed to split text', true);
+    
+    totalChunks = chunks.length;
+    chunksReceived = 0;
+    
+    // Prepare UI
+    status(`Processing ${chunks.length} chunk(s)...`);
+    prepareTextDisplay(text, chunks);
+    E.gen.disabled = true;
+    
+    // Initialize buffers array
+    buffers = new Array(chunks.length);
+    
+    // Create request body template
+    const createRequest = chunk => ({
+      input: { text: chunk },
+      voice: {
+        languageCode: E.voice.selectedOptions[0].dataset.l,
+        name: E.voice.value
+      },
+      audioConfig: {
+        audioEncoding: 'MP3',
+        pitch: +E.pit.value,
+        speakingRate: +E.rat.value
+      }
+    });
+    
+    // Process chunks
+    try {
+      // Start processing all chunks in parallel
+      const chunkPromises = chunks.map(async (chunk, index) => {
+        try {
+          log(`Generating chunk ${index + 1}/${chunks.length} (${chunk.length} chars)`);
+          
+          const response = await fetchJSON(`${SY}?key=${API}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(createRequest(chunk))
+          });
+          
+          if (!response.audioContent) {
+            throw new Error(`No audio content in response for chunk ${index + 1}`);
+          }
+          
+          // Convert base64 to ArrayBuffer
+          const audioData = atob(response.audioContent);
+          const arrayBuffer = new Uint8Array(audioData.length);
+          for (let i = 0; i < audioData.length; i++) {
+            arrayBuffer[i] = audioData.charCodeAt(i);
+          }
+          
+          // Decode audio
+          const audioBuffer = await decodeBuffer(arrayBuffer.buffer);
+          
+          // Store the decoded buffer
+          buffers[index] = audioBuffer;
+          
+          // Update durations
+          loadedDuration += audioBuffer.duration;
+          totalDuration += audioBuffer.duration;
+          
+          log(`Chunk ${index + 1} decoded: ${audioBuffer.duration.toFixed(2)}s`);
+          
+          // Update word elements to show they're ready
+          wordElements.forEach(word => {
+            if (+word.dataset.chunk === index) {
+              word.classList.remove('loading');
+            }
+          });
+          
+          // Update progress
+          chunksReceived++;
+          
+          // Autoplay first chunk when it's ready
+          if (index === 0 && !playing) {
+            startPlayback(0, 0, 0);
+          }
+          
+          return index;
+        } catch (error) {
+          log(`Error processing chunk ${index + 1}:`, error);
+          status(`Chunk ${index + 1} failed: ${error.message}`, true);
+          return null;
+        }
+      });
+      
+      // Wait for all chunks to complete
+      await Promise.all(chunkPromises);
+      
+      // Check if all chunks were processed successfully
+      const success = chunksReceived === totalChunks;
+      loadingComplete = true;
+      
+      if (success) {
+        status(`All chunks processed. Duration: ${fmt(totalDuration)}`);
+      } else {
+        status(`Completed ${chunksReceived}/${totalChunks} chunks`, true);
+      }
+    } catch (e) {
+      status(`Generation failed: ${e.message}`, true);
+    } finally {
+      E.gen.disabled = false;
+    }
+  };
+});
+</script>
 </body>
 </html>
