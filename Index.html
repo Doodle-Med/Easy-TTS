@@ -609,29 +609,56 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Seek to a specific word
-  const seekToWord = (wordIndex) => {
-    if (!buffers.some(b => b) || wordIndex < 0 || wordIndex >= wordElements.length) {
-      log(`Cannot seek to word ${wordIndex}: invalid conditions`, {
-        hasBuffers: buffers.some(b => b),
-        wordCount: wordElements.length
-      });
-      return;
-    }
-    
-    // Make sure the corresponding chunk is loaded
-    const chunkIndex = wordOffsets[wordIndex];
-    if (chunkIndex === undefined || !buffers[chunkIndex]) {
-      log(`Word ${wordIndex} is in chunk ${chunkIndex} which is not loaded yet`);
-      return;
-    }
-    
-    // Calculate time based on word position in text
-    const time = estimateTimeForWord(wordIndex);
-    log(`Seeking to word ${wordIndex} at estimated time ${time.toFixed(2)}s`);
-    
-    seekToTime(time);
-  };
+// Replace your current seekToWord function with this improved version:
+const seekToWord = (wordIndex) => {
+  // Convert wordIndex to a number if it's a string (which can happen from dataset values)
+  wordIndex = parseInt(wordIndex);
+  
+  // Check valid conditions - notice the updated bounds check (length-1)
+  if (!buffers.some(b => b) || wordIndex < 0 || wordIndex >= wordElements.length) {
+    log(`Cannot seek to word ${wordIndex}: invalid conditions`, {
+      hasBuffers: buffers.some(b => b),
+      wordCount: wordElements.length,
+      maxValidIndex: wordElements.length - 1
+    });
+    return;
+  }
+  
+  // Make sure the corresponding chunk is loaded
+  const chunkIndex = wordOffsets[wordIndex];
+  if (chunkIndex === undefined || !buffers[chunkIndex]) {
+    log(`Word ${wordIndex} is in chunk ${chunkIndex} which is not loaded yet`);
+    return;
+  }
+  
+  // Calculate time based on word position in text
+  const time = estimateTimeForWord(wordIndex);
+  log(`Seeking to word ${wordIndex} at estimated time ${time.toFixed(2)}s`);
+  
+  seekToTime(time);
+};
+
+// Also modify the prepareTextDisplay function - specifically the click handler part:
+// Find this section in prepareTextDisplay function:
+span.addEventListener('click', () => {
+  if (span.classList.contains('loading')) {
+    status('That part is still loading...');
+    return;
+  }
+  seekToWord(globalWordIndex); // This is passing the current loop index
+});
+
+// Replace it with this:
+span.addEventListener('click', (e) => {
+  if (span.classList.contains('loading')) {
+    status('That part is still loading...');
+    return;
+  }
+  // Use the index stored in the dataset property
+  const clickedIndex = parseInt(e.currentTarget.dataset.index);
+  log(`Word clicked: ${e.currentTarget.textContent} (index ${clickedIndex})`);
+  seekToWord(clickedIndex);
+});
 
   // Estimate time for a word
   const estimateTimeForWord = (wordIndex) => {
