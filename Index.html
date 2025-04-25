@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Google Cloud TTS (v8 - Fixed)</title>
+    <title>Advanced Google Cloud TTS (v9 - Generate & Play)</title>
     <style>
         /* CSS remains the same - Keeping it for brevity */
         :root { --primary-color: #4285f4; --secondary-color: #34a853; --accent-color: #ea4335; --light-gray: #f5f5f5; --medium-gray: #e0e0e0; --dark-gray: #757575; --text-color: #212121; --buffer-color: #fbbc05; }
@@ -62,14 +62,16 @@
         .api-key-group input { flex-grow: 1; margin-bottom: 0; }
         .api-key-group button { margin-top: 0; }
         #voiceFilterInput { width: 100%; padding: 5px; margin-bottom: 5px; border: 1px solid var(--medium-gray); border-radius: 4px; font-size: 13px; }
+        .generate-buttons { display: flex; gap: 10px; margin-top: 10px;} /* Container for generate buttons */
+        .generate-buttons button { flex: 1; } /* Make buttons share space */
     </style>
 </head>
 <body>
-    <h1>Advanced Google Cloud TTS (v8 - Fixed)</h1>
+    <h1>Advanced Google Cloud TTS (v9 - Generate & Play)</h1>
 
-    <!-- HTML Structure remains the same -->
+    <!-- HTML Structure -->
     <div class="container">
-        <!-- Input Section Panels -->
+        <!-- Input Section -->
         <div class="input-section">
             <div class="panel">
                 <h2>Configuration</h2>
@@ -84,7 +86,11 @@
                     <label for="textInput">Text to Convert</label>
                     <textarea id="textInput" placeholder="Enter the text you want to convert to speech..."></textarea>
                 </div>
-                <button id="generateButton" disabled>Generate Speech</button>
+                <!-- Generate Buttons Container -->
+                <div class="generate-buttons">
+                     <button id="generateButton" disabled>Generate Speech</button>
+                     <button id="generateAndPlayButton" disabled title="Generate speech and play immediately">Generate & Play</button>
+                </div>
                 <p class="status-message" id="initStatus">Enter API Key and click "Load Voices".</p>
             </div>
             <div class="panel">
@@ -138,13 +144,11 @@
             </div>
         </div>
 
-        <!-- Output Section Panels -->
+        <!-- Output Section -->
         <div class="output-section">
             <div class="panel">
                 <h2>Text Display with Highlighting</h2>
-                <div id="textDisplay" class="text-display">
-                    <p>Your converted text will appear here...</p>
-                </div>
+                <div id="textDisplay" class="text-display"><p>Your converted text will appear here...</p></div>
             </div>
             <div class="panel">
                 <h2>Audio Player</h2>
@@ -183,57 +187,157 @@
         document.addEventListener('DOMContentLoaded', function() {
             // --- Constants ---
             const GOOGLE_TTS_API_URL = 'https://texttospeech.googleapis.com/v1';
-            const LOCAL_STORAGE_KEY = 'advancedTtsSettings_v8'; // Updated key for fix
+            const LOCAL_STORAGE_KEY = 'advancedTtsSettings_v9'; // Updated key
 
-            // --- UI Elements --- (Same as v7)
-            const ui = { apiKeyInput: document.getElementById('apiKey'), loadVoicesButton: document.getElementById('loadVoicesButton'), textInput: document.getElementById('textInput'), generateButton: document.getElementById('generateButton'), languageSelect: document.getElementById('languageSelect'), voiceFilterInput: document.getElementById('voiceFilterInput'), voiceSelect: document.getElementById('voiceSelect'), pitchRange: document.getElementById('pitchRange'), pitchValue: document.getElementById('pitchValue'), rateRange: document.getElementById('rateRange'), rateValue: document.getElementById('rateValue'), chunkSizeRange: document.getElementById('chunkSizeRange'), chunkSizeValue: document.getElementById('chunkSizeValue'), chunkMethodButtons: document.querySelectorAll('#chunkMethodGroup .toggle-button'), processingStrategyButtons: document.querySelectorAll('#processingStrategyGroup .toggle-button'), textDisplay: document.getElementById('textDisplay'), statusMessage: document.getElementById('statusMessage'), errorMessage: document.getElementById('errorMessage'), initStatus: document.getElementById('initStatus'), voiceLoadingStatus: document.getElementById('voiceLoadingStatus'), progressFill: document.getElementById('progressFill'), playButton: document.getElementById('playButton'), pauseButton: document.getElementById('pauseButton'), stopButton: document.getElementById('stopButton'), rewindButton: document.getElementById('rewindButton'), forwardButton: document.getElementById('forwardButton'), timeDisplay: document.getElementById('timeDisplay'), timelineContainer: document.getElementById('timelineContainer'), bufferedProgress: document.getElementById('bufferedProgress'), playbackProgress: document.getElementById('playbackProgress'), timelineTooltip: document.getElementById('timelineTooltip'), downloadButton: document.getElementById('downloadButton') };
+            // --- UI Elements ---
+            const ui = {
+                // ... (same as v8)
+                apiKeyInput: document.getElementById('apiKey'), loadVoicesButton: document.getElementById('loadVoicesButton'),
+                textInput: document.getElementById('textInput'), generateButton: document.getElementById('generateButton'),
+                generateAndPlayButton: document.getElementById('generateAndPlayButton'), // New Button
+                languageSelect: document.getElementById('languageSelect'), voiceFilterInput: document.getElementById('voiceFilterInput'), voiceSelect: document.getElementById('voiceSelect'),
+                pitchRange: document.getElementById('pitchRange'), pitchValue: document.getElementById('pitchValue'), rateRange: document.getElementById('rateRange'), rateValue: document.getElementById('rateValue'),
+                chunkSizeRange: document.getElementById('chunkSizeRange'), chunkSizeValue: document.getElementById('chunkSizeValue'),
+                chunkMethodButtons: document.querySelectorAll('#chunkMethodGroup .toggle-button'), processingStrategyButtons: document.querySelectorAll('#processingStrategyGroup .toggle-button'),
+                textDisplay: document.getElementById('textDisplay'), statusMessage: document.getElementById('statusMessage'), errorMessage: document.getElementById('errorMessage'),
+                initStatus: document.getElementById('initStatus'), voiceLoadingStatus: document.getElementById('voiceLoadingStatus'),
+                progressFill: document.getElementById('progressFill'), playButton: document.getElementById('playButton'), pauseButton: document.getElementById('pauseButton'),
+                stopButton: document.getElementById('stopButton'), rewindButton: document.getElementById('rewindButton'), forwardButton: document.getElementById('forwardButton'),
+                timeDisplay: document.getElementById('timeDisplay'), timelineContainer: document.getElementById('timelineContainer'), bufferedProgress: document.getElementById('bufferedProgress'),
+                playbackProgress: document.getElementById('playbackProgress'), timelineTooltip: document.getElementById('timelineTooltip'), downloadButton: document.getElementById('downloadButton')
+            };
 
-            // --- App State --- (Same as v7)
-            const state = { apiKey: '', availableVoices: [], text: '', language: '', voice: '', pitch: 0, rate: 1, chunkSize: 3000, chunkMethod: 'sentence', processingStrategy: 'sequential', audio: { context: null, chunks: [], buffers: [], wordTimings: [], source: null, startTime: 0, pausedAt: 0, duration: 0, playing: false, buffering: false, currentChunk: 0, currentWord: -1 }, processing: { chunks: [], chunkTimings: [], totalChunks: 0, completedChunks: 0, inProgress: false }, ui: { voiceFilter: '' } };
+            // --- App State ---
+            const state = {
+                // ... (same as v8)
+                apiKey: '', availableVoices: [], text: '', language: '', voice: '', pitch: 0, rate: 1, chunkSize: 3000, chunkMethod: 'sentence', processingStrategy: 'sequential',
+                audio: { context: null, chunks: [], buffers: [], wordTimings: [], source: null, startTime: 0, pausedAt: 0, duration: 0, playing: false, buffering: false, currentChunk: 0, currentWord: -1 },
+                processing: { chunks: [], chunkTimings: [], totalChunks: 0, completedChunks: 0, inProgress: false, playWhenReady: false }, // Added playWhenReady flag
+                ui: { voiceFilter: '' }
+            };
 
-            // --- Initialization --- (Same as v7)
+            // --- Initialization --- (Same as v8)
             initializeApplication();
-            function initializeApplication() { console.log("Advanced TTS App Initializing (v8)..."); loadSettings(); setupEventListeners(); updateRangeDisplays(); showMessage("Enter API Key and click 'Load Voices', or settings might load automatically."); if (state.apiKey) { console.log("API Key found, attempting auto voice load."); ui.apiKeyInput.value = state.apiKey; handleLoadVoices(); } }
+            function initializeApplication() { console.log("Advanced TTS App Initializing (v9)..."); loadSettings(); setupEventListeners(); updateRangeDisplays(); showMessage("Enter API Key and click 'Load Voices', or settings might load automatically."); if (state.apiKey) { console.log("API Key found, attempting auto voice load."); ui.apiKeyInput.value = state.apiKey; handleLoadVoices(); } }
 
-            // --- Settings Persistence --- (Same as v7)
+            // --- Settings Persistence --- (Same as v8)
             function saveSettings() { try { const s = { apiKey: state.apiKey, language: state.language, voice: state.voice, pitch: state.pitch, rate: state.rate, chunkSize: state.chunkSize, chunkMethod: state.chunkMethod, processingStrategy: state.processingStrategy }; localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(s)); } catch (e) { console.error("Failed save settings:", e); } }
             function loadSettings() { try { const s = localStorage.getItem(LOCAL_STORAGE_KEY); if (s) { const p = JSON.parse(s); console.log("Loading saved settings:", p); state.apiKey = p.apiKey || ''; state.pitch = p.pitch ?? 0; state.rate = p.rate ?? 1; state.chunkSize = p.chunkSize ?? 3000; state.chunkMethod = p.chunkMethod || 'sentence'; state.processingStrategy = p.processingStrategy || 'sequential'; ui.pitchRange.value = state.pitch; ui.rateRange.value = state.rate; ui.chunkSizeRange.value = state.chunkSize; ui.chunkMethodButtons.forEach(b => b.classList.toggle('active', b.dataset.value === state.chunkMethod)); ui.processingStrategyButtons.forEach(b => b.classList.toggle('active', b.dataset.value === state.processingStrategy)); } } catch (e) { console.error("Failed load settings:", e); localStorage.removeItem(LOCAL_STORAGE_KEY); } }
 
-            // --- Event Listeners --- (Same as v7)
-            function setupEventListeners() { ui.loadVoicesButton.addEventListener('click', handleLoadVoices); ui.apiKeyInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLoadVoices(); }); ui.apiKeyInput.addEventListener('change', () => { state.apiKey = ui.apiKeyInput.value.trim(); saveSettings(); }); ui.languageSelect.addEventListener('change', handleLanguageChange); ui.voiceFilterInput.addEventListener('input', handleVoiceFilterChange); ui.voiceSelect.addEventListener('change', handleVoiceChange); ui.pitchRange.addEventListener('input', () => { state.pitch = parseInt(ui.pitchRange.value); ui.pitchValue.textContent = state.pitch; saveSettings(); }); ui.rateRange.addEventListener('input', () => { state.rate = parseFloat(ui.rateRange.value); ui.rateValue.textContent = state.rate.toFixed(2); saveSettings(); }); ui.chunkSizeRange.addEventListener('input', () => { state.chunkSize = parseInt(ui.chunkSizeRange.value); ui.chunkSizeValue.textContent = `${state.chunkSize} chars`; saveSettings(); }); setupToggleButtons(ui.chunkMethodButtons, 'chunkMethod'); setupToggleButtons(ui.processingStrategyButtons, 'processingStrategy'); ui.generateButton.addEventListener('click', () => { initAudioContext(); startTTSGeneration(); }); ui.playButton.addEventListener('click', playAudio); ui.pauseButton.addEventListener('click', pauseAudio); ui.stopButton.addEventListener('click', stopAudio); ui.rewindButton.addEventListener('click', () => seekAudio(-10)); ui.forwardButton.addEventListener('click', () => seekAudio(10)); ui.downloadButton.addEventListener('click', downloadAudio); ui.timelineContainer.addEventListener('click', handleTimelineClick); ui.timelineContainer.addEventListener('mousemove', handleTimelineMousemove); ui.timelineContainer.addEventListener('mouseout', () => { ui.timelineTooltip.style.display = 'none'; }); }
+            // --- Event Listeners --- (Added listener for new button)
+            function setupEventListeners() {
+                 ui.loadVoicesButton.addEventListener('click', handleLoadVoices);
+                 ui.apiKeyInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLoadVoices(); });
+                 ui.apiKeyInput.addEventListener('change', () => { state.apiKey = ui.apiKeyInput.value.trim(); saveSettings(); });
+                 ui.languageSelect.addEventListener('change', handleLanguageChange);
+                 ui.voiceFilterInput.addEventListener('input', handleVoiceFilterChange);
+                 ui.voiceSelect.addEventListener('change', handleVoiceChange);
+                 ui.pitchRange.addEventListener('input', () => { state.pitch = parseInt(ui.pitchRange.value); ui.pitchValue.textContent = state.pitch; saveSettings(); });
+                 ui.rateRange.addEventListener('input', () => { state.rate = parseFloat(ui.rateRange.value); ui.rateValue.textContent = state.rate.toFixed(2); saveSettings(); });
+                 ui.chunkSizeRange.addEventListener('input', () => { state.chunkSize = parseInt(ui.chunkSizeRange.value); ui.chunkSizeValue.textContent = `${state.chunkSize} chars`; saveSettings(); });
+                 setupToggleButtons(ui.chunkMethodButtons, 'chunkMethod');
+                 setupToggleButtons(ui.processingStrategyButtons, 'processingStrategy');
+                 // Generate buttons
+                 ui.generateButton.addEventListener('click', () => { initAudioContext(); startTTSGeneration(false); }); // Generate only
+                 ui.generateAndPlayButton.addEventListener('click', () => { initAudioContext(); startTTSGeneration(true); }); // Generate and Play
+                 // Playback controls
+                 ui.playButton.addEventListener('click', playAudio);
+                 ui.pauseButton.addEventListener('click', pauseAudio);
+                 ui.stopButton.addEventListener('click', stopAudio);
+                 ui.rewindButton.addEventListener('click', () => seekAudio(-10));
+                 ui.forwardButton.addEventListener('click', () => seekAudio(10));
+                 ui.downloadButton.addEventListener('click', downloadAudio);
+                 // Timeline
+                 ui.timelineContainer.addEventListener('click', handleTimelineClick);
+                 ui.timelineContainer.addEventListener('mousemove', handleTimelineMousemove);
+                 ui.timelineContainer.addEventListener('mouseout', () => { ui.timelineTooltip.style.display = 'none'; });
+            }
+            // handleLanguageChange, handleVoiceFilterChange, handleVoiceChange, setupToggleButtons, updateRangeDisplays (Same as v8)
             function handleLanguageChange() { state.language = ui.languageSelect.value; console.log("Lang change:", state.language); state.ui.voiceFilter = ''; ui.voiceFilterInput.value = ''; populateVoices(state.language); saveSettings(); }
             function handleVoiceFilterChange() { state.ui.voiceFilter = ui.voiceFilterInput.value.toLowerCase(); console.log("Filter change:", state.ui.voiceFilter); populateVoices(state.language); }
             function handleVoiceChange() { state.voice = ui.voiceSelect.value; console.log("Voice change:", state.voice); saveSettings(); }
             function setupToggleButtons(buttons, prop) { buttons.forEach(b => { b.addEventListener('click', function() { buttons.forEach(btn => btn.classList.remove('active')); this.classList.add('active'); state[prop] = this.dataset.value; console.log(`${prop}=${state[prop]}`); saveSettings(); }); }); }
             function updateRangeDisplays() { ui.pitchValue.textContent = ui.pitchRange.value; ui.rateValue.textContent = parseFloat(ui.rateRange.value).toFixed(2); ui.chunkSizeValue.textContent = `${ui.chunkSizeRange.value} chars`; }
 
-            // --- Voice Loading --- (Same as v7)
-            async function handleLoadVoices() { if (!state.apiKey) return showError("API Key required."); console.log("Loading voices..."); ui.voiceLoadingStatus.classList.remove('hidden'); ui.initStatus.classList.add('hidden'); ui.languageSelect.disabled = true; ui.voiceSelect.disabled = true; ui.voiceFilterInput.disabled = true; ui.generateButton.disabled = true; showMessage(""); showError(""); try { const voices = await fetchVoices(state.apiKey); state.availableVoices = voices; console.log(`Fetched ${voices.length} voices.`); populateLanguages(); const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}'); if (saved.language && [...ui.languageSelect.options].some(o => o.value === saved.language)) state.language = saved.language; ui.languageSelect.value = state.language; populateVoices(state.language); if (saved.voice && [...ui.voiceSelect.options].some(o => o.value === saved.voice)) state.voice = saved.voice; else if (ui.voiceSelect.options.length > 0) state.voice = ui.voiceSelect.options[0].value; ui.voiceSelect.value = state.voice; ui.languageSelect.disabled = false; ui.voiceSelect.disabled = false; ui.voiceFilterInput.disabled = false; ui.generateButton.disabled = !state.voice; ui.voiceLoadingStatus.classList.add('hidden'); showMessage("Voices loaded. Ready."); saveSettings(); } catch (e) { console.error("Voice Load Fail:", e); showError(`Voice Load Fail: ${e.message}. Check Key/Perms/Billing & Console.`); ui.voiceLoadingStatus.classList.add('hidden'); ui.initStatus.classList.remove('hidden'); ui.initStatus.textContent = "Voice load failed. Check Key/Console (F12), retry."; state.apiKey = ''; saveSettings(); } }
+
+            // --- Voice Loading --- (Same as v8)
+            async function handleLoadVoices() { if (!state.apiKey) return showError("API Key required."); console.log("Loading voices..."); ui.voiceLoadingStatus.classList.remove('hidden'); ui.initStatus.classList.add('hidden'); ui.languageSelect.disabled = true; ui.voiceSelect.disabled = true; ui.voiceFilterInput.disabled = true; ui.generateButton.disabled = true; ui.generateAndPlayButton.disabled = true; showMessage(""); showError(""); try { const voices = await fetchVoices(state.apiKey); state.availableVoices = voices; console.log(`Fetched ${voices.length} voices.`); populateLanguages(); const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}'); if (saved.language && [...ui.languageSelect.options].some(o => o.value === saved.language)) state.language = saved.language; ui.languageSelect.value = state.language; populateVoices(state.language); if (saved.voice && [...ui.voiceSelect.options].some(o => o.value === saved.voice)) state.voice = saved.voice; else if (ui.voiceSelect.options.length > 0) state.voice = ui.voiceSelect.options[0].value; ui.voiceSelect.value = state.voice; ui.languageSelect.disabled = false; ui.voiceSelect.disabled = false; ui.voiceFilterInput.disabled = false; const enableGen = !!state.voice; ui.generateButton.disabled = !enableGen; ui.generateAndPlayButton.disabled = !enableGen; ui.voiceLoadingStatus.classList.add('hidden'); showMessage("Voices loaded. Ready."); saveSettings(); } catch (e) { console.error("Voice Load Fail:", e); showError(`Voice Load Fail: ${e.message}. Check Key/Perms/Billing & Console.`); ui.voiceLoadingStatus.classList.add('hidden'); ui.initStatus.classList.remove('hidden'); ui.initStatus.textContent = "Voice load failed. Check Key/Console (F12), retry."; state.apiKey = ''; saveSettings(); } }
             async function fetchVoices(apiKey) { const r = await fetch(`${GOOGLE_TTS_API_URL}/voices?key=${apiKey}`); if (!r.ok) { let m = `HTTP ${r.status}`; try { const d = await r.json(); m = d.error?.message || m; } catch (e) {} throw new Error(m); } const d = await r.json(); if (!d.voices) throw new Error("Invalid API response"); return d.voices; }
             function populateLanguages() { const cur = ui.languageSelect.value; ui.languageSelect.innerHTML = ''; const map = new Map(); state.availableVoices.forEach(v => v.languageCodes.forEach(c => map.set(c, getLanguageName(c)))); const sorted = [...map.entries()].sort((a, b) => a[1].localeCompare(b[1])); let defSet = false; sorted.forEach(([c, n]) => { const o = document.createElement('option'); o.value = c; o.textContent = n; ui.languageSelect.appendChild(o); if (c === 'en-US') { state.language = c; defSet = true; } }); if (!defSet && sorted.length > 0) state.language = sorted[0][0]; if ([...ui.languageSelect.options].some(o => o.value === cur)) state.language = cur; ui.languageSelect.value = state.language; console.log("Langs populated, selected:", state.language); }
-            function populateVoices(languageCode) { const cur = ui.voiceSelect.value; ui.voiceSelect.innerHTML = ''; const filter = state.ui.voiceFilter; const filtered = state.availableVoices.filter(v => v.languageCodes.includes(languageCode) && (!filter || v.name.toLowerCase().includes(filter) || v.ssmlGender.toLowerCase().includes(filter))).sort((a, b) => a.name.localeCompare(b.name)); if (filtered.length === 0) { ui.voiceSelect.innerHTML = `<option value="">No voices match</option>`; state.voice = ''; ui.generateButton.disabled = true; return; } filtered.forEach(v => { const o = document.createElement('option'); o.value = v.name; o.textContent = `${v.name} (${v.ssmlGender})`; ui.voiceSelect.appendChild(o); }); if ([...ui.voiceSelect.options].some(o => o.value === cur)) state.voice = cur; else state.voice = filtered[0].name; ui.voiceSelect.value = state.voice; ui.generateButton.disabled = false; console.log("Voices populated for", languageCode, "filter '", filter, "', selected:", state.voice); }
+            function populateVoices(languageCode) { const cur = ui.voiceSelect.value; ui.voiceSelect.innerHTML = ''; const filter = state.ui.voiceFilter; const filtered = state.availableVoices.filter(v => v.languageCodes.includes(languageCode) && (!filter || v.name.toLowerCase().includes(filter) || v.ssmlGender.toLowerCase().includes(filter))).sort((a, b) => a.name.localeCompare(b.name)); if (filtered.length === 0) { ui.voiceSelect.innerHTML = `<option value="">No voices match</option>`; state.voice = ''; ui.generateButton.disabled = true; ui.generateAndPlayButton.disabled = true; return; } filtered.forEach(v => { const o = document.createElement('option'); o.value = v.name; o.textContent = `${v.name} (${v.ssmlGender})`; ui.voiceSelect.appendChild(o); }); if ([...ui.voiceSelect.options].some(o => o.value === cur)) state.voice = cur; else state.voice = filtered[0].name; ui.voiceSelect.value = state.voice; ui.generateButton.disabled = false; ui.generateAndPlayButton.disabled = false; console.log("Voices populated for", languageCode, "filter '", filter, "', selected:", state.voice); }
 
-            // --- Audio Context --- (Same as v7)
+            // --- Audio Context --- (Same as v8)
             function initAudioContext() { if (!state.audio.context || state.audio.context.state === 'suspended') { try { window.AudioContext = window.AudioContext || window.webkitAudioContext; if (!state.audio.context) { state.audio.context = new AudioContext(); console.log("AudioContext created."); } if (state.audio.context.state === 'suspended') { state.audio.context.resume().then(() => console.log("AudioContext resumed.")).catch(e => { console.error("Resume failed:", e); showError("Audio context blocked."); }); } } catch (e) { showError("Web Audio API Error."); console.error("AudioContext init error:", e); state.audio.context = null; } } return state.audio.context; }
 
-            // --- Utilities --- (Same as v7)
+            // --- Utilities --- (Same as v8)
             function formatTime(s) { s = Math.max(0, s || 0); const m = Math.floor(s / 60); s = Math.floor(s % 60); return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
             function updateTimeDisplay(c, t) { if (ui.timeDisplay) ui.timeDisplay.textContent = `${formatTime(c)} / ${formatTime(t)}`; }
             function showMessage(m) { if (ui.statusMessage) ui.statusMessage.textContent = m; if (ui.errorMessage) ui.errorMessage.classList.add('hidden'); }
             function showError(m) { if (ui.errorMessage) { ui.errorMessage.textContent = m; ui.errorMessage.classList.remove('hidden'); } if (ui.statusMessage) ui.statusMessage.textContent = ''; }
             function getLanguageName(c) { try { let rn = new Intl.DisplayNames(['en'], { type: 'language' }); return rn.of(c) || c; } catch (e) { const n = { 'en-US': 'English (US)', 'en-GB': 'English (UK)' }; return n[c] || c; } }
 
-            // --- TTS Generation Core --- (Same as v7, except callGoogleTTSAPI)
-            function startTTSGeneration() { state.text = ui.textInput.value.trim(); if (!state.apiKey) return showError("API Key not loaded."); if (!state.language || !state.voice) return showError("Lang/Voice missing."); if (!state.text) return showError("No text."); const ctx = initAudioContext(); if (!ctx) return showError("Audio unavailable."); console.log(`Starting TTS: ${state.voice}`); resetAudioState(); resetProcessingState(); updateUIForGeneration(true); prepareTextDisplay(); try { const chunks = splitTextIntoChunks(); if (!chunks?.length) throw new Error("Chunking failed."); state.processing.chunks = chunks; state.processing.totalChunks = chunks.length; state.processing.inProgress = true; showMessage(`Split to ${chunks.length} chunks. Generating...`); if (state.processingStrategy === 'sequential') processNextChunk(0); else processAllChunksInParallel(); } catch (e) { console.error("TTS Setup:", e); showError(`Setup Error: ${e.message}`); updateUIForGeneration(false); } }
+            // --- TTS Generation Core ---
+            // Modified startTTSGeneration to accept playWhenReady flag
+            function startTTSGeneration(playWhenReady = false) {
+                state.text = ui.textInput.value.trim();
+                if (!state.apiKey) return showError("API Key not loaded.");
+                if (!state.language || !state.voice) return showError("Lang/Voice missing.");
+                if (!state.text) return showError("No text.");
+                const ctx = initAudioContext(); if (!ctx) return showError("Audio unavailable.");
+
+                console.log(`Starting TTS: ${state.voice}, PlayWhenReady: ${playWhenReady}`);
+                state.processing.playWhenReady = playWhenReady; // Store the flag
+
+                resetAudioState(); resetProcessingState(); updateUIForGeneration(true); prepareTextDisplay();
+                try {
+                    const chunks = splitTextIntoChunks(); if (!chunks?.length) throw new Error("Chunking failed.");
+                    state.processing.chunks = chunks; state.processing.totalChunks = chunks.length; state.processing.inProgress = true;
+                    showMessage(`Split to ${chunks.length} chunks. Generating...`);
+                    if (state.processingStrategy === 'sequential') processNextChunk(0); else processAllChunksInParallel();
+                } catch (e) { console.error("TTS Setup:", e); showError(`Setup Error: ${e.message}`); updateUIForGeneration(false); }
+            }
+
+            // resetAudioState, resetProcessingState (Same as v8)
             function resetAudioState() { console.log("Reset audio state."); if (state.audio.source) { try { state.audio.source.stop(); } catch (e) {} state.audio.source = null; } const size = state.processing.totalChunks || 1; state.audio.chunks = new Array(size); state.audio.buffers = new Array(size); state.audio.wordTimings = []; state.audio.startTime = 0; state.audio.pausedAt = 0; state.audio.duration = 0; state.audio.playing = false; state.audio.buffering = false; state.audio.currentChunk = 0; state.audio.currentWord = -1; document.querySelectorAll('.word.active').forEach(w => w.classList.remove('active')); updateTimeDisplay(0, 0); if (ui.playbackProgress) ui.playbackProgress.style.width = '0%'; if (ui.bufferedProgress) ui.bufferedProgress.style.width = '0%'; }
-            function resetProcessingState() { console.log("Reset proc state."); state.processing.chunks = []; state.processing.chunkTimings = []; state.processing.totalChunks = 0; state.processing.completedChunks = 0; state.processing.inProgress = false; if (ui.progressFill) ui.progressFill.style.width = '0%'; }
-            function updateUIForGeneration(starting) { ui.generateButton.disabled = starting; ui.generateButton.innerHTML = starting ? '<span class="spinner"></span> Generating...' : 'Generate Speech'; ui.playButton.disabled = true; ui.pauseButton.disabled = true; ui.stopButton.disabled = true; ui.rewindButton.disabled = true; ui.forwardButton.disabled = true; ui.downloadButton.disabled = true; if (!starting) { const hasAudio = state.audio.buffers.some(b => b); ui.playButton.disabled = !hasAudio; ui.stopButton.disabled = !hasAudio; ui.rewindButton.disabled = !hasAudio; ui.forwardButton.disabled = !hasAudio; if (state.processing.completedChunks === state.processing.totalChunks && hasAudio) ui.downloadButton.disabled = false; } }
+            function resetProcessingState() { console.log("Reset proc state."); state.processing.chunks = []; state.processing.chunkTimings = []; state.processing.totalChunks = 0; state.processing.completedChunks = 0; state.processing.inProgress = false; state.processing.playWhenReady = false; /* Reset flag */ if (ui.progressFill) ui.progressFill.style.width = '0%'; }
+
+            // Modified updateUIForGeneration to handle both buttons
+            function updateUIForGeneration(starting) {
+                 ui.generateButton.disabled = starting;
+                 ui.generateAndPlayButton.disabled = starting; // Disable both during generation
+                 ui.generateButton.innerHTML = starting ? '<span class="spinner"></span> Generating...' : 'Generate Speech';
+                 ui.generateAndPlayButton.innerHTML = starting ? '<span class="spinner"></span> Generating...' : 'Generate & Play';
+
+                 ui.playButton.disabled = true; ui.pauseButton.disabled = true; ui.stopButton.disabled = true;
+                 ui.rewindButton.disabled = true; ui.forwardButton.disabled = true; ui.downloadButton.disabled = true;
+
+                 if (!starting) {
+                     const hasAudio = state.audio.buffers.some(b => b);
+                     // Re-enable generate buttons if voices are loaded
+                     const voicesLoaded = state.availableVoices.length > 0 && !!state.voice;
+                     ui.generateButton.disabled = !voicesLoaded;
+                     ui.generateAndPlayButton.disabled = !voicesLoaded;
+                     // Enable playback controls if audio exists
+                     ui.playButton.disabled = !hasAudio;
+                     ui.stopButton.disabled = !hasAudio;
+                     ui.rewindButton.disabled = !hasAudio;
+                     ui.forwardButton.disabled = !hasAudio;
+                     // Enable download if fully complete and audio exists
+                     if (state.processing.completedChunks === state.processing.totalChunks && hasAudio) {
+                         ui.downloadButton.disabled = false;
+                     }
+                 }
+            }
+
+            // prepareTextDisplay, splitTextIntoChunks (Same as v8)
             function prepareTextDisplay() { ui.textDisplay.innerHTML = ''; let idx = 0; state.text.split(/(\s+)/).forEach(p => { if (p?.trim()) { const s = document.createElement('span'); s.className = 'word'; s.dataset.index = idx; s.textContent = p; s.addEventListener('click', () => jumpToWord(parseInt(s.dataset.index))); ui.textDisplay.appendChild(s); idx++; } else if (p) { ui.textDisplay.appendChild(document.createTextNode(p)); } }); ui.textDisplay.scrollTop = 0; }
             function splitTextIntoChunks() { const text = state.text; const chunks = []; const max = state.chunkSize; let method = state.chunkMethod; if (text.length < max) return [text]; if (method === 'exact') { for (let i = 0; i < text.length; i += max) chunks.push(text.substring(i, i + max)); } else { let regex = method === 'paragraph' ? /(\n\s*\n)/ : /([.!?]+(?:\s+|$))/; let current = ''; let parts = text.split(regex).filter(Boolean); for (let i = 0; i < parts.length; i += 2) { let seg = parts[i]; let delim = parts[i+1] || ''; let full = seg + delim; if ((current + full).length <= max) { current += full; } else { if (current) chunks.push(current); if (full.length > max) { let rem = full; while (rem.length > max) { let splitPoint = -1; let subSegs = rem.substring(0, max).split(/([.!?]+(?:\s+|$))/).filter(Boolean); if (subSegs.length > 1) { let temp = ''; for (let j=0; j<subSegs.length; j+=2) { if ((temp + subSegs[j] + (subSegs[j+1]||'')).length <= max) temp += subSegs[j] + (subSegs[j+1]||''); else break; } if (temp) splitPoint = temp.length; } if (splitPoint > 0 && splitPoint < rem.length) { chunks.push(rem.substring(0, splitPoint)); rem = rem.substring(splitPoint); } else { chunks.push(rem.substring(0, max)); rem = rem.substring(max); } } current = rem; } else { current = full; } } } if (current) chunks.push(current); } console.log(`Split ${text.length} chars into ${chunks.length} chunks using ${method} method (max ${max}).`); return chunks; }
+
+            // processNextChunk, processAllChunksInParallel (Same as v8)
             function processNextChunk(index) { if (index >= state.processing.chunks.length) { finishProcessing(); return; } const chunk = state.processing.chunks[index]; if (!chunk?.trim()) { console.log(`Skip empty chunk ${index + 1}`); state.processing.completedChunks++; updateProgress(); processNextChunk(index + 1); return; } showMessage(`Req chunk ${index + 1}/${state.processing.totalChunks}`); callGoogleTTSAPI(chunk, index).then(d => { showMessage(`Decode chunk ${index + 1}/${state.processing.totalChunks}`); return processAudioData(d, index); }).then(() => { state.processing.completedChunks++; updateProgress(); processNextChunk(index + 1); }).catch(e => { console.error(`Seq Err chunk ${index + 1}:`, e); showError(`Chunk ${index + 1} fail: ${e.message}. See Console.`); updateUIForGeneration(false); }); }
             function processAllChunksInParallel() { showMessage(`Req ${state.processing.totalChunks} chunks (Parallel)...`); const promises = state.processing.chunks.map((chunk, i) => { if (!chunk?.trim()) { console.log(`Skip empty chunk ${i + 1}`); state.processing.completedChunks++; updateProgress(); return Promise.resolve(i); } return callGoogleTTSAPI(chunk, i).then(d => processAudioData(d, i)).then(() => { state.processing.completedChunks++; updateProgress(); return i; }).catch(e => { console.error(`Parallel Err chunk ${i + 1}:`, e); showError(`Chunk ${i + 1} fail: ${e.message}. See Console.`); return Promise.resolve(i); }); }); Promise.all(promises).then(finishProcessing).catch(e => { console.error("Unexpected Parallel Err:", e); finishProcessing(); }); }
 
-            // --- *** API Call Fix *** ---
+            // --- *** API Call Fix Applied *** ---
             function callGoogleTTSAPI(text, index) {
                 console.log(`API Call: Chunk ${index + 1}, Len: ${text.length}, Voice: ${state.voice}`);
                 return new Promise((resolve, reject) => {
@@ -253,11 +357,11 @@
                             audioEncoding: 'MP3',
                             pitch: state.pitch,
                             speakingRate: state.rate
-                            // *** REMOVED: enableTimePointing: ['SSML_MARK'] ***
+                            // *** Ensure enableTimePointing is NOT present ***
                         }
                     };
 
-                    console.log("Request Body (Chunk " + (index + 1) + "):", JSON.stringify(requestBody));
+                    // console.log("Request Body (Chunk " + (index + 1) + "):", JSON.stringify(requestBody)); // Optional: Keep for deep debugging
 
                     fetch(`${GOOGLE_TTS_API_URL}/text:synthesize?key=${state.apiKey}`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody)
@@ -276,13 +380,13 @@
                         if (!d.audioContent) return reject(new Error('No audio content'));
                         console.log(`Recvd audio (Chunk ${index + 1}), Len: ${d.audioContent.length}`);
                         let timings = [];
-                        if (d.timepoints) { // Timepoints are returned if <mark> tags were in the SSML
+                        if (d.timepoints) {
                             let offset = 0;
                             if (index > 0) for(let i=0; i<index; i++) offset += (state.processing.chunks[i]||'').split(/(\s+)/).filter(w=>w?.trim()).length;
                             const start = getChunkStartTime(index);
                             timings = d.timepoints.map(p => ({ time: p.timeSeconds + start, wordIndex: parseInt(p.markName) + offset })).sort((a, b) => a.wordIndex - b.wordIndex);
                         } else {
-                            console.warn(`No timepoints received for chunk ${index + 1} (Is SSML with <mark> correct?)`);
+                            console.warn(`No timepoints received for chunk ${index + 1}`);
                         }
                         resolve({ audio: d.audioContent, timings: timings, chunkIndex: index });
                     })
@@ -291,14 +395,50 @@
             }
             // --- *** End API Call Fix *** ---
 
-            function processAudioData(data, index) { /* Same logic as v7 */ return new Promise((resolve, reject) => { try { const audio = atob(data.audio); const buf = new ArrayBuffer(audio.length); const view = new Uint8Array(buf); for (let i = 0; i < audio.length; i++) view[i] = audio.charCodeAt(i); state.audio.chunks[index] = buf; if (data.timings) state.audio.wordTimings.push(...data.timings); console.log(`Decoding (Chunk ${index + 1})`); state.audio.context.decodeAudioData(buf.slice(0), buffer => { console.log(`Decoded Chunk ${index + 1}, Dur: ${buffer.duration.toFixed(3)}s`); state.audio.buffers[index] = buffer; calculateTotalDuration(); updateBufferedProgress(); if (index === 0 && !state.audio.playing) updatePlaybackControls(false); if (state.audio.playing && state.audio.buffering && index === state.audio.currentChunk) playCurrentChunk(state.audio.context.currentTime - state.audio.startTime); resolve(); }, e => { console.error(`Decode Err chunk ${index + 1}:`, e); reject(new Error(`Decode fail chunk ${index + 1}`)); }); } catch (e) { console.error(`Base64 Err chunk ${index + 1}:`, e); reject(new Error(`Data process fail chunk ${index + 1}`)); } }); }
+            // Modified processAudioData to handle playWhenReady
+            function processAudioData(data, index) {
+                 return new Promise((resolve, reject) => {
+                     try {
+                         const audio = atob(data.audio); const buf = new ArrayBuffer(audio.length); const view = new Uint8Array(buf);
+                         for (let i = 0; i < audio.length; i++) view[i] = audio.charCodeAt(i);
+                         state.audio.chunks[index] = buf; if (data.timings) state.audio.wordTimings.push(...data.timings);
+                         console.log(`Decoding (Chunk ${index + 1})`);
+                         state.audio.context.decodeAudioData(buf.slice(0), buffer => {
+                             console.log(`Decoded Chunk ${index + 1}, Dur: ${buffer.duration.toFixed(3)}s`);
+                             state.audio.buffers[index] = buffer;
+                             calculateTotalDuration(); updateBufferedProgress();
+
+                             // Enable general playback controls as soon as first chunk is ready
+                             if (index === 0 && !state.audio.playing) {
+                                 updatePlaybackControls(false); // Enable play/stop etc.
+                             }
+
+                             // --- Trigger immediate playback if requested ---
+                             if (index === 0 && state.processing.playWhenReady && !state.audio.playing) {
+                                 console.log("First chunk ready and playWhenReady is true. Starting playback.");
+                                 playAudio(); // Start playback now
+                             }
+                             // --- End immediate playback trigger ---
+
+                             // Resume if buffering
+                             if (state.audio.playing && state.audio.buffering && index === state.audio.currentChunk) {
+                                 playCurrentChunk(state.audio.context.currentTime - state.audio.startTime);
+                             }
+                             resolve();
+                         }, e => { console.error(`Decode Err chunk ${index + 1}:`, e); reject(new Error(`Decode fail chunk ${index + 1}`)); });
+                     } catch (e) { console.error(`Base64 Err chunk ${index + 1}:`, e); reject(new Error(`Data process fail chunk ${index + 1}`)); }
+                 });
+             }
+
+            // calculateTotalDuration, getChunkStartTime, updateProgress, updateBufferedProgress, finishProcessing (Same as v8)
             function calculateTotalDuration() { state.audio.duration = state.audio.buffers.reduce((s, b) => s + (b?.duration || 0), 0); updateTimeDisplay(state.audio.playing ? (state.audio.context.currentTime - state.audio.startTime) : state.audio.pausedAt, state.audio.duration); }
             function getChunkStartTime(index) { let t = 0; for (let i = 0; i < index; i++) t += state.audio.buffers[i]?.duration || 0; return t; }
             function updateProgress() { const p = state.processing.totalChunks > 0 ? (state.processing.completedChunks / state.processing.totalChunks) * 100 : 0; if (ui.progressFill) ui.progressFill.style.width = `${p}%`; showMessage(`Processed ${state.processing.completedChunks}/${state.processing.totalChunks} (${Math.round(p)}%)`); }
             function updateBufferedProgress() { let dur = 0; let contig = true; for (let i = 0; i < state.processing.totalChunks; i++) { if (state.audio.buffers[i] && contig) dur += state.audio.buffers[i].duration; else contig = false; } const p = state.audio.duration > 0 ? (dur / state.audio.duration) * 100 : 0; if (ui.bufferedProgress) ui.bufferedProgress.style.width = `${p}%`; }
-            function finishProcessing() { /* Same logic as v7 */ state.processing.inProgress = false; calculateTotalDuration(); state.audio.wordTimings.sort((a, b) => a.time - b.time); updateUIForGeneration(false); const hasAudio = state.audio.duration > 0; if (state.processing.completedChunks === state.processing.totalChunks && hasAudio) { showMessage(`Generation complete! Duration: ${formatTime(state.audio.duration)}`); ui.downloadButton.disabled = false; } else if (!hasAudio) showError(`Generation failed. No audio produced.`); else { showError(`Generation incomplete. ${state.processing.completedChunks}/${state.processing.totalChunks} OK.`); if (state.audio.chunks.some(c=>c)) ui.downloadButton.disabled = false; } console.log("Processing finished."); }
+            function finishProcessing() { state.processing.inProgress = false; calculateTotalDuration(); state.audio.wordTimings.sort((a, b) => a.time - b.time); updateUIForGeneration(false); const hasAudio = state.audio.duration > 0; if (state.processing.completedChunks === state.processing.totalChunks && hasAudio) { showMessage(`Generation complete! Duration: ${formatTime(state.audio.duration)}`); ui.downloadButton.disabled = false; } else if (!hasAudio) showError(`Generation failed. No audio produced.`); else { showError(`Generation incomplete. ${state.processing.completedChunks}/${state.processing.totalChunks} OK.`); if (state.audio.chunks.some(c=>c)) ui.downloadButton.disabled = false; } console.log("Processing finished."); }
 
-            // --- Full Playback Logic --- (Same as v7)
+
+            // --- Full Playback Logic --- (Same as v7/v8)
             function playAudio() { const ctx = initAudioContext(); if (!ctx) return showError("Audio unavailable."); if (state.audio.playing) return; console.log("Play cmd"); if (state.audio.pausedAt > 0) resumeFromPause(); else startPlayback(); updatePlaybackControls(true); }
             function startPlayback() { if (!state.audio.buffers.some(b => b)) return showMessage("Waiting for audio..."); const firstChunkIdx = state.audio.buffers.findIndex(b => b); if (firstChunkIdx === -1) return showMessage("No audio decoded."); console.log("Starting playback."); state.audio.playing = true; state.audio.pausedAt = 0; state.audio.currentChunk = firstChunkIdx; const startTimeOffset = getChunkStartTime(firstChunkIdx); state.audio.startTime = state.audio.context.currentTime - startTimeOffset; playCurrentChunk(startTimeOffset); requestAnimationFrame(updatePlayback); }
             function resumeFromPause() { if (state.audio.pausedAt <= 0) return startPlayback(); console.log(`Resuming from ${state.audio.pausedAt.toFixed(3)}s`); state.audio.playing = true; state.audio.startTime = state.audio.context.currentTime - state.audio.pausedAt; const { chunkIndex } = findChunkForTime(state.audio.pausedAt); state.audio.currentChunk = chunkIndex; playCurrentChunk(state.audio.pausedAt); state.audio.pausedAt = 0; requestAnimationFrame(updatePlayback); }
@@ -317,11 +457,11 @@
             function ensureWordVisible(el) { const cont = ui.textDisplay; const contRect = cont.getBoundingClientRect(); const elRect = el.getBoundingClientRect(); if (elRect.top < contRect.top + 30) cont.scrollTop -= (contRect.top - elRect.top + 30); else if (elRect.bottom > contRect.bottom - 30) cont.scrollTop += (elRect.bottom - contRect.bottom + 30); }
             function updatePlaybackControls(playing) { const hasAudio = state.audio.duration > 0; if (ui.playButton) ui.playButton.disabled = playing || !hasAudio; if (ui.pauseButton) ui.pauseButton.disabled = !playing; if (ui.stopButton) ui.stopButton.disabled = !hasAudio; if (ui.rewindButton) ui.rewindButton.disabled = !hasAudio; if (ui.forwardButton) ui.forwardButton.disabled = !hasAudio; }
 
-            // --- Timeline Interaction --- (Same as v7)
+            // --- Timeline Interaction --- (Same as v8)
             function handleTimelineClick(e) { if (!state.audio.duration) return; const rect = ui.timelineContainer.getBoundingClientRect(); const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)); const time = pos * state.audio.duration; console.log(`Timeline click: seek to ${time.toFixed(3)}s`); if (canSeekToTime(time)) seekToTime(time); else showMessage("Cannot seek: unbuffered"); }
             function handleTimelineMousemove(e) { if (!state.audio.duration) return; const rect = ui.timelineContainer.getBoundingClientRect(); const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)); const time = pos * state.audio.duration; ui.timelineTooltip.style.display = 'block'; ui.timelineTooltip.style.left = `${pos * 100}%`; ui.timelineTooltip.textContent = formatTime(time); ui.timelineTooltip.style.backgroundColor = canSeekToTime(time) ? 'rgba(0,0,0,0.8)' : 'rgba(234,67,53,0.8)'; }
 
-            // --- Download --- (Same as v7)
+            // --- Download --- (Same as v8)
             function downloadAudio() { if (!state.audio.chunks.some(c => c)) return showError("No audio data."); const valid = state.audio.chunks.filter(c => c instanceof ArrayBuffer); if (valid.length === 0) return showError("No valid audio data."); try { const blob = new Blob(valid, { type: 'audio/mp3' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = 'tts_output.mp3'; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); document.body.removeChild(a); showMessage("Download started."); } catch (e) { showError("Download failed."); console.error("Download error:", e); } }
 
         }); // End DOMContentLoaded
