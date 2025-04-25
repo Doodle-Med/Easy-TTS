@@ -53,6 +53,12 @@ button:disabled{background:var(--bd);cursor:not-allowed;}
 .volume-control{display:flex;align-items:center;gap:0.5rem;flex:1;}
 .volume-control input{margin:0;}
 .download-btn{margin-left:auto;}
+.debug-panel{font-family:monospace;font-size:12px;background:#f5f5f5;border:1px solid #ddd;border-radius:var(--r);padding:0.8rem;margin-top:1rem;max-height:200px;overflow:auto;}
+.debug-entry{margin-bottom:0.3rem;border-bottom:1px solid #eee;padding-bottom:0.3rem;}
+.debug-time{color:#666;font-size:10px;}
+.debug-msg{font-weight:bold;}
+.debug-data{color:#333;margin-left:1rem;}
+.toggle-debug{text-align:center;font-size:0.9rem;margin-top:0.5rem;cursor:pointer;color:var(--c1);}
 .hidden{display:none}
 </style>
 </head>
@@ -124,6 +130,8 @@ button:disabled{background:var(--bd);cursor:not-allowed;}
     </div>
     
     <button id="download" class="download-btn" disabled>💾 Download Audio</button>
+    <div class="toggle-debug" id="toggleDebug">Show Debug Info</div>
+    <div id="debugPanel" class="debug-panel hidden"></div>
   </div>
 </div>
 
@@ -156,7 +164,94 @@ window.addEventListener('DOMContentLoaded', () => {
     download: Q('download'),
     prog: Q('prog'),
     fill: Q('fill'),
-    time: Q('time')
+    time: Q('time'),
+    toggleDebug: Q('toggleDebug'),
+    debugPanel: Q('debugPanel')
+  };
+  
+  // Debug logging
+  let debugEnabled = localStorage.getItem('debugEnabled') === 'true';
+  const maxDebugEntries = 100;
+  let debugEntries = [];
+  
+  // Toggle debug panel
+  E.toggleDebug.addEventListener('click', () => {
+    debugEnabled = !debugEnabled;
+    localStorage.setItem('debugEnabled', debugEnabled);
+    E.debugPanel.classList.toggle('hidden', !debugEnabled);
+    E.toggleDebug.textContent = debugEnabled ? 'Hide Debug Info' : 'Show Debug Info';
+    
+    if (debugEnabled) {
+      updateDebugPanel();
+    }
+  });
+  
+  // Initialize debug panel state
+  if (debugEnabled) {
+    E.debugPanel.classList.remove('hidden');
+    E.toggleDebug.textContent = 'Hide Debug Info';
+  }
+
+  // Enhanced logging with debug panel support
+  const log = (message, data = null, level = 'info') => {
+    const timestamp = new Date().toISOString();
+    const entry = {
+      timestamp,
+      message,
+      data,
+      level
+    };
+    
+    // Add to debug entries
+    debugEntries.unshift(entry);
+    if (debugEntries.length > maxDebugEntries) {
+      debugEntries.pop();
+    }
+    
+    // Output to console with appropriate level
+    switch(level) {
+      case 'error':
+        console.error(`[${timestamp}] ${message}`, data);
+        break;
+      case 'warn':
+        console.warn(`[${timestamp}] ${message}`, data);
+        break;
+      default:
+        console.log(`[${timestamp}] ${message}`, data);
+    }
+    
+    // Update debug panel if visible
+    if (debugEnabled) {
+      updateDebugPanel();
+    }
+  };
+  
+  // Update debug panel with latest entries
+  const updateDebugPanel = () => {
+    E.debugPanel.innerHTML = debugEntries.map(entry => {
+      const timeStr = new Date(entry.timestamp).toLocaleTimeString();
+      let dataStr = '';
+      
+      if (entry.data !== null) {
+        try {
+          if (typeof entry.data === 'object') {
+            dataStr = `<div class="debug-data">${JSON.stringify(entry.data)}</div>`;
+          } else {
+            dataStr = `<div class="debug-data">${entry.data}</div>`;
+          }
+        } catch (e) {
+          dataStr = `<div class="debug-data">[Complex Object]</div>`;
+        }
+      }
+      
+      return `
+        <div class="debug-entry ${entry.level}">
+          <span class="debug-time">${timeStr}</span>
+          <span class="debug-msg">${entry.message}</span>
+          ${dataStr}
+        </div>
+      `;
+    }).join('');
   };
 
   // App state
@@ -165,7 +260,7 @@ window.addEventListener('DOMContentLoaded', () => {
   let gainNode;
   let voices = [];
   let buffers = [];
-  let rawBuffers = []; // For downloading
+  let audioBlobs = []; // Store audio as blobs for download
   let audioSources = []; // Track all audio sources
   let wordElements = []; // Store word elements for efficient lookup
   let wordOffsets = []; // Track which chunk each word belongs to
@@ -186,6 +281,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (API) {
     E.key.value = API;
     // Auto-load voices if API key is saved
+    log('API key found in localStorage, auto-loading voices');
     setTimeout(() => E.load.click(), 500);
   }
 
@@ -195,27 +291,32 @@ window.addEventListener('DOMContentLoaded', () => {
   const status = (m, isError) => {
     E.stat.textContent = m;
     E.stat.className = 'status' + (isError ? ' error' : isError === false ? ' success' : '');
-    console.log(isError ? `Error: ${m}` : m);
+    log(m, null, isError ? 'error' : 'info');
   };
   
   // JSON fetch helper with error handling
   const fetchJSON = async (url, opts) => {
     try {
+      log(`Fetching ${url}`, opts);
       const r = await fetch(url, opts);
+      
       if (!r.ok) {
         let m = `HTTP ${r.status}`;
         try {
           const errorData = await r.json();
           m = errorData.error?.message || m;
-          console.log('API Error', errorData);
+          log('API Error', errorData, 'error');
         } catch (e) {
-          console.log('Failed to parse error response', e);
+          log('Failed to parse error response', e, 'error');
         }
         throw new Error(m);
       }
-      return r.json();
+      
+      const data = await r.json();
+      log(`Fetch completed successfully`, { url });
+      return data;
     } catch (e) {
-      console.log('Fetch error:', e);
+      log('Fetch error', e, 'error');
       throw e;
     }
   };
@@ -235,6 +336,7 @@ window.addEventListener('DOMContentLoaded', () => {
   E.volume.addEventListener('input', () => {
     if (gainNode) {
       gainNode.gain.value = E.volume.value;
+      log(`Volume changed to ${E.volume.value}`);
     }
   });
 
@@ -251,13 +353,13 @@ window.addEventListener('DOMContentLoaded', () => {
     status('Loading voices...');
     
     try {
-      console.log(`Requesting voices from ${VO}`);
+      log(`Requesting voices from ${VO}`);
       const d = await fetchJSON(`${VO}?key=${API}`);
       voices = d.voices || [];
       
       if (!voices.length) throw new Error('No voices returned');
       
-      console.log(`Loaded ${voices.length} voices`);
+      log(`Loaded ${voices.length} voices`);
       
       // Group voices by language
       const langMap = new Map();
@@ -312,12 +414,14 @@ window.addEventListener('DOMContentLoaded', () => {
     E.methodBtns.forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     method = b.dataset.m;
-    console.log(`Splitting method changed to: ${method}`);
+    log(`Splitting method changed to: ${method}`);
   });
 
   // Split text into chunks based on selected method
   const splitText = t => {
     const m = +E.chk.value;
+    log(`Splitting text (${t.length} chars) with method: ${method}, chunk size: ${m}`);
+    
     if (t.length <= m) return [t];
     
     if (method === 'exact') {
@@ -325,11 +429,14 @@ window.addEventListener('DOMContentLoaded', () => {
       for (let i = 0; i < t.length; i += m) {
         a.push(t.slice(i, i + m));
       }
+      log(`Split into ${a.length} chunks using exact method`);
       return a;
     }
     
     const re = method === 'paragraph' ? /\n\s*\n/ : /([.!?]+["']?\s+)/;
     const bits = t.split(re).filter(Boolean);
+    log(`Split text into ${bits.length} initial segments`);
+    
     const out = [];
     let cur = '';
     
@@ -355,16 +462,39 @@ window.addEventListener('DOMContentLoaded', () => {
     
     if (cur.trim()) out.push(cur.trim());
     
-    console.log(`Split into ${out.length} chunks using ${method} method`);
+    log(`Final chunks: ${out.length}`, {
+      chunkSizes: out.map(c => c.length)
+    });
     
     return out;
   };
 
   // Decode audio buffer
-  const decodeBuffer = a => new Promise((res, rej) => ctx.decodeAudioData(a, res, rej));
+  const decodeBuffer = a => {
+    log(`Decoding audio buffer of size ${a.byteLength}`);
+    return new Promise((res, rej) => {
+      try {
+        ctx.decodeAudioData(a, 
+          (buffer) => {
+            log(`Audio buffer decoded successfully: ${buffer.duration.toFixed(2)}s`);
+            res(buffer);
+          },
+          (err) => {
+            log(`Error decoding audio buffer`, err, 'error');
+            rej(err);
+          }
+        );
+      } catch (e) {
+        log(`Exception in decodeBuffer`, e, 'error');
+        rej(e);
+      }
+    });
+  };
 
   // Prepare text display with clickable words
   const prepareTextDisplay = (text, chunks) => {
+    log(`Preparing text display with ${text.length} chars and ${chunks.length} chunks`);
+    
     E.textBox.innerHTML = '';
     wordElements = [];
     wordOffsets = [];
@@ -410,16 +540,19 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
     
-    console.log(`Prepared text display with ${globalWordIndex} words`);
+    log(`Text display prepared with ${globalWordIndex} words`);
   };
 
   // Find which chunk and offset to play for a given time
   const locateTimePosition = (time) => {
+    log(`Locating position for time ${time.toFixed(2)}s`);
+    
     let currentTime = 0;
     
     // Handle case where time is beyond loaded duration
     if (time >= loadedDuration) {
       const lastIndex = buffers.findLastIndex(b => b);
+      log(`Time ${time.toFixed(2)}s is beyond loaded duration ${loadedDuration.toFixed(2)}s, using last loaded chunk`);
       return { chunk: lastIndex === -1 ? 0 : lastIndex, offset: 0 };
     }
     
@@ -430,7 +563,9 @@ window.addEventListener('DOMContentLoaded', () => {
       
       const duration = buffer.duration;
       if (time < currentTime + duration) {
-        return { chunk: i, offset: time - currentTime };
+        const offset = time - currentTime;
+        log(`Found time ${time.toFixed(2)}s in chunk ${i} at offset ${offset.toFixed(2)}s`);
+        return { chunk: i, offset: offset };
       }
       
       currentTime += duration;
@@ -438,17 +573,21 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Fallback to beginning of last loaded chunk
     const lastLoaded = buffers.findLastIndex(b => b);
+    log(`Could not locate time ${time.toFixed(2)}s in any chunk, using last loaded chunk`);
     return { chunk: lastLoaded === -1 ? 0 : lastLoaded, offset: 0 };
   };
 
   // Seek to a specific time
   const seekToTime = (time) => {
-    if (!buffers.some(b => b)) return;
+    if (!buffers.some(b => b)) {
+      log(`Cannot seek: no buffers loaded`);
+      return;
+    }
     
     // Ensure time is within valid range
     time = Math.max(0, Math.min(time, loadedDuration));
     
-    console.log(`Seeking to ${time.toFixed(2)}s`);
+    log(`Seeking to ${time.toFixed(2)}s`);
     
     // Find the chunk this time belongs to
     const { chunk, offset } = locateTimePosition(time);
@@ -460,6 +599,7 @@ window.addEventListener('DOMContentLoaded', () => {
       // Just update the paused position
       pausedAt = time;
       updateUI(time);
+      log(`Updated paused position to ${time.toFixed(2)}s`);
     } else {
       // Start playback from this position
       startPlayback(chunk, offset, time);
@@ -468,18 +608,24 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Seek to a specific word
   const seekToWord = (wordIndex) => {
-    if (!buffers.some(b => b) || wordIndex < 0 || wordIndex >= wordElements.length) return;
+    if (!buffers.some(b => b) || wordIndex < 0 || wordIndex >= wordElements.length) {
+      log(`Cannot seek to word ${wordIndex}: invalid conditions`, {
+        hasBuffers: buffers.some(b => b),
+        wordCount: wordElements.length
+      });
+      return;
+    }
     
     // Make sure the corresponding chunk is loaded
     const chunkIndex = wordOffsets[wordIndex];
     if (chunkIndex === undefined || !buffers[chunkIndex]) {
-      console.log(`Word ${wordIndex} is in chunk ${chunkIndex} which is not loaded yet`);
+      log(`Word ${wordIndex} is in chunk ${chunkIndex} which is not loaded yet`);
       return;
     }
     
     // Calculate time based on word position in text
     const time = estimateTimeForWord(wordIndex);
-    console.log(`Seeking to word ${wordIndex} at estimated time ${time.toFixed(2)}s`);
+    log(`Seeking to word ${wordIndex} at estimated time ${time.toFixed(2)}s`);
     
     seekToTime(time);
   };
@@ -523,12 +669,17 @@ window.addEventListener('DOMContentLoaded', () => {
   // Initialize audio context
   const initAudioContext = () => {
     if (!ctx) {
+      log('Initializing AudioContext');
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       
       // Create master gain node for volume control
       gainNode = ctx.createGain();
       gainNode.gain.value = E.volume.value;
       gainNode.connect(ctx.destination);
+      
+      log('AudioContext initialized', {
+        sampleRate: ctx.sampleRate
+      });
     }
     
     return ctx.resume(); // Ensure it's running
@@ -548,7 +699,7 @@ window.addEventListener('DOMContentLoaded', () => {
     paused = false;
     startTime = ctx.currentTime - absoluteTime;
     
-    console.log(`Starting playback: chunk ${chunkIndex}, offset ${offset.toFixed(2)}s, abs time ${absoluteTime.toFixed(2)}s`);
+    log(`Starting playback: chunk ${chunkIndex}, offset ${offset.toFixed(2)}s, abs time ${absoluteTime.toFixed(2)}s`);
     
     // Update UI
     E.play.disabled = true;
@@ -566,13 +717,13 @@ window.addEventListener('DOMContentLoaded', () => {
   const playChunk = (index, offset = 0, id) => {
     // Check if this playback request is still valid
     if (id !== playbackId) {
-      console.log(`Ignoring stale playback request: ${id} vs ${playbackId}`);
+      log(`Ignoring stale playback request: ${id} vs ${playbackId}`);
       return;
     }
     
     // Check if we've reached the end
     if (index >= buffers.length) {
-      console.log('Reached end of audio');
+      log('Reached end of audio');
       stopPlayback();
       return;
     }
@@ -582,7 +733,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // If the buffer isn't loaded yet, wait and retry
     if (!buffer) {
-      console.log(`Chunk ${index} not loaded yet, waiting...`);
+      log(`Chunk ${index} not loaded yet, waiting...`);
       setTimeout(() => {
         if (playing && id === playbackId) {
           playChunk(index, offset, id);
@@ -591,7 +742,7 @@ window.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    console.log(`Playing chunk ${index} from offset ${offset.toFixed(2)}s`);
+    log(`Playing chunk ${index} from offset ${offset.toFixed(2)}s`);
     
     // Create a new audio source
     const source = ctx.createBufferSource();
@@ -602,7 +753,7 @@ window.addEventListener('DOMContentLoaded', () => {
     source.onended = () => {
       // Only proceed if this is still the active playback
       if (playing && id === playbackId) {
-        console.log(`Chunk ${index} ended, playing next chunk`);
+        log(`Chunk ${index} ended, playing next chunk`);
         playChunk(index + 1, 0, id);
       }
     };
@@ -616,11 +767,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Cancel any current playback
   const cancelPlayback = () => {
+    log('Canceling current playback');
+    
     // Stop all audio sources
-    audioSources.forEach(source => {
+    audioSources.forEach((source, i) => {
       if (source) {
+        log(`Stopping audio source for chunk ${i}`);
         source.onended = null; // Remove callback
-        try { source.stop(); } catch (e) {}
+        try { source.stop(); } catch (e) {
+          log(`Error stopping source for chunk ${i}`, e, 'warn');
+        }
       }
     });
     
@@ -633,13 +789,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Pause playback
   const pausePlayback = () => {
-    if (!playing) return;
+    if (!playing) {
+      log('Cannot pause: not playing');
+      return;
+    }
     
     pausedAt = ctx.currentTime - startTime;
     playing = false;
     paused = true;
     
-    console.log(`Pausing at ${pausedAt.toFixed(2)}s`);
+    log(`Pausing at ${pausedAt.toFixed(2)}s`);
     
     // Cancel current playback
     cancelPlayback();
@@ -653,9 +812,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Resume playback
   const resumePlayback = () => {
-    if (!paused) return;
+    if (!paused) {
+      log('Cannot resume: not paused');
+      return;
+    }
     
-    console.log(`Resuming from ${pausedAt.toFixed(2)}s`);
+    log(`Resuming from ${pausedAt.toFixed(2)}s`);
     
     // Find the chunk to resume from
     const { chunk, offset } = locateTimePosition(pausedAt);
@@ -681,7 +843,7 @@ window.addEventListener('DOMContentLoaded', () => {
     currentWordIndex = -1;
     
     if (!silent) {
-      console.log('Playback stopped');
+      log('Playback stopped');
       
       // Reset UI
       E.fill.style.width = '0%';
@@ -701,6 +863,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Check if we've reached the end
     if (currentTime >= totalDuration) {
+      log(`Reached end of playback (${currentTime.toFixed(2)}s >= ${totalDuration.toFixed(2)}s)`);
       stopPlayback();
       return;
     }
@@ -796,7 +959,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const ratio = (e.clientX - rect.left) / rect.width;
     const targetTime = ratio * totalDuration;
     
-    console.log(`Progress bar clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`);
+    log(`Progress bar clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`);
     seekToTime(targetTime);
   };
 
@@ -814,132 +977,47 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Create download link
   const createDownloadLink = () => {
-    if (!rawBuffers.length) return;
+    log('Creating download link');
     
-    // Create a single MP3 file using Web Audio API
-    mergeAudioBuffers(rawBuffers)
-      .then(mergedBuffer => {
-        // Convert to WAV
-        const wav = bufferToWav(mergedBuffer);
-        const blob = new Blob([wav], { type: 'audio/wav' });
-        
-        // Create download link
-        const url = URL.createObjectURL(blob);
-        
-        // Trigger download
-        const a = document.createElement('a');
-        const fileName = 'speech_' + new Date().toISOString().replace(/[:.]/g, '-') + '.wav';
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        
-        // Clean up
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-        
-        status('Download started', false);
-      })
-      .catch(err => {
-        console.error('Error creating download:', err);
-        status('Failed to create download', true);
-      });
-  };
-  
-  // Convert ArrayBuffer to WAV format
-  const bufferToWav = (buffer) => {
-    const numOfChan = buffer.numberOfChannels;
-    const length = buffer.length * numOfChan * 2 + 44;
-    const sampleRate = buffer.sampleRate;
-    const bitsPerSample = 16;
-    const byteRate = sampleRate * numOfChan * bitsPerSample / 8;
-    const blockAlign = numOfChan * bitsPerSample / 8;
-    const data = new DataView(new ArrayBuffer(length));
-    let offset = 0;
-    
-    // RIFF header
-    writeString(data, offset, 'RIFF'); offset += 4;
-    data.setUint32(offset, length - 8, true); offset += 4;
-    writeString(data, offset, 'WAVE'); offset += 4;
-    
-    // fmt chunk
-    writeString(data, offset, 'fmt '); offset += 4;
-    data.setUint32(offset, 16, true); offset += 4;
-    data.setUint16(offset, 1, true); offset += 2; // PCM format
-    data.setUint16(offset, numOfChan, true); offset += 2;
-    data.setUint32(offset, sampleRate, true); offset += 4;
-    data.setUint32(offset, byteRate, true); offset += 4;
-    data.setUint16(offset, blockAlign, true); offset += 2;
-    data.setUint16(offset, bitsPerSample, true); offset += 2;
-    
-    // data chunk
-    writeString(data, offset, 'data'); offset += 4;
-    data.setUint32(offset, length - 44, true); offset += 4;
-    
-    // Write interleaved audio data
-    if (numOfChan === 2) {
-      // Stereo
-      const leftChannel = buffer.getChannelData(0);
-      const rightChannel = buffer.getChannelData(1);
-      for (let i = 0; i < buffer.length; i++) {
-        data.setInt16(offset, leftChannel[i] * 0x7FFF, true); offset += 2;
-        data.setInt16(offset, rightChannel[i] * 0x7FFF, true); offset += 2;
-      }
-    } else {
-      // Mono
-      const channel = buffer.getChannelData(0);
-      for (let i = 0; i < buffer.length; i++) {
-        data.setInt16(offset, channel[i] * 0x7FFF, true); offset += 2;
-      }
+    if (!audioBlobs.length) {
+      log('No audio blobs to download', null, 'error');
+      status('No audio available for download', true);
+      return;
     }
     
-    return data.buffer;
-  };
-  
-  // Helper to write string to DataView
-  const writeString = (view, offset, string) => {
-    for (let i = 0; i < string.length; i++) {
-      view.setUint8(offset + i, string.charCodeAt(i));
-    }
-  };
-  
-  // Merge audio buffers into a single buffer
-  const mergeAudioBuffers = async (audioBuffers) => {
-    // Initialize audio context if not done yet
-    await initAudioContext();
-    
-    // Decode all buffers
-    const decodedBuffers = await Promise.all(
-      audioBuffers.map(buffer => decodeBuffer(buffer))
-    );
-    
-    // Calculate total length
-    let totalLength = 0;
-    decodedBuffers.forEach(buffer => {
-      totalLength += buffer.length;
-    });
-    
-    // Create a new buffer with the total length
-    const numberOfChannels = decodedBuffers[0].numberOfChannels;
-    const sampleRate = decodedBuffers[0].sampleRate;
-    const result = ctx.createBuffer(numberOfChannels, totalLength, sampleRate);
-    
-    // Copy data from each buffer
-    let offset = 0;
-    for (const buffer of decodedBuffers) {
-      // For each channel
-      for (let channel = 0; channel < numberOfChannels; channel++) {
-        const resultData = result.getChannelData(channel);
-        const bufferData = buffer.getChannelData(channel);
-        
-        // Copy data
-        for (let i = 0; i < buffer.length; i++) {
-          resultData[offset + i] = bufferData[i];
-        }
-      }
+    try {
+      log(`Creating combined blob from ${audioBlobs.length} chunks`);
       
-      offset += buffer.length;
+      // Create a single blob from all chunks
+      const combinedBlob = new Blob(audioBlobs, { type: 'audio/mp3' });
+      
+      log(`Combined blob created: ${(combinedBlob.size / 1024 / 1024).toFixed(2)} MB`);
+      
+      // Create download link
+      const url = URL.createObjectURL(combinedBlob);
+      
+      // Trigger download
+      const a = document.createElement('a');
+      const fileName = 'speech_' + new Date().toISOString().replace(/[:.]/g, '-') + '.mp3';
+      a.href = url;
+      a.download = fileName;
+      
+      log(`Triggering download: ${fileName}`);
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        log('Download cleanup complete');
+      }, 100);
+      
+      status('Download started', false);
+    } catch (err) {
+      log('Error creating download', err, 'error');
+      status('Failed to create download: ' + err.message, true);
     }
-    
-    return result;
   };
   
   // Download button
@@ -950,58 +1028,58 @@ window.addEventListener('DOMContentLoaded', () => {
     if (!API) return status('Load voices first', true);
     if (!E.voice.value) return status('Select a voice', true);
     
-    // Initialize audio context and ensure it's running
-    await initAudioContext();
-    
-    const text = E.txt.value.trim();
-    if (!text) return status('Enter text', true);
-    
-    // Reset state
-    stopPlayback();
-    buffers = [];
-    rawBuffers = [];
-    audioSources = [];
-    totalDuration = 0;
-    loadedDuration = 0;
-    loadingComplete = false;
-    E.download.disabled = true;
-    
-    // Split text into chunks
-    const chunks = splitText(text);
-    if (!chunks.length) return status('Failed to split text', true);
-    
-    totalChunks = chunks.length;
-    chunksReceived = 0;
-    
-    // Prepare UI
-    status(`Processing ${chunks.length} chunk(s)...`);
-    prepareTextDisplay(text, chunks);
-    E.gen.disabled = true;
-    
-    // Initialize buffers array
-    buffers = new Array(chunks.length);
-    rawBuffers = new Array(chunks.length);
-    
-    // Create request body template
-    const createRequest = chunk => ({
-      input: { text: chunk },
-      voice: {
-        languageCode: E.voice.selectedOptions[0].dataset.l,
-        name: E.voice.value
-      },
-      audioConfig: {
-        audioEncoding: 'MP3',
-        pitch: +E.pit.value,
-        speakingRate: +E.rat.value
-      }
-    });
-    
-    // Process chunks
     try {
+      // Initialize audio context and ensure it's running
+      await initAudioContext();
+      
+      const text = E.txt.value.trim();
+      if (!text) return status('Enter text', true);
+      
+      // Reset state
+      stopPlayback();
+      buffers = [];
+      audioBlobs = [];
+      audioSources = [];
+      totalDuration = 0;
+      loadedDuration = 0;
+      loadingComplete = false;
+      E.download.disabled = true;
+      
+      // Split text into chunks
+      const chunks = splitText(text);
+      if (!chunks.length) return status('Failed to split text', true);
+      
+      totalChunks = chunks.length;
+      chunksReceived = 0;
+      
+      // Prepare UI
+      status(`Processing ${chunks.length} chunk(s)...`);
+      prepareTextDisplay(text, chunks);
+      E.gen.disabled = true;
+      
+      // Initialize buffers array
+      buffers = new Array(chunks.length);
+      audioBlobs = new Array(chunks.length);
+      
+      // Create request body template
+      const createRequest = chunk => ({
+        input: { text: chunk },
+        voice: {
+          languageCode: E.voice.selectedOptions[0].dataset.l,
+          name: E.voice.value
+        },
+        audioConfig: {
+          audioEncoding: 'MP3',
+          pitch: +E.pit.value,
+          speakingRate: +E.rat.value
+        }
+      });
+      
+      // Process chunks
       // Start processing all chunks in parallel
       const chunkPromises = chunks.map(async (chunk, index) => {
         try {
-          console.log(`Generating chunk ${index + 1}/${chunks.length} (${chunk.length} chars)`);
+          log(`Generating chunk ${index + 1}/${chunks.length} (${chunk.length} chars)`);
           
           const response = await fetchJSON(`${SY}?key=${API}`, {
             method: 'POST',
@@ -1013,6 +1091,8 @@ window.addEventListener('DOMContentLoaded', () => {
             throw new Error(`No audio content in response for chunk ${index + 1}`);
           }
           
+          log(`Received audio content for chunk ${index + 1}`);
+          
           // Convert base64 to ArrayBuffer
           const audioData = atob(response.audioContent);
           const arrayBuffer = new Uint8Array(audioData.length);
@@ -1020,39 +1100,51 @@ window.addEventListener('DOMContentLoaded', () => {
             arrayBuffer[i] = audioData.charCodeAt(i);
           }
           
-          // Save raw buffer for downloading
-          rawBuffers[index] = arrayBuffer.buffer;
+          // Store the audio blob for downloading (prevent detached buffer issue)
+          const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
+          audioBlobs[index] = blob;
+          
+          log(`Created blob for chunk ${index + 1}: ${(blob.size / 1024).toFixed(2)} KB`);
+          
+          // Create a copy of the array buffer for decoding
+          // This is important to prevent the "detached ArrayBuffer" issue
+          const bufferCopy = arrayBuffer.slice(0).buffer;
           
           // Decode audio
-          const audioBuffer = await decodeBuffer(arrayBuffer.buffer);
-          
-          // Store the decoded buffer
-          buffers[index] = audioBuffer;
-          
-          // Update durations
-          loadedDuration += audioBuffer.duration;
-          totalDuration += audioBuffer.duration;
-          
-          console.log(`Chunk ${index + 1} decoded: ${audioBuffer.duration.toFixed(2)}s`);
-          
-          // Update word elements to show they're ready
-          wordElements.forEach(word => {
-            if (+word.dataset.chunk === index) {
-              word.classList.remove('loading');
+          try {
+            const audioBuffer = await decodeBuffer(bufferCopy);
+            
+            // Store the decoded buffer
+            buffers[index] = audioBuffer;
+            
+            // Update durations
+            loadedDuration += audioBuffer.duration;
+            totalDuration += audioBuffer.duration;
+            
+            log(`Chunk ${index + 1} decoded: ${audioBuffer.duration.toFixed(2)}s`);
+            
+            // Update word elements to show they're ready
+            wordElements.forEach(word => {
+              if (+word.dataset.chunk === index) {
+                word.classList.remove('loading');
+              }
+            });
+            
+            // Update progress
+            chunksReceived++;
+            
+            // Autoplay first chunk when it's ready
+            if (index === 0 && !playing && !paused) {
+              startPlayback(0, 0, 0);
             }
-          });
-          
-          // Update progress
-          chunksReceived++;
-          
-          // Autoplay first chunk when it's ready
-          if (index === 0 && !playing && !paused) {
-            startPlayback(0, 0, 0);
+            
+            return index;
+          } catch (decodeError) {
+            log(`Error decoding chunk ${index + 1}`, decodeError, 'error');
+            throw new Error(`Failed to decode audio for chunk ${index + 1}: ${decodeError.message}`);
           }
-          
-          return index;
         } catch (error) {
-          console.log(`Error processing chunk ${index + 1}:`, error);
+          log(`Error processing chunk ${index + 1}`, error, 'error');
           status(`Chunk ${index + 1} failed: ${error.message}`, true);
           return null;
         }
@@ -1066,12 +1158,15 @@ window.addEventListener('DOMContentLoaded', () => {
       loadingComplete = true;
       
       if (success) {
+        log('All chunks processed successfully', { totalDuration });
         status(`All chunks processed. Duration: ${fmt(totalDuration)}`, false);
         E.download.disabled = false;
       } else {
+        log(`Some chunks failed (${chunksReceived}/${totalChunks})`, null, 'warn');
         status(`Completed ${chunksReceived}/${totalChunks} chunks`, true);
       }
     } catch (e) {
+      log('Generation failed', e, 'error');
       status(`Generation failed: ${e.message}`, true);
     } finally {
       E.gen.disabled = false;
@@ -1107,6 +1202,13 @@ window.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       E.download.click();
     }
+  });
+  
+  // Log initial state
+  log('Application initialized', {
+    version: '1.1.0',
+    date: '2025-04-25',
+    debugEnabled: debugEnabled
   });
 });
 </script>
