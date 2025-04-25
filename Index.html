@@ -7,38 +7,38 @@
 <style>
 :root {
   /* Light theme (default) */
-  --c1:#4285f4;
-  --c2:#34a853;
-  --c3:#ea4335;
-  --c4:#fbbc04;
-  --bg:#f8f9fa;
-  --card-bg:#ffffff;
-  --fg:#202124;
-  --bd:#dadce0;
-  --hover:#f1f3f4;
-  --r:10px;
-  --shadow: 0 4px 12px rgba(0,0,0,.05);
-  --code-bg: #f5f5f5;
-  --hover-bg: rgba(66,133,244,0.1);
-  
+  --c1: #4285f4; /* Fixed leading space */
+  --c2: #34a853; /* Fixed leading space */
+  --c3: #ea4335; /* Fixed leading space */
+  --c4: #fbbc04; /* Fixed leading space */
+  --bg: #f8f9fa; /* Fixed leading space */
+  --card-bg: #ffffff; /* Fixed leading space */
+  --fg: #202124; /* Fixed leading space */
+  --bd: #dadce0; /* Fixed leading space */
+  --hover: #f1f3f4; /* Fixed leading space */
+  --r: 10px; /* Fixed leading space */
+  --shadow: 0 4px 12px rgba(0,0,0,.05); /* Fixed leading space */
+  --code-bg: #f5f5f5; /* Fixed leading space */
+  --hover-bg: rgba(66,133,244,0.1); /* Fixed leading space */
+
   /* Animation and transition properties */
-  --transition: all 0.3s ease;
+  --transition: all 0.3s ease; /* Fixed leading space */
 }
 
 /* Dark theme variables */
 [data-theme="dark"] {
-  --c1:#8ab4f8;
-  --c2:#81c995;
-  --c3:#f28b82;
-  --c4:#fdd663;
-  --bg:#202124;
-  --card-bg:#292a2d;
-  --fg:#e8eaed;
-  --bd:#5f6368;
-  --hover:#3c3c3c;
-  --shadow: 0 4px 12px rgba(0,0,0,.2);
-  --code-bg: #2d2d30;
-  --hover-bg: rgba(138, 180, 248, 0.15);
+  --c1: #8ab4f8; /* Fixed leading space */
+  --c2: #81c995; /* Fixed leading space */
+  --c3: #f28b82; /* Fixed leading space */
+  --c4: #fdd663; /* Fixed leading space */
+  --bg: #202124; /* Fixed leading space */
+  --card-bg: #292a2d; /* Fixed leading space */
+  --fg: #e8eaed; /* Fixed leading space */
+  --bd: #5f6368; /* Fixed leading space */
+  --hover: #3c3c3c; /* Fixed leading space */
+  --shadow: 0 4px 12px rgba(0,0,0,.2); /* Fixed leading space */
+  --code-bg: #2d2d30; /* Fixed leading space */
+  --hover-bg: rgba(138, 180, 248, 0.15); /* Fixed leading space */
 }
 
 * {
@@ -90,10 +90,12 @@ h1 {
   box-shadow:var(--shadow);
   padding:1.2rem;
   position:relative;
+  transition: box-shadow 0.3s ease; /* Added transition specifically for shadow */
 }
 
 .card:hover {
-  box-shadow: 0 6px 16px rgba(0,0,0, var(--shadow-opacity, 0.08));
+  /* Removed rule using undefined --shadow-opacity. Rely on base shadow and transition */
+  box-shadow: 0 6px 16px rgba(0,0,0, 0.08); /* Example hover shadow */
 }
 
 .card-header {
@@ -122,6 +124,7 @@ input, select, textarea, button {
   margin-bottom:.8rem;
   background: var(--card-bg);
   color: var(--fg);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Added transitions */
 }
 
 input:focus, select:focus, textarea:focus {
@@ -141,6 +144,7 @@ button {
   color:#fff;
   border:none;
   font-weight:600;
+  transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease; /* Added transitions */
 }
 
 button:not(:disabled):hover {
@@ -183,6 +187,7 @@ button:disabled {
   margin:.5rem 0;
   padding: .5rem;
   border-radius: 6px;
+  transition: background-color 0.3s ease, color 0.3s ease; /* Added transition */
 }
 
 .error {
@@ -275,7 +280,7 @@ button:disabled {
 .word[data-time]:hover::after {
   content: attr(data-time) "s";
   position: absolute;
-  top: -25px;
+  top: -25px; /* Adjust position */
   left: 50%;
   transform: translateX(-50%);
   background: var(--c1);
@@ -285,6 +290,7 @@ button:disabled {
   font-size: 10px;
   white-space: nowrap;
   z-index: 10;
+  pointer-events: none; /* Prevent tooltip from interfering with hover */
 }
 
 @keyframes shine {
@@ -300,6 +306,7 @@ button:disabled {
   border-top-color:var(--c1);
   animation:spin 0.8s linear infinite;
   margin-right:5px;
+  vertical-align: middle; /* Align better with text */
 }
 
 @keyframes spin {
@@ -350,10 +357,15 @@ button:disabled {
   padding-bottom:0.3rem;
 }
 
+.debug-entry:last-child {
+    border-bottom: none; /* Remove border from last entry */
+}
+
 .debug-time {
   color:var(--fg);
   opacity: 0.6;
   font-size:10px;
+  margin-right: 0.5em; /* Add spacing */
 }
 
 .debug-msg {
@@ -364,6 +376,8 @@ button:disabled {
   color:var(--fg);
   opacity: 0.8;
   margin-left:1rem;
+  display: block; /* Ensure data appears on new line */
+  word-break: break-all; /* Prevent long strings from overflowing */
 }
 
 .toggle-debug {
@@ -397,7 +411,7 @@ button:disabled {
 
 .theme-toggle button:hover {
   background: var(--hover-bg);
-  transform: none;
+  transform: none; /* Override default button hover */
 }
 
 /* Timeline visualization */
@@ -410,6 +424,7 @@ button:disabled {
   margin: 10px 0;
   position: relative;
   overflow: hidden;
+  cursor: pointer; /* Add cursor for click interaction */
 }
 
 .chunk-marker {
@@ -424,6 +439,7 @@ button:disabled {
   white-space: nowrap;
   overflow: hidden;
   color: var(--c1);
+  pointer-events: none; /* Allow clicks to pass through */
 }
 
 .chunk-marker:nth-child(odd) {
@@ -440,6 +456,7 @@ button:disabled {
   border-radius: 50%;
   bottom: 2px;
   transform: translateX(-2px);
+  pointer-events: none; /* Allow clicks to pass through */
 }
 
 .word-dot.active {
@@ -458,6 +475,7 @@ button:disabled {
   top: 0;
   left: 0;
   z-index: 5;
+  pointer-events: none; /* Allow clicks to pass through */
 }
 
 /* Custom scrollbar */
@@ -495,72 +513,69 @@ button:disabled {
     <div class="card-header">
       <h2>🎛️ Configuration</h2>
     </div>
-    <label>API Key</label>
-    <div class="controls">
+    <label for="k">API Key</label> <div class="controls">
       <input id="k" type="password" placeholder="Enter your Google Cloud API Key"/>
       <button class="small-btn" id="ld">Load Voices</button>
     </div>
     <div id="loading" class="status hidden"><span class="spinner"></span>Loading voices...</div>
-    
-    <label>Text</label>
-    <textarea id="txt" placeholder="Type or paste text here..."></textarea>
-    
-    <label>Voice</label>
-    <select id="v" disabled></select>
-    
+
+    <label for="txt">Text</label> <textarea id="txt" placeholder="Type or paste text here..."></textarea>
+
+    <label for="v">Voice</label> <select id="v" disabled></select>
+
     <div class="grid" style="grid-template-columns:1fr 1fr;gap:.8rem">
       <div>
-        <label>Pitch <span id="pitVal">0</span></label>
-        <input id="pit" type="range" min="-20" max="20" value="0"/>
+        <label for="pit">Pitch <span id="pitVal">0</span></label> <input id="pit" type="range" min="-20" max="20" value="0"/>
       </div>
       <div>
-        <label>Rate <span id="ratVal">1</span></label>
-        <input id="rat" type="range" min="0.25" max="4" step="0.05" value="1"/>
+        <label for="rat">Rate <span id="ratVal">1</span></label> <input id="rat" type="range" min="0.25" max="4" step="0.05" value="1"/>
       </div>
     </div>
-    
-    <label>Chunk Size <span id="chkVal">1000</span></label>
-    <input id="chk" type="range" min="500" max="4500" step="500" value="1000"/>
-    
-    <div class="toggle" id="method">
+
+    <label for="chk">Chunk Size <span id="chkVal">1000</span></label> <input id="chk" type="range" min="500" max="4500" step="500" value="1000"/>
+
+    <label>Splitting Method</label> <div class="toggle" id="method">
       <button data-m="sentence">Sentence</button>
       <button data-m="paragraph" class="active">Paragraph</button>
       <button data-m="exact">Exact</button>
     </div>
-    
+
     <button id="gen" disabled>🎤 Generate & Play</button>
     <div id="stat" class="status"></div>
   </div>
-  
+
   <div class="card">
     <div class="card-header">
       <h2>🔊 Playback</h2>
     </div>
     <div id="text" class="text-box"><p style="opacity:.6;text-align:center;">Words will appear here...</p></div>
-    
-    <!-- Timeline visualization for word timings - NEW -->
+
     <div id="timeline" class="timeline hidden">
       <div id="playhead" class="playhead"></div>
     </div>
-    
-    <canvas id="visualizer" height="80" style="width:100%;margin:0.8rem 0;border:1px solid var(--bd);border-radius:var(--r);"></canvas>
+
+    <div style="height: 80px; width:100%; margin:0.8rem 0; border:1px solid var(--bd); border-radius:var(--r); display:flex; align-items:center; justify-content:center; opacity:0.5;">
+        (Audio Visualizer Placeholder)
+    </div>
+
+
     <div class="bar" id="prog">
       <div class="fill" id="fill"></div>
     </div>
-    
+
     <div class="audio">
       <button class="small-btn" id="play" disabled title="Play">▶</button>
       <button class="small-btn" id="pause" disabled title="Pause">⏸</button>
       <button class="small-btn" id="stop" disabled title="Stop">⏹</button>
-      
+
       <div class="volume-control">
         <span>🔊</span>
-        <input type="range" id="volume" min="0" max="1" step="0.1" value="1"/>
+        <label for="volume" class="hidden">Volume</label> <input type="range" id="volume" min="0" max="1" step="0.1" value="1"/>
       </div>
-      
+
       <span class="time" id="time">00:00 / 00:00</span>
     </div>
-    
+
     <button id="download" class="download-btn" disabled>💾 Download Audio</button>
     <div class="toggle-debug" id="toggleDebug">Show Debug Info</div>
     <div id="debugPanel" class="debug-panel hidden"></div>
@@ -568,19 +583,23 @@ button:disabled {
 </div>
 
 <script>
+// Wait for the DOM to be fully loaded before executing script
 window.addEventListener('DOMContentLoaded', () => {
-  // Current date and user info
+  // --- App Information ---
   const APP_INFO = {
-    version: '1.3.0',
-    date: '2025-04-25',
-    user: 'Doodle-Med',
-    timestamp: '2025-04-25 21:58:56'
+    version: '1.3.1', // Updated version
+    date: new Date().toISOString().split('T')[0], // Use current date
+    user: 'Doodle-Med', // Placeholder user
+    timestamp: new Date().toISOString() // Use current timestamp
   };
-  
-  // API endpoints & DOM elements
-  const VO = 'https://texttospeech.googleapis.com/v1/voices';
-  const SY = 'https://texttospeech.googleapis.com/v1/text:synthesize';
-  const Q = id => document.getElementById(id);
+  console.log('App Info:', APP_INFO); // Log app info on start
+
+  // --- API Endpoints ---
+  const VOICES_API_URL = 'https://texttospeech.googleapis.com/v1/voices';
+  const SYNTHESIZE_API_URL = 'https://texttospeech.googleapis.com/v1/text:synthesize';
+
+  // --- DOM Element References ---
+  const Q = id => document.getElementById(id); // Shorthand for getting element by ID
   const E = {
     key: Q('k'),
     load: Q('ld'),
@@ -595,7 +614,7 @@ window.addEventListener('DOMContentLoaded', () => {
     chkVal: Q('chkVal'),
     gen: Q('gen'),
     stat: Q('stat'),
-    methodBtns: [...Q('method').children],
+    methodBtns: [...Q('method').children], // Get all buttons within the method toggle div
     textBox: Q('text'),
     play: Q('play'),
     pause: Q('pause'),
@@ -609,1211 +628,1338 @@ window.addEventListener('DOMContentLoaded', () => {
     debugPanel: Q('debugPanel'),
     themeToggle: Q('themeToggle'),
     timeline: Q('timeline'),
-    playhead: Q('playhead')
+    playhead: Q('playhead'),
+    // visualizerCanvas: Q('visualizer') // Reference to the canvas (currently unused)
   };
-  
-  // Debug logging
+
+  // --- Debugging ---
   let debugEnabled = localStorage.getItem('debugEnabled') === 'true';
-  const maxDebugEntries = 100;
-  let debugEntries = [];
-  
-  // Theme toggle
+  const maxDebugEntries = 100; // Limit number of entries shown in debug panel
+  let debugEntries = []; // Array to store log entries
+
+  // --- Theme Management ---
   let isDarkMode = localStorage.getItem('darkMode') === 'true';
-  if (isDarkMode) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  }
-  
-  E.themeToggle.addEventListener('click', () => {
-    isDarkMode = !isDarkMode;
+  const applyTheme = () => {
     document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-    localStorage.setItem('darkMode', isDarkMode);
-    log(`Theme changed to ${isDarkMode ? 'dark' : 'light'} mode`);
-  });
-  
-  // Toggle debug panel
-  E.toggleDebug.addEventListener('click', () => {
-    debugEnabled = !debugEnabled;
-    localStorage.setItem('debugEnabled', debugEnabled);
-    E.debugPanel.classList.toggle('hidden', !debugEnabled);
-    E.toggleDebug.textContent = debugEnabled ? 'Hide Debug Info' : 'Show Debug Info';
-    
-    // Show/hide timeline visualization based on debug state
-    E.timeline.classList.toggle('hidden', !debugEnabled);
-    
-    if (debugEnabled) {
-      updateDebugPanel();
-    }
-  });
-  
-  // Initialize debug panel state
-  if (debugEnabled) {
-    E.debugPanel.classList.remove('hidden');
-    E.toggleDebug.textContent = 'Hide Debug Info';
-    E.timeline.classList.remove('hidden');
+    E.themeToggle.textContent = isDarkMode ? '☀️' : '🌓'; // Update icon
+  };
+  applyTheme(); // Apply theme on initial load
+
+  // --- Audio State ---
+  let apiKey = localStorage.getItem('apiKey') || ''; // Load API key from storage
+  let audioContext; // The Web Audio API AudioContext
+  let masterGainNode; // Gain node for master volume control
+  let availableVoices = []; // Array to store voices fetched from API
+  let audioBuffers = []; // Array to store decoded AudioBuffer objects for each chunk
+  let audioBlobs = []; // Array to store raw audio Blob objects for download
+  let activeAudioSources = []; // Array to track currently playing AudioBufferSourceNodes
+  let wordElements = []; // Array of span elements representing words in the text box
+  let wordTimings = []; // Array storing { word, chunk, indexInChunk, globalIndex, startTime, endTime }
+  let totalDuration = 0; // Total duration of the synthesized audio in seconds
+  let loadedDuration = 0; // Duration of the audio chunks loaded so far
+  let playbackStartTime = 0; // audioContext.currentTime when playback started
+  let pausedAtTime = 0; // Time (relative to total duration) where playback was paused
+  let currentPlaybackId = 0; // ID to track the current playback sequence, prevents stale callbacks
+  let isPlaying = false; // Flag indicating if audio is currently playing
+  let isPaused = false; // Flag indicating if audio is paused
+  let chunkSplitMethod = 'paragraph'; // Default text splitting method
+  let currentWordIndex = -1; // Index of the currently highlighted word
+  let isLoadingComplete = false; // Flag indicating if all chunks have been fetched and decoded
+  let chunksReceivedCount = 0; // Counter for received chunks
+  let totalChunksCount = 0; // Total number of chunks for the current text
+  let chunksData = []; // Array storing { text, startTime, endTime, startIndex, endIndex, wordCount, duration, loaded }
+  // let visualizer; // Variable for the audio visualizer instance (REMOVED - code missing)
+  let showTimingDebug = true; // Flag to control display of timing info on word hover
+
+  // --- Initialization ---
+
+  // Restore API key if saved
+  if (apiKey) {
+    E.key.value = apiKey;
+    // Auto-load voices with a small delay
+    log('API key found in localStorage, auto-loading voices...');
+    setTimeout(() => E.load.click(), 300); // Use click() to trigger loading status etc.
   }
 
-  // Enhanced logging with debug panel support
+  // Initialize debug panel visibility
+  E.debugPanel.classList.toggle('hidden', !debugEnabled);
+  E.toggleDebug.textContent = debugEnabled ? 'Hide Debug Info' : 'Show Debug Info';
+  // Show/hide timeline based on debug state (only show if debug is enabled AND audio has been generated)
+  E.timeline.classList.add('hidden'); // Hide initially
+
+
+  // --- Utility Functions ---
+
+  // Format seconds into MM:SS format
+  const formatTime = seconds => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  };
+
+  // Update the status message area
+  const updateStatus = (message, isError = null) => {
+    E.stat.textContent = message;
+    // Apply CSS classes based on status type (error, success, or neutral)
+    E.stat.className = 'status'; // Reset classes
+    if (isError === true) {
+      E.stat.classList.add('error');
+    } else if (isError === false) {
+      E.stat.classList.add('success');
+    }
+    // Log the status message
+    log(message, null, isError ? 'error' : (isError === false ? 'success' : 'info'));
+  };
+
+  // Log messages to console and optionally to the debug panel
   const log = (message, data = null, level = 'info') => {
     const timestamp = new Date().toISOString();
-    const entry = {
-      timestamp,
-      message,
-      data,
-      level
-    };
-    
-    // Add to debug entries
+    const entry = { timestamp, message, data, level };
+
+    // Add to debug entries array (newest first)
     debugEntries.unshift(entry);
     if (debugEntries.length > maxDebugEntries) {
-      debugEntries.pop();
+      debugEntries.pop(); // Remove oldest entry if limit exceeded
     }
-    
-    // Output to console with appropriate level
+
+    // Output to browser console
+    const consoleArgs = [`[${new Date(timestamp).toLocaleTimeString()}] ${message}`];
+    if (data !== null) consoleArgs.push(data); // Add data object if provided
+
     switch(level) {
-      case 'error':
-        console.error(`[${timestamp}] ${message}`, data);
-        break;
-      case 'warn':
-        console.warn(`[${timestamp}] ${message}`, data);
-        break;
-      default:
-        console.log(`[${timestamp}] ${message}`, data);
+      case 'error': console.error(...consoleArgs); break;
+      case 'warn': console.warn(...consoleArgs); break;
+      case 'success': console.log(`%c${consoleArgs[0]}`, 'color: green', ...(consoleArgs.slice(1))); break; // Green for success
+      default: console.log(...consoleArgs);
     }
-    
-    // Update debug panel if visible
+
+    // Update the debug panel in the UI if it's enabled
     if (debugEnabled) {
       updateDebugPanel();
     }
   };
-  
-  // Update debug panel with latest entries
+
+  // Render the debug log entries into the debug panel UI
   const updateDebugPanel = () => {
     E.debugPanel.innerHTML = debugEntries.map(entry => {
       const timeStr = new Date(entry.timestamp).toLocaleTimeString();
       let dataStr = '';
-      
       if (entry.data !== null) {
         try {
-          if (typeof entry.data === 'object') {
-            dataStr = `<div class="debug-data">${JSON.stringify(entry.data)}</div>`;
-          } else {
-            dataStr = `<div class="debug-data">${entry.data}</div>`;
-          }
+          // Stringify objects, otherwise display directly
+          dataStr = `<div class="debug-data">${typeof entry.data === 'object' ? JSON.stringify(entry.data, null, 2) : entry.data}</div>`;
         } catch (e) {
-          dataStr = `<div class="debug-data">[Complex Object]</div>`;
+          dataStr = `<div class="debug-data">[Error stringifying data]</div>`; // Handle potential stringify errors
         }
       }
-      
-      return `
-        <div class="debug-entry ${entry.level}">
-          <span class="debug-time">${timeStr}</span>
-          <span class="debug-msg">${entry.message}</span>
-          ${dataStr}
-        </div>
-      `;
+      // Use level as a CSS class for potential styling
+      return `<div class="debug-entry debug-${entry.level}">
+                <span class="debug-time">${timeStr}</span>
+                <span class="debug-msg">${entry.message}</span>
+                ${dataStr}
+              </div>`;
     }).join('');
   };
 
-  // App state
-  let API = localStorage.getItem('apiKey') || '';
-  let ctx;
-  let gainNode;
-  let voices = [];
-  let buffers = [];
-  let audioBlobs = []; // Store audio as blobs for download
-  let audioSources = []; // Track all audio sources
-  let wordElements = []; // Store word elements for efficient lookup
-  let wordTimings = []; // Store precise timing data for words
-  let totalDuration = 0; // Total final duration
-  let loadedDuration = 0; // Duration of loaded chunks so far
-  let startTime = 0; // When playback started
-  let pausedAt = 0; // Where we paused
-  let playbackId = 0; // Used to cancel stale playback
-  let playing = false;
-  let paused = false;
-  let method = 'paragraph';
-  let currentWordIndex = -1;
-  let loadingComplete = false;
-  let chunksReceived = 0;
-  let totalChunks = 0;
-  let chunksData = []; // Store detailed data about each chunk
-  let visualizer;
-  let showTimingDebug = true; // Always show timing debug info when in debug mode
-  
-  // Initialize API key if saved
-  if (API) {
-    E.key.value = API;
-    // Auto-load voices if API key is saved
-    log('API key found in localStorage, auto-loading voices');
-    setTimeout(() => E.load.click(), 500);
-  }
-
-  // Utilities
-  const fmt = s => `${String(Math.floor(s/60)).padStart(2, '0')}:${String(Math.floor(s%60)).padStart(2, '0')}`;
-  
-  const status = (m, isError) => {
-    E.stat.textContent = m;
-    E.stat.className = 'status' + (isError ? ' error' : isError === false ? ' success' : '');
-    log(m, null, isError ? 'error' : 'info');
-  };
-  
-  // JSON fetch helper with error handling
-  const fetchJSON = async (url, opts) => {
+  // Helper for making fetch requests and handling JSON responses/errors
+  const fetchJSON = async (url, options = {}) => {
+    log(`Fetching: ${url}`, options.method || 'GET');
     try {
-      log(`Fetching ${url}`, opts);
-      const r = await fetch(url, opts);
-      
-      if (!r.ok) {
-        let m = `HTTP ${r.status}`;
+      const response = await fetch(url, options);
+
+      // Check for HTTP errors
+      if (!response.ok) {
+        let errorMessage = `HTTP Error: ${response.status} ${response.statusText}`;
+        let errorDetails = null;
         try {
-          const errorData = await r.json();
-          m = errorData.error?.message || m;
-          log('API Error', errorData, 'error');
+          // Try to parse error details from the response body
+          errorDetails = await response.json();
+          errorMessage = errorDetails?.error?.message || errorMessage;
+          log('API Error Response', errorDetails, 'error');
         } catch (e) {
-          log('Failed to parse error response', e, 'error');
+          log('Failed to parse error response body', await response.text(), 'warn');
         }
-        throw new Error(m);
+        throw new Error(errorMessage); // Throw an error with details
       }
-      
-      const data = await r.json();
-      log(`Fetch completed successfully`, { url });
+
+      // Parse successful JSON response
+      const data = await response.json();
+      log(`Fetch Success: ${url}`, data);
       return data;
-    } catch (e) {
-      log('Fetch error', e, 'error');
-      throw e;
+
+    } catch (error) {
+      log(`Fetch Failed: ${url}`, { error: error.message, stack: error.stack }, 'error');
+      // Re-throw the error to be caught by the calling function
+      throw error;
     }
   };
 
-  // UI event binding
-  ['pit', 'rat', 'chk'].forEach(id => {
-    E[id].addEventListener('input', e => {
-      const span = E[`${id}Val`];
-      if (span) {
-        const val = id === 'rat' ? parseFloat(e.target.value).toFixed(2) : e.target.value;
-        span.textContent = val;
+  // Simple word counter (splits by whitespace)
+  const countWords = text => {
+    if (!text) return 0;
+    return text.trim().split(/\s+/).filter(Boolean).length; // Filter out empty strings after split
+  };
+
+  // Initialize the Web Audio API context
+  const initAudioContext = async () => {
+    if (!audioContext) {
+      try {
+        log('Initializing AudioContext...');
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Create the master gain node for volume control
+        masterGainNode = audioContext.createGain();
+        masterGainNode.gain.value = E.volume.value; // Set initial volume
+        masterGainNode.connect(audioContext.destination); // Connect gain to output
+
+        // --- Visualizer Initialization (REMOVED) ---
+        // The original code had a 'VoiceVisualizer' which is not defined.
+        // If you have a visualizer library, initialize it here and connect the gainNode.
+        // Example placeholder:
+        // if (E.visualizerCanvas) {
+        //   visualizer = new SomeVisualizerLibrary(E.visualizerCanvas, audioContext, masterGainNode);
+        // }
+        log('AudioContext initialized successfully.', { sampleRate: audioContext.sampleRate, state: audioContext.state });
+
+      } catch (error) {
+        log('Failed to initialize AudioContext', error, 'error');
+        updateStatus('Error initializing audio. Please refresh.', true);
+        throw error; // Prevent further execution if context fails
       }
+    }
+    // Ensure the context is running (required after user interaction)
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+      log('AudioContext resumed.');
+    }
+  };
+
+  // Decode base64 MP3 data into an AudioBuffer
+  const decodeAudioDataAsync = async (arrayBuffer) => {
+    // Ensure context is initialized and running
+    if (!audioContext || audioContext.state !== 'running') {
+        await initAudioContext();
+    }
+    log(`Decoding audio buffer (${(arrayBuffer.byteLength / 1024).toFixed(1)} KB)`);
+    return new Promise((resolve, reject) => {
+        audioContext.decodeAudioData(
+            arrayBuffer,
+            (buffer) => {
+                log(`Audio buffer decoded: ${buffer.duration.toFixed(2)}s`);
+                resolve(buffer);
+            },
+            (error) => {
+                log('Error decoding audio data', error, 'error');
+                reject(new Error(`Audio decode error: ${error.message || error}`));
+            }
+        );
     });
+  };
+
+
+  // --- UI Event Listeners ---
+
+  // Update displayed values for range sliders
+  ['pit', 'rat', 'chk'].forEach(id => {
+    const slider = E[id];
+    const display = E[`${id}Val`];
+    if (slider && display) {
+      slider.addEventListener('input', (e) => {
+        const value = id === 'rat' ? parseFloat(e.target.value).toFixed(2) : e.target.value;
+        display.textContent = value;
+      });
+      // Initial display update
+      display.textContent = id === 'rat' ? parseFloat(slider.value).toFixed(2) : slider.value;
+    }
   });
-  
-  // Initialize volume control
+
+  // Volume slider control
   E.volume.addEventListener('input', () => {
-    if (gainNode) {
-      gainNode.gain.value = E.volume.value;
+    if (masterGainNode) {
+      masterGainNode.gain.value = E.volume.value;
       log(`Volume changed to ${E.volume.value}`);
     }
   });
 
-  // Load voices from Google TTS API
-  E.load.onclick = async () => {
-    API = E.key.value.trim();
-    if (!API) return status('API key required', true);
-    
-    // Save API key to localStorage
-    localStorage.setItem('apiKey', API);
-    
-    E.loading.classList.remove('hidden');
-    E.load.disabled = true;
-    status('Loading voices...');
-    
-    try {
-      log(`Requesting voices from ${VO}`);
-      const d = await fetchJSON(`${VO}?key=${API}`);
-      voices = d.voices || [];
-      
-      if (!voices.length) throw new Error('No voices returned');
-      
-      log(`Loaded ${voices.length} voices`);
-      
-      // Group voices by language
-      const langMap = new Map();
-      voices.forEach(v => {
-        v.languageCodes.forEach(code => {
-          let name;
-          try {
-            name = new Intl.DisplayNames(['en'], { type: 'language' }).of(code);
-          } catch (e) {
-            name = code;
-          }
-          
-          if (!langMap.has(code)) {
-            langMap.set(code, { name, voices: [] });
-          }
-          langMap.get(code).voices.push(v);
-        });
-      });
-      
-      // Sort languages by name
-      const sortedLangs = [...langMap.entries()]
-        .sort((a, b) => a[1].name.localeCompare(b[1].name));
-      
-      // Group options by language
-      const html = sortedLangs.map(([code, { name, voices }]) => {
-        const options = voices
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map(v => {
-            const isNeural = v.name.includes('Neural') || v.name.includes('Wavenet');
-            return `<option value="${v.name}" data-l="${code}">${v.name} ${isNeural ? '(Neural)' : ''}</option>`;
-          })
-          .join('');
-        
-        return `<optgroup label="${name}">${options}</optgroup>`;
-      }).join('');
-      
-      E.voice.innerHTML = html;
-      E.voice.disabled = false;
-      E.gen.disabled = false;
-      
-      status('Voices loaded successfully', false);
-    } catch (e) {
-      status(`Failed to load voices: ${e.message}`, true);
-    } finally {
-      E.loading.classList.add('hidden');
-      E.load.disabled = false;
-    }
-  };
-
-  // Configure chunk splitting method
-  E.methodBtns.forEach(b => b.onclick = () => {
-    E.methodBtns.forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    method = b.dataset.m;
-    log(`Splitting method changed to: ${method}`);
+  // Theme toggle button
+  E.themeToggle.addEventListener('click', () => {
+    isDarkMode = !isDarkMode;
+    applyTheme();
+    localStorage.setItem('darkMode', isDarkMode); // Save preference
+    log(`Theme toggled to ${isDarkMode ? 'dark' : 'light'}`);
   });
 
-  // Split text into chunks based on selected method
-  const splitText = t => {
-    const m = +E.chk.value;
-    log(`Splitting text (${t.length} chars) with method: ${method}, chunk size: ${m}`);
-    
-    if (t.length <= m) return [t];
-    
-    if (method === 'exact') {
-      const a = [];
-      for (let i = 0; i < t.length; i += m) {
-        a.push(t.slice(i, i + m));
-      }
-      log(`Split into ${a.length} chunks using exact method`);
-      return a;
-    }
-    
-    const re = method === 'paragraph' ? /\n\s*\n/ : /([.!?]+["']?\s+)/;
-    const bits = t.split(re).filter(Boolean);
-    log(`Split text into ${bits.length} initial segments`);
-    
-    const out = [];
-    let cur = '';
-    
-    for (const p of bits) {
-      if ((cur + p).length > m) {
-        if (cur.trim()) out.push(cur.trim());
-        cur = '';
-        
-        if (p.length > m) {
-          let q = p;
-          while (q.length > m) {
-            out.push(q.slice(0, m));
-            q = q.slice(m);
-          }
-          cur = q;
-        } else {
-          cur = p;
-        }
-      } else {
-        cur += p;
-      }
-    }
-    
-    if (cur.trim()) out.push(cur.trim());
-    
-    log(`Final chunks: ${out.length}`, {
-      chunkSizes: out.map(c => c.length)
-    });
-    
-    return out;
-  };
+  // Debug panel toggle
+  E.toggleDebug.addEventListener('click', () => {
+    debugEnabled = !debugEnabled;
+    localStorage.setItem('debugEnabled', debugEnabled); // Save preference
+    E.debugPanel.classList.toggle('hidden', !debugEnabled);
+    E.toggleDebug.textContent = debugEnabled ? 'Hide Debug Info' : 'Show Debug Info';
+    // Show/hide timeline only if debug is enabled AND audio has been generated
+    E.timeline.classList.toggle('hidden', !debugEnabled || totalDuration === 0);
+    if (debugEnabled) updateDebugPanel(); // Refresh panel content
+    log(`Debug panel ${debugEnabled ? 'enabled' : 'disabled'}`);
+  });
 
-  // Decode audio buffer
-  const decodeBuffer = a => {
-    log(`Decoding audio buffer of size ${a.byteLength}`);
-    return new Promise((res, rej) => {
-      try {
-        ctx.decodeAudioData(a, 
-          (buffer) => {
-            log(`Audio buffer decoded successfully: ${buffer.duration.toFixed(2)}s`);
-            res(buffer);
-          },
-          (err) => {
-            log(`Error decoding audio buffer`, err, 'error');
-            rej(err);
-          }
-        );
-      } catch (e) {
-        log(`Exception in decodeBuffer`, e, 'error');
-        rej(e);
-      }
-    });
-  };
+  // Load Voices button
+  E.load.addEventListener('click', async () => {
+    apiKey = E.key.value.trim();
+    if (!apiKey) {
+      return updateStatus('API key is required.', true);
+    }
+    localStorage.setItem('apiKey', apiKey); // Save API key
 
-  // IMPROVED: Prepare text display with clickable words
-  const prepareTextDisplay = (text, chunks) => {
-    log(`Preparing text display with ${text.length} chars and ${chunks.length} chunks`);
-    
-    // Reset UI
-    E.textBox.innerHTML = '';
+    E.loading.classList.remove('hidden');
+    E.load.disabled = true;
+    E.voice.disabled = true; // Disable dropdown during load
+    E.gen.disabled = true; // Disable generate button
+    updateStatus('Loading available voices...');
+
+    try {
+      const data = await fetchJSON(`${VOICES_API_URL}?key=${apiKey}`);
+      availableVoices = data.voices || [];
+
+      if (!availableVoices.length) {
+        throw new Error('No voices returned from API. Check API key and permissions.');
+      }
+
+      log(`Loaded ${availableVoices.length} voices.`);
+
+      // Group voices by language for the dropdown
+      const voicesByLanguage = availableVoices.reduce((acc, voice) => {
+        voice.languageCodes.forEach(code => {
+          if (!acc[code]) {
+            // Try to get a display name for the language code
+            let langName = code;
+            try {
+              langName = new Intl.DisplayNames(['en'], { type: 'language' }).of(code.split('-')[0]) || code; // Use base code for name
+            } catch (e) { /* Ignore errors, use code */ }
+            acc[code] = { name: langName, voices: [] };
+          }
+          acc[code].voices.push(voice);
+        });
+        return acc;
+      }, {});
+
+      // Sort languages alphabetically by display name
+      const sortedLanguages = Object.entries(voicesByLanguage)
+        .sort(([, a], [, b]) => a.name.localeCompare(b.name));
+
+      // Generate HTML for the select dropdown
+      const optionsHtml = sortedLanguages.map(([code, { name, voices }]) => {
+        // Sort voices within each language group
+        const sortedVoiceOptions = voices
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(v => {
+            // Add indicators for Neural/Wavenet/Studio voices
+            const qualityIndicator = v.name.includes('Neural') || v.name.includes('Wavenet') ? ' (Neural/WaveNet)' : (v.name.includes('Studio') ? ' (Studio)' : '');
+            return `<option value="${v.name}" data-lang="${v.languageCodes[0]}">${v.name}${qualityIndicator}</option>`; // Use first lang code for data attribute
+          }).join('');
+        return `<optgroup label="${name} (${code})">${sortedVoiceOptions}</optgroup>`;
+      }).join('');
+
+      E.voice.innerHTML = optionsHtml;
+      E.voice.disabled = false; // Enable dropdown
+      E.gen.disabled = false; // Enable generate button
+      updateStatus('Voices loaded successfully.', false);
+
+    } catch (error) {
+      updateStatus(`Failed to load voices: ${error.message}`, true);
+      E.voice.innerHTML = '<option>Loading failed</option>'; // Indicate failure
+    } finally {
+      E.loading.classList.add('hidden'); // Hide loading indicator
+      E.load.disabled = false; // Re-enable load button
+    }
+  });
+
+  // Chunk splitting method toggle buttons
+  E.methodBtns.forEach(button => {
+    button.addEventListener('click', () => {
+      E.methodBtns.forEach(btn => btn.classList.remove('active')); // Deactivate all
+      button.classList.add('active'); // Activate clicked button
+      chunkSplitMethod = button.dataset.m; // Update state variable
+      log(`Chunk splitting method set to: ${chunkSplitMethod}`);
+    });
+  });
+
+  // Generate & Play button
+  E.gen.addEventListener('click', async () => {
+    // Initial checks
+    if (!apiKey) return updateStatus('Load voices first (API key needed).', true);
+    if (!E.voice.value) return updateStatus('Please select a voice.', true);
+    const textToSynthesize = E.txt.value.trim();
+    if (!textToSynthesize) return updateStatus('Please enter text to synthesize.', true);
+
+    // --- Reset State for New Generation ---
+    log('--- Starting New Speech Generation ---');
+    stopPlayback(true); // Stop any existing playback silently
+    audioBuffers = [];
+    audioBlobs = [];
+    activeAudioSources = [];
     wordElements = [];
     wordTimings = [];
-    
-    // Clear timeline visualization
-    E.timeline.innerHTML = '';
-    E.timeline.appendChild(E.playhead);
-    
-    // Initialize chunks data
-    chunksData = chunks.map((chunk, index) => ({
-      text: chunk,
-      startTime: 0,
-      endTime: 0,
-      startIndex: index > 0 ? chunksData[index-1]?.endIndex || 0 : 0,
-      endIndex: 0, // Will be set later
-      wordCount: countWords(chunk),
-      duration: 0,
-      loaded: false
-    }));
-    
-    // Set end indices for each chunk
-    for (let i = 0; i < chunksData.length; i++) {
-      chunksData[i].endIndex = chunksData[i].startIndex + chunksData[i].wordCount - 1;
-      
-      if (debugEnabled) {
-        log(`Chunk ${i}: words ${chunksData[i].startIndex} to ${chunksData[i].endIndex} (${chunksData[i].wordCount} words)`);
+    chunksData = [];
+    totalDuration = 0;
+    loadedDuration = 0;
+    isLoadingComplete = false;
+    chunksReceivedCount = 0;
+    currentWordIndex = -1;
+    E.download.disabled = true; // Disable download until ready
+    E.play.disabled = true; // Disable playback controls initially
+    E.pause.disabled = true;
+    E.stop.disabled = true;
+    E.fill.style.width = '0%'; // Reset progress bar
+    E.time.textContent = '00:00 / 00:00'; // Reset time display
+    E.textBox.innerHTML = '<p style="opacity:.6;text-align:center;">Processing text...</p>'; // Clear text box
+    E.timeline.classList.add('hidden'); // Hide timeline until processing finishes
+    E.playhead.style.left = '0%'; // Reset playhead
+
+
+    try {
+      await initAudioContext(); // Ensure AudioContext is ready
+
+      // --- Split Text into Chunks ---
+      const chunks = splitText(textToSynthesize);
+      if (!chunks || chunks.length === 0) {
+        return updateStatus('Text could not be split into chunks.', true);
       }
-    }
-    
-    // Total word count
-    const totalWordCount = chunksData.reduce((total, chunk) => total + chunk.wordCount, 0);
-    
-    // Process words with knowledge of which chunk they belong to
-    let globalWordIndex = 0;
-    let currentChunk = 0;
-    
-    // Process text to extract words and spaces
-    const parts = [];
-    let currentWord = '';
-    let inWord = false;
-    
-    // Simple tokenizer
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      const isWordChar = /[\w\d''-]/.test(char);
-      
-      if (isWordChar) {
-        currentWord += char;
-        inWord = true;
+      totalChunksCount = chunks.length;
+      log(`Text split into ${totalChunksCount} chunk(s) using '${chunkSplitMethod}' method.`);
+
+      // --- Prepare UI ---
+      updateStatus(`Processing ${totalChunksCount} chunk(s)... 0%`);
+      prepareTextDisplay(textToSynthesize, chunks); // Setup words in the text box
+      E.gen.disabled = true; // Disable generate button during processing
+
+      // Initialize arrays to hold results for each chunk
+      audioBuffers = new Array(totalChunksCount).fill(null);
+      audioBlobs = new Array(totalChunksCount).fill(null);
+
+      // --- Define Request Payload ---
+      const selectedOption = E.voice.selectedOptions[0];
+      const voiceConfig = {
+        languageCode: selectedOption.dataset.lang,
+        name: E.voice.value
+      };
+      const audioConfig = {
+        audioEncoding: 'MP3', // Request MP3 format
+        pitch: parseFloat(E.pit.value),
+        speakingRate: parseFloat(E.rat.value)
+      };
+      log('Synthesis Config:', { voiceConfig, audioConfig });
+
+      // --- Process Chunks Asynchronously ---
+      const chunkPromises = chunks.map(async (chunkText, index) => {
+        try {
+          log(`Requesting chunk ${index + 1}/${totalChunksCount} (${chunkText.length} chars)`);
+          const requestBody = {
+            input: { text: chunkText },
+            voice: voiceConfig,
+            audioConfig: audioConfig
+          };
+
+          const response = await fetchJSON(`${SYNTHESIZE_API_URL}?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+
+          if (!response.audioContent) {
+            throw new Error(`No audio content received for chunk ${index + 1}`);
+          }
+
+          // Decode Base64 audio content
+          const binaryString = atob(response.audioContent);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const arrayBuffer = bytes.buffer;
+
+          // Store Blob for download (important: use the original ArrayBuffer)
+          const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
+          audioBlobs[index] = blob;
+          log(`Stored Blob for chunk ${index + 1} (${(blob.size / 1024).toFixed(1)} KB)`);
+
+          // Decode into AudioBuffer for playback (use a copy to avoid detachment issues)
+          const bufferCopy = arrayBuffer.slice(0); // Create a copy
+          const decodedBuffer = await decodeAudioDataAsync(bufferCopy);
+          audioBuffers[index] = decodedBuffer; // Store the decoded buffer
+
+          // --- Update Timings and Progress ---
+          chunksReceivedCount++;
+          const progress = Math.round((chunksReceivedCount / totalChunksCount) * 100);
+          updateStatus(`Processing ${totalChunksCount} chunk(s)... ${progress}%`);
+          updateWordTimings(index, decodedBuffer.duration); // Update word timing estimates
+
+          return { index, success: true, duration: decodedBuffer.duration }; // Return success status
+
+        } catch (error) {
+          log(`Error processing chunk ${index + 1}: ${error.message}`, error, 'error');
+          // Mark chunk as failed but don't stop others
+          audioBuffers[index] = null; // Ensure it's null on error
+          audioBlobs[index] = null;
+          chunksData[index].loaded = false; // Mark as not loaded
+          chunksData[index].duration = 0;
+          // Update status with chunk-specific error
+          updateStatus(`Error in chunk ${index + 1}: ${error.message}. Continuing...`, true);
+          return { index, success: false, error: error.message }; // Return failure status
+        }
+      });
+
+      // --- Wait for all chunks to process ---
+      const results = await Promise.all(chunkPromises);
+      log('All chunk processing finished.', results);
+
+      // --- Finalize and Enable Controls ---
+      const successfulChunks = results.filter(r => r.success);
+      const failedChunks = results.filter(r => !r.success);
+
+      if (successfulChunks.length === 0) {
+        throw new Error("All chunks failed to synthesize. Check API key, quota, and input text.");
+      }
+
+      // Calculate final total duration based on loaded chunks
+      totalDuration = chunksData.reduce((sum, chunk) => sum + (chunk.loaded ? chunk.duration : 0), 0);
+      loadedDuration = totalDuration; // Since all are processed now
+      isLoadingComplete = true;
+
+      log(`Synthesis complete. Total duration: ${totalDuration.toFixed(2)}s. ${successfulChunks.length}/${totalChunksCount} chunks succeeded.`);
+
+      // Update UI for completion
+      E.time.textContent = `00:00 / ${formatTime(totalDuration)}`;
+      E.play.disabled = false; // Enable play
+      E.stop.disabled = false; // Enable stop
+      E.download.disabled = false; // Enable download
+      E.gen.disabled = false; // Re-enable generate button
+
+      if (failedChunks.length > 0) {
+        updateStatus(`Completed with ${failedChunks.length} error(s). Total duration: ${formatTime(totalDuration)}`, true);
       } else {
-        if (inWord) {
-          parts.push({ type: 'word', text: currentWord });
-          currentWord = '';
-          inWord = false;
+        updateStatus(`Ready to play. Total duration: ${formatTime(totalDuration)}`, false);
+      }
+
+      // Update and show timeline if debug is enabled
+      if (debugEnabled) {
+        updateTimelineVisualization();
+        E.timeline.classList.remove('hidden');
+      }
+
+      // Automatically start playback
+      log('Auto-starting playback.');
+      startPlayback(0, 0, 0);
+
+
+    } catch (error) {
+      updateStatus(`Generation failed: ${error.message}`, true);
+      log('General error during speech generation', error, 'error');
+      E.gen.disabled = false; // Re-enable generate button on failure
+    }
+  });
+
+  // Playback control buttons
+  E.play.addEventListener('click', () => {
+    if (!audioContext) initAudioContext(); // Ensure context is ready
+    if (isPaused) {
+      resumePlayback();
+    } else if (!isPlaying && audioBuffers.some(b => b)) { // Check if buffers exist
+      startPlayback(0, 0, 0); // Start from beginning if not playing/paused
+    }
+  });
+  E.pause.addEventListener('click', pausePlayback);
+  E.stop.addEventListener('click', () => stopPlayback()); // Pass false for non-silent stop
+
+  // Progress bar click/seek handler
+  E.prog.addEventListener('click', (e) => {
+    if (!totalDuration || totalDuration <= 0) return; // No audio loaded
+    const progressBarRect = E.prog.getBoundingClientRect();
+    const clickPositionRatio = (e.clientX - progressBarRect.left) / progressBarRect.width;
+    const targetTime = clickPositionRatio * totalDuration;
+    log(`Progress bar clicked: ratio=${clickPositionRatio.toFixed(3)}, time=${targetTime.toFixed(2)}s`);
+    seekToTime(targetTime);
+  });
+
+  // Timeline click/seek handler (only active if debug enabled)
+  E.timeline.addEventListener('click', (e) => {
+    if (!debugEnabled || !totalDuration || totalDuration <= 0) return;
+    const timelineRect = E.timeline.getBoundingClientRect();
+    const clickPositionRatio = (e.clientX - timelineRect.left) / timelineRect.width;
+    const targetTime = clickPositionRatio * totalDuration;
+    log(`Timeline clicked: ratio=${clickPositionRatio.toFixed(3)}, time=${targetTime.toFixed(2)}s`);
+    seekToTime(targetTime);
+  });
+
+  // Download button
+  E.download.addEventListener('click', createDownloadLink);
+
+
+  // --- Core Logic Functions ---
+
+  // Split text based on the selected method and chunk size
+  const splitText = (text) => {
+    const maxChunkSize = parseInt(E.chk.value, 10);
+    log(`Splitting text (${text.length} chars) using '${chunkSplitMethod}', max size: ${maxChunkSize}`);
+
+    // If text is short enough, return as a single chunk
+    if (text.length <= maxChunkSize) {
+      return [text];
+    }
+
+    let chunks = [];
+    if (chunkSplitMethod === 'exact') {
+      // Split exactly at maxChunkSize
+      for (let i = 0; i < text.length; i += maxChunkSize) {
+        chunks.push(text.slice(i, i + maxChunkSize));
+      }
+    } else {
+      // Split by sentence or paragraph, then subdivide if needed
+      const delimiter = chunkSplitMethod === 'paragraph' ? /(\n\s*\n)/ : /([.!?]+(?:["']|\u201d|\u2019)?\s+)/; // Include closing quotes
+      // Split by delimiter, keeping the delimiter attached to the preceding part
+      const segments = text.split(delimiter).reduce((acc, part, index) => {
+          if (index % 2 === 0) { // Even indices are text parts
+              acc.push(part);
+          } else { // Odd indices are delimiters
+              if (acc.length > 0) {
+                  acc[acc.length - 1] += part; // Append delimiter to previous part
+              } else {
+                  acc.push(part); // Handle case where text starts with delimiter
+              }
+          }
+          return acc;
+      }, []).filter(Boolean); // Filter out empty strings
+
+
+      log(`Initial split into ${segments.length} segments by ${chunkSplitMethod}.`);
+
+      let currentChunk = '';
+      segments.forEach(segment => {
+        if (segment.length > maxChunkSize) {
+          // If a single segment is too long, force split it (word boundary preferred)
+          if (currentChunk) chunks.push(currentChunk); // Add previous chunk first
+          currentChunk = ''; // Reset current chunk
+
+          let remainingSegment = segment;
+          while (remainingSegment.length > maxChunkSize) {
+              let splitPoint = maxChunkSize;
+              // Try to find a space near the max size to split at
+              let lastSpace = remainingSegment.lastIndexOf(' ', maxChunkSize);
+              if (lastSpace > maxChunkSize / 2) { // Only split at space if it's reasonably far in
+                  splitPoint = lastSpace + 1;
+              }
+              chunks.push(remainingSegment.slice(0, splitPoint));
+              remainingSegment = remainingSegment.slice(splitPoint);
+          }
+          currentChunk = remainingSegment; // The last part becomes the start of the next chunk
+
+        } else if ((currentChunk + segment).length <= maxChunkSize) {
+          // Add segment to current chunk if it fits
+          currentChunk += segment;
+        } else {
+          // Segment doesn't fit, finalize current chunk and start new one
+          chunks.push(currentChunk);
+          currentChunk = segment;
         }
-        parts.push({ type: 'space', text: char });
+      });
+      // Add the last remaining chunk
+      if (currentChunk) {
+        chunks.push(currentChunk);
       }
     }
-    
-    // Add the last word if needed
-    if (inWord) {
-      parts.push({ type: 'word', text: currentWord });
-    }
-    
-    // Create dynamic word boundaries based on processed text
-    parts.forEach(part => {
-      if (part.type === 'word') {
-        // Find which chunk this word belongs to
-        while (globalWordIndex > chunksData[currentChunk].endIndex && currentChunk < chunksData.length - 1) {
-          currentChunk++;
+
+    log(`Final chunks: ${chunks.length}`, { chunkSizes: chunks.map(c => c.length) });
+    return chunks.map(c => c.trim()).filter(Boolean); // Trim and remove empty chunks
+  };
+
+  // Prepare the text display area with clickable word spans
+  const prepareTextDisplay = (fullText, textChunks) => {
+    log(`Preparing text display: ${fullText.length} chars, ${textChunks.length} chunks.`);
+    E.textBox.innerHTML = ''; // Clear previous content
+    wordElements = [];
+    wordTimings = [];
+    chunksData = []; // Reset chunk data
+
+    let currentChunkIndex = 0;
+    let wordCountInCurrentChunk = 0;
+    let totalWordCountOffset = 0;
+
+    // Initialize chunksData based on the actual chunks being used
+    chunksData = textChunks.map((chunkText, index) => {
+        const wordCount = countWords(chunkText);
+        const startIndex = totalWordCountOffset;
+        const endIndex = startIndex + wordCount -1;
+        totalWordCountOffset += wordCount; // Update offset for the next chunk
+        return {
+            text: chunkText,
+            startTime: 0, // To be calculated later
+            endTime: 0,   // To be calculated later
+            startIndex: startIndex,
+            endIndex: endIndex < startIndex ? startIndex : endIndex, // Handle empty chunks
+            wordCount: wordCount,
+            duration: 0,  // To be calculated later
+            loaded: false // Mark as not loaded initially
+        };
+    });
+
+
+    log('Initialized chunksData:', chunksData);
+
+    // --- Tokenize the full text into words and whitespace ---
+    // Regex to match sequences of word characters (letters, numbers, apostrophe, hyphen) OR sequences of non-word/non-whitespace characters (punctuation) OR whitespace
+    const tokenizerRegex = /([\w\d'-]+)|([^\s\w\d'-]+)|(\s+)/g;
+    let match;
+    let globalWordIndex = 0;
+
+    while ((match = tokenizerRegex.exec(fullText)) !== null) {
+      const wordText = match[1]; // Group 1: Word
+      const punctuation = match[2]; // Group 2: Punctuation
+      const spaceText = match[3]; // Group 3: Whitespace
+
+      if (wordText) {
+        // Find the chunk this word belongs to
+        // This relies on chunksData having accurate startIndex/endIndex
+        while (currentChunkIndex < chunksData.length -1 && globalWordIndex > chunksData[currentChunkIndex].endIndex) {
+            currentChunkIndex++;
+            wordCountInCurrentChunk = 0; // Reset counter for the new chunk
         }
-        
-        // Create word element
+
+        const chunkInfo = chunksData[currentChunkIndex];
+        const indexInChunk = globalWordIndex - chunkInfo.startIndex;
+
+        // Create the word span element
         const span = document.createElement('span');
-        span.textContent = part.text;
-        span.className = 'word loading';
-        span.dataset.index = globalWordIndex;
-        span.dataset.chunk = currentChunk;
-        
-        // Calculate index within chunk
-        const indexInChunk = globalWordIndex - chunksData[currentChunk].startIndex;
-        
-        // Store timing data (to be filled later)
+        span.textContent = wordText;
+        span.className = 'word loading'; // Initially marked as loading
+        span.dataset.index = globalWordIndex; // Store global index
+        span.dataset.chunk = currentChunkIndex; // Store chunk index
+
+        // Store timing data structure (to be filled later)
         wordTimings[globalWordIndex] = {
-          word: part.text,
-          chunk: currentChunk,
-          indexInChunk: indexInChunk, 
+          word: wordText,
+          chunk: currentChunkIndex,
+          indexInChunk: indexInChunk,
           globalIndex: globalWordIndex,
           startTime: 0,
           endTime: 0
         };
-        
-        // Add click handler
-        span.addEventListener('click', e => {
-          if (span.classList.contains('loading')) {
-            status('That part is still loading...');
+
+        // Add click listener for seeking
+        span.addEventListener('click', (e) => {
+          const clickedWordIndex = parseInt(e.currentTarget.dataset.index, 10);
+          const clickedChunkIndex = parseInt(e.currentTarget.dataset.chunk, 10);
+          if (e.currentTarget.classList.contains('loading') || !chunksData[clickedChunkIndex]?.loaded) {
+            updateStatus('Audio for this section is still loading...');
             return;
           }
-          
-          const clickedIndex = parseInt(e.currentTarget.dataset.index);
-          log(`Word clicked: ${part.text} (index ${clickedIndex}, chunk ${currentChunk})`);
-          seekToWord(clickedIndex);
+          log(`Word clicked: "${wordTimings[clickedWordIndex]?.word}" (Index: ${clickedWordIndex}, Chunk: ${clickedChunkIndex})`);
+          seekToWord(clickedWordIndex);
         });
-        
-        wordElements.push(span);
-        E.textBox.appendChild(span);
+
+        wordElements.push(span); // Store reference to the element
+        E.textBox.appendChild(span); // Add to the display
         globalWordIndex++;
-      } else {
-        // This is whitespace
-        E.textBox.appendChild(document.createTextNode(part.text));
-      }
-    });
-    
-    log(`Text display prepared with ${globalWordIndex} words`);
-  };
-  
-  // Count words in a string
-  const countWords = text => {
-    return text.split(/\s+/).filter(w => w.trim().length > 0).length;
-  };
-  
-  // COMPLETELY REVISED: Update word timings based on actual audio durations
-  const updateWordTimings = (chunkIndex, duration) => {
-    if (!chunksData[chunkIndex]) return;
-    
-    log(`Updating word timings for chunk ${chunkIndex}, duration ${duration.toFixed(2)}s`, {
-      wordCount: chunksData[chunkIndex].wordCount
-    });
-    
-    // Update chunk data
-    chunksData[chunkIndex].loaded = true;
-    chunksData[chunkIndex].duration = duration;
-    
-    // Calculate chunk start time (sum of durations of all previous loaded chunks)
-    let chunkStartTime = 0;
-    for (let i = 0; i < chunkIndex; i++) {
-      if (chunksData[i].loaded) {
-        chunkStartTime += chunksData[i].duration;
+        wordCountInCurrentChunk++;
+
+      } else if (punctuation) {
+        // Append punctuation as plain text
+        E.textBox.appendChild(document.createTextNode(punctuation));
+      } else if (spaceText) {
+        // Append whitespace as plain text
+        E.textBox.appendChild(document.createTextNode(spaceText));
       }
     }
-    
-    chunksData[chunkIndex].startTime = chunkStartTime;
-    chunksData[chunkIndex].endTime = chunkStartTime + duration;
-    
-    // Get word count for this chunk
-    const wordCount = chunksData[chunkIndex].wordCount;
-    
-    // Skip empty chunks
-    if (wordCount === 0) {
-      log(`Chunk ${chunkIndex} has no words, skipping timing update`);
+    log(`Text display prepared with ${globalWordIndex} words.`);
+  };
+
+  // Update estimated word timings after a chunk's audio is decoded
+  const updateWordTimings = (chunkIndex, chunkDuration) => {
+    const chunkInfo = chunksData[chunkIndex];
+    if (!chunkInfo) {
+      log(`Error updating timings: Invalid chunkIndex ${chunkIndex}`, null, 'error');
       return;
     }
-    
-    // Calculate average word duration, adjusting for speaking rhythm
-    const avgWordDuration = duration / wordCount;
-    
-    // Log detailed information
-    log(`Chunk ${chunkIndex} timing details:`, {
-      startTime: chunkStartTime.toFixed(2) + 's',
-      endTime: (chunkStartTime + duration).toFixed(2) + 's',
-      duration: duration.toFixed(2) + 's',
-      wordCount,
-      avgWordDuration: avgWordDuration.toFixed(3) + 's'
-    });
-    
-    // Linear mapping approach
-    for (let i = chunksData[chunkIndex].startIndex; i <= chunksData[chunkIndex].endIndex; i++) {
-      if (i < 0 || i >= wordTimings.length) continue;
-      
-      const timing = wordTimings[i];
-      if (timing.chunk !== chunkIndex) continue;
-      
-      // Calculate word position as fraction of chunk (0 to 1)
-      const position = timing.indexInChunk / (wordCount - 1 || 1);
-      
-      // Apply a simple distribution model
-      const startOffset = position * duration;
-      const endOffset = (position + (1 / (wordCount - 1 || 1))) * duration;
-      
-      timing.startTime = chunkStartTime + startOffset;
-      timing.endTime = chunkStartTime + endOffset;
-      
-      // Remove loading state from word element
-      const el = wordElements[i];
-      if (el) {
-        el.classList.remove('loading');
-        
-        // Add timing data to the element for debugging
-        if (showTimingDebug) {
-          el.dataset.time = timing.startTime.toFixed(2);
-        }
+
+    log(`Updating word timings for Chunk ${chunkIndex}: Duration=${chunkDuration.toFixed(2)}s, Words=${chunkInfo.wordCount}`);
+
+    // Update chunk data
+    chunkInfo.loaded = true;
+    chunkInfo.duration = chunkDuration;
+
+    // Calculate the start time of this chunk based on durations of *loaded* preceding chunks
+    let chunkStartTime = 0;
+    for (let i = 0; i < chunkIndex; i++) {
+      if (chunksData[i]?.loaded) { // Only add duration if the previous chunk actually loaded
+        chunkStartTime += chunksData[i].duration;
+      }
+      // If a previous chunk failed, its duration is 0, so timing might be off.
+      // A more robust approach might involve placeholder durations or skipping failed chunks entirely in playback.
+    }
+    chunkInfo.startTime = chunkStartTime;
+    chunkInfo.endTime = chunkStartTime + chunkDuration;
+
+    // Distribute duration linearly among words in this chunk
+    const wordCountInChunk = chunkInfo.wordCount;
+    if (wordCountInChunk > 0) {
+      const avgWordDuration = chunkDuration / wordCountInChunk;
+      log(`Chunk ${chunkIndex} timing: Start=${chunkStartTime.toFixed(2)}s, End=${chunkInfo.endTime.toFixed(2)}s, AvgWordDur=${avgWordDuration.toFixed(3)}s`);
+
+      for (let i = chunkInfo.startIndex; i <= chunkInfo.endIndex; i++) {
+          if (i >= 0 && i < wordTimings.length) { // Bounds check
+              const timing = wordTimings[i];
+              if (timing.chunk === chunkIndex) { // Ensure word belongs to this chunk
+                  // Simple linear distribution:
+                  timing.startTime = chunkStartTime + (timing.indexInChunk * avgWordDuration);
+                  timing.endTime = timing.startTime + avgWordDuration; // End time is start + average duration
+
+                  // Update the corresponding word element UI
+                  const wordEl = wordElements[i];
+                  if (wordEl) {
+                      wordEl.classList.remove('loading');
+                      // Add timing data attribute for hover tooltip (if debug enabled)
+                      if (showTimingDebug && debugEnabled) {
+                          wordEl.dataset.time = timing.startTime.toFixed(2);
+                      }
+                  }
+              }
+          } else {
+              log(`Warning: Word index ${i} out of bounds during timing update for chunk ${chunkIndex}.`, {startIndex: chunkInfo.startIndex, endIndex: chunkInfo.endIndex, totalWords: wordTimings.length }, 'warn');
+          }
+      }
+    } else {
+      log(`Chunk ${chunkIndex} has 0 words, skipping timing distribution.`);
+    }
+
+    // Update the overall loaded duration (sum of loaded chunk durations)
+    loadedDuration = chunksData.reduce((sum, chunk) => sum + (chunk.loaded ? chunk.duration : 0), 0);
+
+    // Update timeline visualization if it's enabled and visible
+    if (debugEnabled && !E.timeline.classList.contains('hidden')) {
+      // Recalculate total duration based on currently loaded chunks for timeline scaling
+      const currentTotalDurationForTimeline = chunksData.reduce((sum, chunk) => sum + (chunk.loaded ? chunk.duration : 0), 0);
+      if (currentTotalDurationForTimeline > 0) {
+          updateTimelineVisualization(currentTotalDurationForTimeline);
       }
     }
-    
-    // Update timeline visualization if debugging enabled
-    if (debugEnabled) {
-      updateTimelineVisualization();
-      
-      // Log first few word timings as sample
-      const sample = wordTimings
-        .filter(t => t.chunk === chunkIndex)
-        .slice(0, 5)
-        .map(t => ({
-          word: t.word,
-          start: t.startTime.toFixed(2) + 's',
-          end: t.endTime.toFixed(2) + 's'
-        }));
-      
-      log(`Sample word timings for chunk ${chunkIndex}:`, sample);
-    }
   };
-  
-  // NEW: Update timeline visualization 
-  const updateTimelineVisualization = () => {
-    // Clear existing visualization (except playhead)
+
+
+  // Update the timeline visualization (markers, dots)
+  const updateTimelineVisualization = (currentTotalDur) => {
+    if (!debugEnabled || !currentTotalDur || currentTotalDur <= 0) return; // Only run if debugging and duration > 0
+
+    log(`Updating timeline visualization (Total Duration: ${currentTotalDur.toFixed(2)}s)`);
+
+    // Clear existing markers/dots (keep playhead)
     Array.from(E.timeline.children).forEach(child => {
       if (child !== E.playhead) {
         E.timeline.removeChild(child);
       }
     });
-    
+
     // Add chunk markers
     chunksData.forEach((chunk, i) => {
-      if (!chunk.loaded) return;
-      
-      const startPercent = (chunk.startTime / totalDuration) * 100;
-      const widthPercent = (chunk.duration / totalDuration) * 100;
-      
+      if (!chunk.loaded || chunk.duration <= 0) return; // Skip unloaded or zero-duration chunks
+
+      const startPercent = (chunk.startTime / currentTotalDur) * 100;
+      const widthPercent = (chunk.duration / currentTotalDur) * 100;
+
+      // Ensure valid percentages
+      if (startPercent < 0 || startPercent > 100 || widthPercent <= 0) {
+          log(`Skipping invalid chunk marker for chunk ${i}`, {startPercent, widthPercent}, 'warn');
+          return;
+      }
+
       const marker = document.createElement('div');
       marker.className = 'chunk-marker';
-      marker.style.left = `${startPercent}%`;
-      marker.style.width = `${widthPercent}%`;
-      marker.textContent = `${i}: ${chunk.wordCount}w`;
-      marker.title = `Chunk ${i}: ${chunk.duration.toFixed(2)}s, ${chunk.wordCount} words`;
-      
+      marker.style.left = `${Math.max(0, startPercent)}%`; // Clamp to 0-100 range
+      marker.style.width = `${Math.min(100 - startPercent, widthPercent)}%`; // Clamp width
+      marker.textContent = `C${i}`; // Shorter label
+      marker.title = `Chunk ${i}: ${chunk.startTime.toFixed(1)}s-${chunk.endTime.toFixed(1)}s (${chunk.wordCount}w)`;
       E.timeline.appendChild(marker);
     });
-    
-    // Add word markers (just a sample to avoid overloading)
-    const sampleRate = Math.ceil(wordTimings.length / 100); // Show about 100 word markers
-    
+
+    // Add word dots (sampling for performance)
+    const maxDots = 200; // Limit number of dots drawn
+    const sampleRate = Math.max(1, Math.ceil(wordTimings.length / maxDots));
+
     wordTimings.forEach((timing, i) => {
-      if (i % sampleRate !== 0) return; // Skip most words for performance
-      
-      const position = (timing.startTime / totalDuration) * 100;
-      
-      const dot = document.createElement('div');
-      dot.className = 'word-dot';
-      dot.style.left = `${position}%`;
-      dot.title = `${timing.word} (${timing.startTime.toFixed(2)}s)`;
-      
-      E.timeline.appendChild(dot);
+      // Only draw if word is loaded and at sample rate interval
+      if (i % sampleRate === 0 && chunksData[timing.chunk]?.loaded) {
+        const positionPercent = (timing.startTime / currentTotalDur) * 100;
+
+        // Ensure valid percentage
+        if (positionPercent >= 0 && positionPercent <= 100) {
+            const dot = document.createElement('div');
+            dot.className = 'word-dot';
+            dot.style.left = `${positionPercent}%`;
+            dot.title = `${timing.word} @ ${timing.startTime.toFixed(2)}s`;
+            dot.dataset.index = i; // Add index for potential highlighting
+            E.timeline.appendChild(dot);
+        }
+      }
     });
   };
-  
-  // NEW: Update playhead position in timeline
-  const updatePlayhead = (time) => {
-    if (!debugEnabled || totalDuration === 0) return;
-    
-    const position = (time / totalDuration) * 100;
-    E.playhead.style.left = `${position}%`;
+
+  // Update the playhead position on the timeline
+  const updatePlayheadPosition = (currentTime) => {
+    if (!debugEnabled || !totalDuration || totalDuration <= 0) return;
+    const positionPercent = Math.min(100, Math.max(0, (currentTime / totalDuration) * 100)); // Clamp 0-100
+    E.playhead.style.left = `${positionPercent}%`;
   };
 
-  // Find which chunk and offset to play for a given time
-  const locateTimePosition = (time) => {
-    // Handle case where time is beyond loaded duration
-    if (time >= loadedDuration) {
-      const lastIndex = buffers.findLastIndex(b => b);
-      return { chunk: lastIndex === -1 ? 0 : lastIndex, offset: 0 };
-    }
-    
-    // Find the chunk that contains this time using chunksData
+  // Find the chunk index and offset within that chunk for a given absolute time
+  const findPositionForTime = (time) => {
+    let accumulatedTime = 0;
     for (let i = 0; i < chunksData.length; i++) {
-      if (chunksData[i].loaded && 
-          time >= chunksData[i].startTime && 
-          time < chunksData[i].endTime) {
-        
-        const offset = time - chunksData[i].startTime;
-        return { chunk: i, offset: offset };
+      const chunk = chunksData[i];
+      if (chunk.loaded && chunk.duration > 0) { // Only consider loaded chunks with duration
+        if (time >= accumulatedTime && time < accumulatedTime + chunk.duration) {
+          const offset = time - accumulatedTime;
+          // log(`Time ${time.toFixed(2)}s maps to Chunk ${i}, Offset ${offset.toFixed(2)}s`);
+          return { chunkIndex: i, offset: offset };
+        }
+        accumulatedTime += chunk.duration;
       }
     }
-    
-    // Fallback: linear search through buffers if chunksData lookup fails
-    let currentTime = 0;
-    for (let i = 0; i < buffers.length; i++) {
-      const buffer = buffers[i];
-      if (!buffer) continue; // Skip unloaded chunks
-      
-      const duration = buffer.duration;
-      if (time < currentTime + duration) {
-        const offset = time - currentTime;
-        return { chunk: i, offset: offset };
-      }
-      
-      currentTime += duration;
+    // If time is beyond the last loaded chunk, return the start of the first chunk or end of last?
+    // Let's return the end of the last loaded chunk.
+    const lastLoadedChunkIndex = chunksData.findLastIndex(c => c.loaded && c.duration > 0);
+    if (lastLoadedChunkIndex !== -1) {
+        log(`Time ${time.toFixed(2)}s is beyond loaded duration. Mapping to end of chunk ${lastLoadedChunkIndex}.`);
+        return { chunkIndex: lastLoadedChunkIndex, offset: chunksData[lastLoadedChunkIndex].duration };
     }
-    
-    // Final fallback: use last loaded chunk
-    const lastLoaded = buffers.findLastIndex(b => b);
-    return { chunk: lastLoaded === -1 ? 0 : lastLoaded, offset: 0 };
+
+    log(`Could not map time ${time.toFixed(2)}s to any loaded chunk. Defaulting to start.`, null, 'warn');
+    return { chunkIndex: 0, offset: 0 }; // Fallback: start of the first chunk
   };
 
-  // Seek to a specific time
+  // Seek playback to a specific absolute time
   const seekToTime = (time) => {
-    if (!buffers.some(b => b)) {
-      log(`Cannot seek: no buffers loaded`);
+    if (!audioBuffers.some(b => b) || totalDuration <= 0) {
+      log('Cannot seek: No audio loaded or zero duration.', null, 'warn');
       return;
     }
-    
-    // Ensure time is within valid range
-    time = Math.max(0, Math.min(time, loadedDuration));
-    
-    log(`Seeking to ${time.toFixed(2)}s`);
-    
-    // Find the chunk this time belongs to
-    const { chunk, offset } = locateTimePosition(time);
-    
-    // Cancel any current playback
-    cancelPlayback();
-    
-    if (paused) {
-      // Just update the paused position
-      pausedAt = time;
-      updateUI(time);
-      log(`Updated paused position to ${time.toFixed(2)}s`);
+    // Clamp time within 0 and total duration
+    const targetTime = Math.max(0, Math.min(time, totalDuration));
+    log(`Seeking to time: ${targetTime.toFixed(2)}s`);
+
+    const { chunkIndex, offset } = findPositionForTime(targetTime);
+
+    // Stop current playback before seeking
+    const wasPlaying = isPlaying;
+    stopPlayback(true); // Stop silently
+
+    // Update UI immediately
+    updateUIForTime(targetTime);
+
+    // If it was playing, restart playback from the new position
+    if (wasPlaying) {
+      startPlayback(chunkIndex, offset, targetTime);
     } else {
-      // Start playback from this position
-      startPlayback(chunk, offset, time);
+      // If it was paused or stopped, just update the paused time
+      isPaused = true; // Set to paused state after seeking
+      pausedAtTime = targetTime;
+      E.play.disabled = false; // Enable play button
+      E.pause.disabled = true; // Disable pause button
+      log(`Seek complete. Playback paused at ${targetTime.toFixed(2)}s.`);
     }
   };
 
-  // COMPLETELY REVISED: Seek to a specific word
+  // Seek playback to the start time of a specific word index
   const seekToWord = (wordIndex) => {
-    // Validate word index
-    wordIndex = parseInt(wordIndex);
-    
-    if (isNaN(wordIndex) || wordIndex < 0 || wordIndex >= wordTimings.length) {
-      log(`Cannot seek to word ${wordIndex}: invalid index`, {
-        wordCount: wordTimings.length,
-      });
+    if (wordIndex < 0 || wordIndex >= wordTimings.length) {
+      log(`Cannot seek: Invalid word index ${wordIndex}.`, null, 'error');
       return;
     }
-    
-    // Get timing data for this word
     const timing = wordTimings[wordIndex];
-    if (!timing) {
-      log(`No timing data for word ${wordIndex}`, { wordIndex });
+    const chunkInfo = chunksData[timing.chunk];
+
+    if (!timing || !chunkInfo || !chunkInfo.loaded) {
+      log(`Cannot seek to word ${wordIndex}: Timing data or chunk not loaded.`, { timing, chunkInfo }, 'warn');
+      updateStatus('Audio for this word is not loaded yet.');
       return;
     }
-    
-    // Make sure the chunk is loaded
-    const chunkIndex = timing.chunk;
-    if (!chunksData[chunkIndex]?.loaded || !buffers[chunkIndex]) {
-      log(`Word ${wordIndex} ("${timing.word}") is in chunk ${chunkIndex} which is not loaded yet`);
-      return;
-    }
-    
-    // Get the calculated word start time
-    const time = timing.startTime;
-    log(`Seeking to word "${timing.word}" (index ${wordIndex}) at time ${time.toFixed(2)}s`);
-    
-    // Seek to this time
-    seekToTime(time);
+
+    const targetTime = timing.startTime;
+    log(`Seeking to word "${timing.word}" (Index: ${wordIndex}) at time ${targetTime.toFixed(2)}s`);
+    seekToTime(targetTime);
   };
 
-  // Initialize audio context
-  const initAudioContext = () => {
-    if (!ctx) {
-      log('Initializing AudioContext');
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Create master gain node for volume control
-      gainNode = ctx.createGain();
-      gainNode.gain.value = E.volume.value;
-      gainNode.connect(ctx.destination);
-      
-      visualizer = new VoiceVisualizer('visualizer', ctx, {
-        mode: 'waveform',
-        color: 'gradient'
-      });
-      
-      log('AudioContext initialized', {
-        sampleRate: ctx.sampleRate
-      });
+  // Start playback sequence
+  const startPlayback = (startChunkIndex, startOffset = 0, absoluteStartTime = 0) => {
+    if (isPlaying) {
+        log('Playback already in progress.', null, 'warn');
+        return;
     }
-    
-    return ctx.resume(); // Ensure it's running
-  };
+    if (!audioBuffers.some(b => b)) {
+        log('Cannot start playback: No audio buffers loaded.', null, 'warn');
+        return;
+    }
 
-  // Start playback from a specific position
-  const startPlayback = (chunkIndex, offset = 0, absoluteTime = 0) => {
-    // Ensure audio context is initialized
-    initAudioContext();
-    
-    // Generate a new playback ID to track this session
-    playbackId = Date.now();
-    const currentPlayback = playbackId;
-    
-    // Update state
-    playing = true;
-    paused = false;
-    startTime = ctx.currentTime - absoluteTime;
-    
-    log(`Starting playback: chunk ${chunkIndex}, offset ${offset.toFixed(2)}s, abs time ${absoluteTime.toFixed(2)}s`);
-    
+    initAudioContext(); // Ensure context is running
+
+    const newPlaybackId = Date.now(); // Unique ID for this playback sequence
+    currentPlaybackId = newPlaybackId;
+    isPlaying = true;
+    isPaused = false;
+    playbackStartTime = audioContext.currentTime - absoluteStartTime; // Adjust context time based on where we start
+
+    log(`Starting playback sequence (ID: ${newPlaybackId}): Chunk ${startChunkIndex}, Offset ${startOffset.toFixed(2)}s, AbsTime ${absoluteStartTime.toFixed(2)}s`);
+
     // Update UI
     E.play.disabled = true;
     E.pause.disabled = false;
     E.stop.disabled = false;
-    
-    // Start playing from the specified position
-    playChunk(chunkIndex, offset, currentPlayback);
-    
-    // Start the update loop
-    requestAnimationFrame(updatePlayback);
+
+    // Clear any previous sources
+    stopAndClearSources();
+
+    // Begin playing the sequence
+    playChunkRecursive(startChunkIndex, startOffset, newPlaybackId);
+
+    // Start UI update loop
+    requestAnimationFrame(playbackUpdateLoop);
   };
 
-  // Play a specific chunk
-  const playChunk = (index, offset = 0, id) => {
-    // Check if this playback request is still valid
-    if (id !== playbackId) {
-      log(`Ignoring stale playback request: ${id} vs ${playbackId}`);
+  // Recursive function to play chunks sequentially
+  const playChunkRecursive = (chunkIndex, offset, playbackId) => {
+    // --- Pre-checks ---
+    // Check if this playback sequence is still the active one
+    if (playbackId !== currentPlaybackId || !isPlaying) {
+      log(`Stopping chunk playback: Playback ID mismatch or not playing (Current: ${currentPlaybackId}, Target: ${playbackId}, Playing: ${isPlaying})`);
       return;
     }
-    
-    // Check if we've reached the end
-    if (index >= buffers.length) {
-      log('Reached end of audio');
-      stopPlayback();
+    // Check if we've gone past the last chunk
+    if (chunkIndex >= audioBuffers.length) {
+      log('Playback finished: Reached end of chunks.');
+      stopPlayback(); // Normal end of playback
       return;
     }
-    
-    // Get the audio buffer for this chunk
-    const buffer = buffers[index];
-    
-    // If the buffer isn't loaded yet, wait and retry
-    if (!buffer) {
-      log(`Chunk ${index} not loaded yet, waiting...`);
+
+    const buffer = audioBuffers[chunkIndex];
+    const chunkInfo = chunksData[chunkIndex];
+
+    // If the buffer for the current chunk isn't loaded, wait and retry
+    if (!buffer || !chunkInfo || !chunkInfo.loaded) {
+      log(`Chunk ${chunkIndex} not ready, waiting...`);
+      updateStatus(`Waiting for chunk ${chunkIndex + 1}...`);
+      // Check again shortly
       setTimeout(() => {
-        if (playing && id === playbackId) {
-          playChunk(index, offset, id);
+        // Ensure playback hasn't been stopped/changed in the meantime
+        if (playbackId === currentPlaybackId && isPlaying) {
+          playChunkRecursive(chunkIndex, offset, playbackId);
         }
-      }, 300);
+      }, 200); // Wait 200ms
       return;
     }
-    
-    log(`Playing chunk ${index} from offset ${offset.toFixed(2)}s`);
-    
-    // Create a new audio source
-    const source = ctx.createBufferSource();
+
+    // --- Play the Chunk ---
+    log(`Playing Chunk ${chunkIndex} (ID: ${playbackId}) from offset ${offset.toFixed(2)}s`);
+    updateStatus(`Playing chunk ${chunkIndex + 1}/${totalChunksCount}`);
+
+    const source = audioContext.createBufferSource();
     source.buffer = buffer;
-    
-    // Connect to visualizer
-    source.connect(visualizer.analyser);
-    visualizer.analyser.connect(gainNode);
-    
-    // When this chunk ends, play the next one
+
+    // Connect source -> gain -> destination
+    source.connect(masterGainNode);
+    // TODO: Connect to visualizer if implemented: source.connect(visualizer.analyser);
+
+    // Store the source node so we can stop it later if needed
+    activeAudioSources[chunkIndex] = source;
+
+    // Calculate when the next chunk should start
+    const remainingDuration = buffer.duration - offset;
+
+    // Schedule the next chunk to play when this one ends
     source.onended = () => {
-      // Only proceed if this is still the active playback
-      if (playing && id === playbackId) {
-        log(`Chunk ${index} ended, playing next chunk`);
-        playChunk(index + 1, 0, id);
+      log(`Chunk ${chunkIndex} (ID: ${playbackId}) ended.`);
+      activeAudioSources[chunkIndex] = null; // Clear reference
+
+      // Check again if playback should continue
+      if (playbackId === currentPlaybackId && isPlaying) {
+        playChunkRecursive(chunkIndex + 1, 0, playbackId); // Play next chunk from the beginning
       }
     };
-    
-    // Save the source so we can stop it later
-    audioSources[index] = source;
-    
-    // Start playback with the specified offset
-    source.start(0, Math.min(offset, buffer.duration));
+
+    // Start playback for this chunk at the calculated offset
+    // Ensure offset is valid
+    const validOffset = Math.max(0, Math.min(offset, buffer.duration));
+    if(validOffset !== offset){
+        log(`Corrected invalid offset ${offset.toFixed(2)} to ${validOffset.toFixed(2)} for chunk ${chunkIndex}`, null, 'warn');
+    }
+
+    // Handle potential edge case where offset >= duration
+    if (validOffset >= buffer.duration && buffer.duration > 0) {
+        log(`Skipping chunk ${chunkIndex} as offset ${validOffset.toFixed(2)} >= duration ${buffer.duration.toFixed(2)}`, null, 'warn');
+        // Immediately trigger the 'onended' logic to move to the next chunk
+        source.onended();
+        return; // Don't actually start the source
+    }
+
+    try {
+        source.start(0, validOffset); // Start now, at the specified offset
+    } catch (e) {
+        log(`Error starting source for chunk ${chunkIndex}`, e, 'error');
+        // Attempt to recover by moving to the next chunk
+        source.onended();
+    }
   };
 
-  // Cancel any current playback
-  const cancelPlayback = () => {
-    log('Canceling current playback');
-    
-    // Stop all audio sources
-    audioSources.forEach((source, i) => {
+  // Stop all currently playing audio sources
+  const stopAndClearSources = () => {
+    log(`Stopping ${activeAudioSources.filter(Boolean).length} active audio source(s).`);
+    activeAudioSources.forEach((source, index) => {
       if (source) {
-        log(`Stopping audio source for chunk ${i}`);
-        source.onended = null; // Remove callback
-        try { source.stop(); } catch (e) {
-          log(`Error stopping source for chunk ${i}`, e, 'warn');
+        try {
+          source.onended = null; // Prevent recursion/callback issues
+          source.stop();
+          log(`Stopped source for chunk ${index}.`);
+        } catch (e) {
+          // Ignore errors if source already stopped
+          if (e.name !== 'InvalidStateError') {
+            log(`Error stopping source for chunk ${index}: ${e.message}`, e, 'warn');
+          }
         }
       }
     });
-    
-    // Reset sources array
-    audioSources = [];
-    
-    // Generate a new playback ID to invalidate any pending callbacks
-    playbackId = Date.now();
+    activeAudioSources = new Array(chunksData.length).fill(null); // Reset the array
   };
 
   // Pause playback
   const pausePlayback = () => {
-    if (!playing) {
-      log('Cannot pause: not playing');
+    if (!isPlaying) {
+      log('Cannot pause: Not currently playing.', null, 'warn');
       return;
     }
-    
-    pausedAt = ctx.currentTime - startTime;
-    playing = false;
-    paused = true;
-    
-    log(`Pausing at ${pausedAt.toFixed(2)}s`);
-    
-    // Cancel current playback
-    cancelPlayback();
-    
+    pausedAtTime = audioContext.currentTime - playbackStartTime; // Record exact pause time
+    isPlaying = false;
+    isPaused = true;
+    log(`Pausing playback (ID: ${currentPlaybackId}) at ${pausedAtTime.toFixed(2)}s`);
+
+    stopAndClearSources(); // Stop all chunks
+
     // Update UI
-    E.play.disabled = false;
-    E.pause.disabled = true;
-    
-    status(`Paused at ${fmt(pausedAt)}`);
+    E.play.disabled = false; // Enable play (resume)
+    E.pause.disabled = true; // Disable pause
+    updateStatus(`Paused at ${formatTime(pausedAtTime)}`);
   };
 
-  // Resume playback
+  // Resume playback from paused state
   const resumePlayback = () => {
-    if (!paused) {
-      log('Cannot resume: not paused');
+    if (!isPaused) {
+      log('Cannot resume: Not paused.', null, 'warn');
       return;
     }
-    
-    log(`Resuming from ${pausedAt.toFixed(2)}s`);
-    
-    // Find the chunk to resume from
-    const { chunk, offset } = locateTimePosition(pausedAt);
-    
-    // Start playback from the pause position
-    startPlayback(chunk, offset, pausedAt);
+    log(`Resuming playback from ${pausedAtTime.toFixed(2)}s`);
+
+    // Find the chunk and offset corresponding to the pause time
+    const { chunkIndex, offset } = findPositionForTime(pausedAtTime);
+
+    // Start playback sequence from the calculated position
+    startPlayback(chunkIndex, offset, pausedAtTime);
   };
 
-  // Stop playback
+  // Stop playback completely
   const stopPlayback = (silent = false) => {
-    // Cancel current playback
-    cancelPlayback();
-    
-    // Reset state
-    playing = false;
-    paused = false;
-    pausedAt = 0;
-    
-    // Clear word highlighting
-    if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
-      wordElements[currentWordIndex].classList.remove('active');
+    if (!isPlaying && !isPaused) {
+        // log('Already stopped.'); // Avoid redundant logs if called multiple times
+        return;
+    }
+    const wasPlaying = isPlaying;
+    const currentId = currentPlaybackId;
+    log(`Stopping playback (ID: ${currentId}, Silent: ${silent})`);
+
+    isPlaying = false;
+    isPaused = false;
+    currentPlaybackId = 0; // Invalidate current playback ID
+
+    stopAndClearSources(); // Stop all audio sources
+
+    // Reset UI unless stopping silently
+    if (!silent) {
+      pausedAtTime = 0; // Reset pause time
+      updateUIForTime(0); // Reset progress bar, time display, highlighting
+      E.play.disabled = !audioBuffers.some(b => b); // Enable play only if buffers exist
+      E.pause.disabled = true; // Disable pause
+      E.stop.disabled = !audioBuffers.some(b => b); // Disable stop if no buffers
+      updateStatus('Playback stopped.');
+    }
+
+    // Clear active word highlight
+    if (currentWordIndex !== -1 && currentWordIndex < wordElements.length) {
+      wordElements[currentWordIndex]?.classList.remove('active');
+      // Also update timeline dot if applicable
+      const dot = E.timeline.querySelector(`.word-dot[data-index="${currentWordIndex}"]`);
+      dot?.classList.remove('active');
     }
     currentWordIndex = -1;
-    
-    if (!silent) {
-      log('Playback stopped');
-      
-      // Reset UI
-      E.fill.style.width = '0%';
-      E.time.textContent = `00:00 / ${fmt(totalDuration)}`;
-      E.play.disabled = false;
-      E.pause.disabled = true;
-      E.stop.disabled = false;
-      
-      // Reset playhead
-      updatePlayhead(0);
-    }
   };
 
-  // Update playback UI (called on each animation frame)
-  const updatePlayback = () => {
-    if (!playing) return;
-    
-    // Calculate current time
-    const currentTime = ctx.currentTime - startTime;
-    
-    // Check if we've reached the end
-    if (currentTime >= totalDuration) {
-      log(`Reached end of playback (${currentTime.toFixed(2)}s >= ${totalDuration.toFixed(2)}s)`);
-      stopPlayback();
+  // Main loop for updating UI during playback (progress bar, time, word highlight)
+  const playbackUpdateLoop = () => {
+    // Stop the loop if playback is no longer active
+    if (!isPlaying) {
       return;
     }
-    
-    // Update UI
-    updateUI(currentTime);
-    
-    // Continue updates
-    requestAnimationFrame(updatePlayback);
+
+    // Calculate current playback time
+    const currentTime = audioContext.currentTime - playbackStartTime;
+
+    // Ensure time doesn't exceed total duration (can happen due to timing inaccuracies)
+    const clampedTime = Math.min(currentTime, totalDuration);
+
+    // Update UI elements
+    updateUIForTime(clampedTime);
+
+    // Check if playback should end
+    if (clampedTime >= totalDuration && totalDuration > 0) {
+        log(`Playback loop reached end: ${clampedTime.toFixed(2)}s >= ${totalDuration.toFixed(2)}s`);
+        stopPlayback(); // Stop normally
+        return; // End the loop
+    }
+
+
+    // Request the next frame
+    requestAnimationFrame(playbackUpdateLoop);
   };
 
-  // Update UI with current time
-  const updateUI = (time) => {
-    // Update progress bar
+  // Update all relevant UI elements based on the current playback time
+  const updateUIForTime = (time) => {
+    // Update progress bar fill
     const percentage = totalDuration > 0 ? (time / totalDuration) * 100 : 0;
-    E.fill.style.width = `${percentage}%`;
-    
-    // Update time display
-    E.time.textContent = `${fmt(time)} / ${fmt(totalDuration)}`;
-    
-    // Update playhead position
-    updatePlayhead(time);
-    
-    // Update word highlighting
+    E.fill.style.width = `${Math.min(100, Math.max(0, percentage))}%`; // Clamp 0-100
+
+    // Update time display (MM:SS / MM:SS)
+    E.time.textContent = `${formatTime(time)} / ${formatTime(totalDuration)}`;
+
+    // Update timeline playhead position
+    updatePlayheadPosition(time);
+
+    // Update word highlighting in the text box
     updateWordHighlight(time);
   };
 
-  // IMPROVED: Word highlighting with direct timing data lookup
+  // Highlight the word corresponding to the current playback time
+  let lastHighlightUpdateTime = 0;
+  const highlightUpdateThrottle = 50; // ms - Update highlight max every 50ms
+
   const updateWordHighlight = (time) => {
-    // Throttle updates for performance
-    const now = Date.now();
-    if (now - (updateWordHighlight.lastUpdate || 0) < 50) return;
-    updateWordHighlight.lastUpdate = now;
-    
-    let newWordIndex = -1;
-    
-    // Direct approach: find the word whose timing contains the current time
-    for (let i = 0; i < wordTimings.length; i++) {
-      const timing = wordTimings[i];
-      
-      // Check if time is within this word's timing boundary
-      if (timing.startTime <= time && time <= timing.endTime) {
-        newWordIndex = i;
-        break;
+      const now = Date.now();
+      if (now - lastHighlightUpdateTime < highlightUpdateThrottle) {
+          return; // Throttle updates
       }
-    }
-    
-    // If no direct match, find the closest upcoming word
-    if (newWordIndex === -1) {
-      let closestTime = Infinity;
-      let closestIndex = -1;
-      
+      lastHighlightUpdateTime = now;
+
+      let newActiveWordIndex = -1;
+
+      // Find the word whose time range includes the current time
+      // Optimize: Start search near the previous index? For now, linear search.
       for (let i = 0; i < wordTimings.length; i++) {
-        const timing = wordTimings[i];
-        
-        // If word has valid timing and is in the future
-        if (timing.startTime >= time && timing.startTime < closestTime) {
-          closestTime = timing.startTime;
-          closestIndex = i;
-        }
+          const timing = wordTimings[i];
+          // Check if the word's chunk is loaded before considering it
+          if (chunksData[timing.chunk]?.loaded && time >= timing.startTime && time < timing.endTime) {
+              newActiveWordIndex = i;
+              break; // Found the active word
+          }
       }
-      
-      // If we found a close upcoming word
-      if (closestIndex !== -1) {
-        newWordIndex = closestIndex;
-      } else {
-        // If everything is in the past, use the last word
-        newWordIndex = wordTimings.length - 1;
+
+      // If no word is active at the exact time (e.g., silence), find the *last* word that *finished* before the current time.
+      if (newActiveWordIndex === -1) {
+          for (let i = wordTimings.length - 1; i >= 0; i--) {
+              const timing = wordTimings[i];
+              if (chunksData[timing.chunk]?.loaded && time >= timing.endTime) {
+                  newActiveWordIndex = i;
+                  break;
+              }
+          }
       }
-    }
-    
-    // Only update if it's a different word
-    if (newWordIndex !== currentWordIndex && newWordIndex >= 0 && newWordIndex < wordElements.length) {
-      // Remove highlight from previous word
-      if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
-        wordElements[currentWordIndex].classList.remove('active');
-        
-        // Also update timeline dots
-        const prevDot = document.querySelector(`.word-dot[data-index="${currentWordIndex}"]`);
-        if (prevDot) prevDot.classList.remove('active');
+
+
+      // Update highlighting only if the active word has changed
+      if (newActiveWordIndex !== currentWordIndex) {
+          // Remove highlight from the previously active word (if any)
+          if (currentWordIndex !== -1 && currentWordIndex < wordElements.length) {
+              wordElements[currentWordIndex]?.classList.remove('active');
+              const prevDot = E.timeline.querySelector(`.word-dot[data-index="${currentWordIndex}"]`);
+              prevDot?.classList.remove('active');
+          }
+
+          // Add highlight to the new active word (if found)
+          if (newActiveWordIndex !== -1 && newActiveWordIndex < wordElements.length) {
+              const newWordElement = wordElements[newActiveWordIndex];
+              newWordElement?.classList.add('active');
+              const newDot = E.timeline.querySelector(`.word-dot[data-index="${newActiveWordIndex}"]`);
+              newDot?.classList.add('active');
+
+              // --- Auto-scroll text box ---
+              // Check if the highlighted word is outside the visible area and scroll if needed
+              const container = E.textBox;
+              const wordRect = newWordElement.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+
+              // Check if word top is above visible area or word bottom is below visible area
+              if (wordRect.top < containerRect.top || wordRect.bottom > containerRect.bottom) {
+                  // Scroll the word into the vertical center of the container
+                  const scrollOffset = newWordElement.offsetTop - container.offsetTop - (container.clientHeight / 2) + (newWordElement.clientHeight / 2);
+                  container.scrollTop = scrollOffset;
+                  // newWordElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Alternative simpler scroll
+              }
+          }
+          // Update the current index
+          currentWordIndex = newActiveWordIndex;
       }
-      
-      // Add highlight to current word
-      const wordEl = wordElements[newWordIndex];
-      wordEl.classList.add('active');
-      
-      // Highlight timeline dot if it exists
-      const dot = document.querySelector(`.word-dot[data-index="${newWordIndex}"]`);
-      if (dot) dot.classList.add('active');
-      
-      // Ensure word is visible
-      const container = E.textBox;
-      const wordTop = wordEl.offsetTop;
-      const wordBottom = wordTop + wordEl.offsetHeight;
-      const containerTop = container.scrollTop;
-      const containerBottom = containerTop + container.offsetHeight;
-      
-      if (wordTop < containerTop + 30) {
-        container.scrollTop = wordTop - 30;
-      } else if (wordBottom > containerBottom - 30) {
-        container.scrollTop = wordBottom - container.offsetHeight + 30;
-      }
-      
-      currentWordIndex = newWordIndex;
-    }
   };
 
-  // Progress bar click handler
-  E.prog.onclick = e => {
-    if (!totalDuration) return;
-    
-    const rect = E.prog.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    const targetTime = ratio * totalDuration;
-    
-    log(`Progress bar clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`);
-    seekToTime(targetTime);
-  };
-  
-  // Timeline click handler
-  E.timeline.onclick = e => {
-    if (!totalDuration || !debugEnabled) return;
-    
-    const rect = E.timeline.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    const targetTime = ratio * totalDuration;
-    
-    log(`Timeline clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`);
-    seekToTime(targetTime);
-  };
 
-  // Playback control buttons
-  E.play.onclick = () => {
-    if (paused) {
-      resumePlayback();
-    } else {
-      startPlayback(0, 0, 0);
-    }
-  };
-  
-  E.pause.onclick = pausePlayback;
-  E.stop.onclick = stopPlayback;
-
-  // Create download link
+  // Create and trigger a download link for the combined audio
   const createDownloadLink = () => {
-    log('Creating download link');
-    
-    if (!audioBlobs.length) {
-      log('No audio blobs to download', null, 'error');
-      status('No audio available for download', true);
+    log('Attempting to create download link...');
+    const validBlobs = audioBlobs.filter(Boolean); // Filter out null entries (failed chunks)
+
+    if (validBlobs.length === 0) {
+      log('No valid audio blobs available for download.', null, 'error');
+      updateStatus('Download failed: No audio data.', true);
       return;
     }
-    
+
+    log(`Combining ${validBlobs.length} audio blob(s) for download.`);
+
     try {
-      log(`Creating combined blob from ${audioBlobs.length} chunks`);
-      
-      // Create a single blob from all chunks
-      const combinedBlob = new Blob(audioBlobs, { type: 'audio/mp3' });
-      
-      log(`Combined blob created: ${(combinedBlob.size / 1024 / 1024).toFixed(2)} MB`);
-      
-      // Create download link
-      const url = URL.createObjectURL(combinedBlob);
-      
-      // Trigger download
-      const a = document.createElement('a');
-      const fileName = 'speech_' + new Date().toISOString().replace(/[:.]/g, '-') + '.mp3';
-      a.href = url;
-      a.download = fileName;
-      
-      log(`Triggering download: ${fileName}`);
-      document.body.appendChild(a);
-      a.click();
-      
-      // Clean up
+      // Combine all valid blobs into a single blob
+      const combinedBlob = new Blob(validBlobs, { type: 'audio/mp3' });
+      log(`Combined blob size: ${(combinedBlob.size / 1024 / 1024).toFixed(2)} MB`);
+
+      // Create a temporary URL for the blob
+      const blobUrl = URL.createObjectURL(combinedBlob);
+
+      // Create a temporary anchor element for download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      // Generate filename based on voice and date/time
+      const voiceName = E.voice.value.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.download = `tts_audio_${voiceName}_${timestamp}.mp3`;
+
+      // Programmatically click the link to trigger download
+      document.body.appendChild(link); // Append link to body (required for Firefox)
+      link.click();
+      document.body.removeChild(link); // Remove link from body
+
+      // Revoke the object URL after a short delay to allow download to start
       setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        log('Download cleanup complete');
-      }, 100);
-      
-      status('Download started', false);
-    } catch (err) {
-      log('Error creating download', err, 'error');
-      status('Failed to create download: ' + err.message, true);
+        URL.revokeObjectURL(blobUrl);
+        log('Blob URL revoked.');
+      }, 1500); // Wait 1.5 seconds
+
+      updateStatus('Audio download started.', false);
+
+    } catch (error) {
+      log('Error creating download link', error, 'error');
+      updateStatus(`Download failed: ${error.message}`, true);
     }
   };
-  
-  // Download button
-  E.download.onclick = createDownloadLink;
 
-  // Generate speech
-  E.gen.onclick = async () => {
-    if (!API) return status('Load voices first', true);
-    if (!E.voice.value) return status('Select a voice', true);
-    
-    try {
-      // Initialize audio context and ensure it's running
-      await initAudioContext();
-      
-      const text = E.txt.value.trim();
-      if (!text) return status('Enter text', true);
-      
-      // Reset state
-      stopPlayback();
-      buffers = [];
-      audioBlobs = [];
-      audioSources = [];
-      totalDuration = 0;
-      loadedDuration = 0;
-      loadingComplete = false;
-      E.download.disabled = true;
-      
-      // Split text into chunks
-      const chunks = splitText(text);
-      if (!chunks.length) return status('Failed to split text', true);
-      
-      totalChunks = chunks.length;
-      chunksReceived = 0;
-      
-      // Prepare UI
-      status(`Processing ${chunks.length} chunk(s)...`);
-      prepareTextDisplay(text, chunks);
-      E.gen.disabled = true;
-      
-      // Initialize buffers array
-      buffers = new Array(chunks.length);
-      audioBlobs = new Array(chunks.length);
-      
-      // Create request body template
-      const createRequest = chunk => ({
-        input: { text: chunk },
-        voice: {
-          languageCode: E.voice.selectedOptions[0].dataset.l,
-          name: E.voice.value
-        },
-        audioConfig: {
-          audioEncoding: 'MP3',
-          pitch: +E.pit.value,
-          speakingRate: +E.rat.value
-        }
-      });
-      
-      // Process chunks
-      // Start processing all chunks in parallel
-      const chunkPromises = chunks.map(async (chunk, index) => {
-        try {
-          log(`Generating chunk ${index + 1}/${chunks.length} (${chunk.length} chars)`);
-          
-          const response = await fetchJSON(`${SY}?key=${API}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(createRequest(chunk))
-          });
-          
-          if (!response.audioContent) {
-            throw new Error(`No audio content in response for chunk ${index + 1}`);
-          }
-          
-          log(`Received audio content for chunk ${index + 1}`);
-          
-          // Convert base64 to ArrayBuffer
-          const audioData = atob(response.audioContent);
-          const arrayBuffer = new Uint8Array(audioData.length);
-          for (let i = 0; i < audioData.length; i++) {
-            arrayBuffer[i] = audioData.charCodeAt(i);
-          }
-          
-          // Store the audio blob for downloading (prevent detached buffer issue)
-          const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
-          audioBlobs[index] = blob;
-          
-          log(`Created blob for chunk ${index + 1}: ${(blob.size / 1024).toFixed(2)} KB`);
-          
-          // Create a copy of the array buffer for decoding
-          // This is important to prevent the "detached ArrayBuffer" issue
-          const bufferCopy = arrayBuffer.slice(0).buffer;
-          
-          // Decode audio
-          try {
-            const audioBuffer = await decodeBuffer(bufferCopy);
-            
-            // Store the decoded buffer
-            buffers[index
+}); // End DOMContentLoaded listener
+</script>
+</body>
+</html>
