@@ -443,7 +443,7 @@
                             <span class="tooltip-text">Determines how the text is split into chunks: by sentence, paragraph, or exact character count.</span>
                         </span>
                     </label>
-                    <div class="toggle-group">
+                    <div class="toggle-group" id="chunkMethodGroup">
                         <button class="toggle-button active" data-value="sentence">Sentence</button>
                         <button class="toggle-button" data-value="paragraph">Paragraph</button>
                         <button class="toggle-button" data-value="exact">Exact</button>
@@ -457,7 +457,7 @@
                             <span class="tooltip-text">Sequential: Processes one chunk at a time. Parallel: Processes all chunks simultaneously.</span>
                         </span>
                     </label>
-                    <div class="toggle-group">
+                    <div class="toggle-group" id="processingStrategyGroup">
                         <button class="toggle-button active" data-value="sequential">Sequential</button>
                         <button class="toggle-button" data-value="parallel">Parallel</button>
                     </div>
@@ -527,7 +527,8 @@
             const rateValue = document.getElementById('rateValue');
             const chunkSizeRange = document.getElementById('chunkSizeRange');
             const chunkSizeValue = document.getElementById('chunkSizeValue');
-            const toggleButtons = document.querySelectorAll('.toggle-button');
+            const chunkMethodButtons = document.querySelectorAll('#chunkMethodGroup .toggle-button');
+            const processingStrategyButtons = document.querySelectorAll('#processingStrategyGroup .toggle-button');
             const textDisplay = document.getElementById('textDisplay');
             const statusMessage = document.getElementById('statusMessage');
             const errorMessage = document.getElementById('errorMessage');
@@ -625,124 +626,46 @@
                 { language: 'zh-TW', name: 'cmn-TW-Neural2-C', gender: 'FEMALE' }
             ];
 
-            // Populate language dropdown
-            const languages = [...new Set(voiceOptions.map(voice => voice.language))];
-            languages.forEach(language => {
-                const option = document.createElement('option');
-                option.value = language;
-                option.textContent = getLanguageName(language);
-                languageSelect.appendChild(option);
-            });
+            // Initialize UI
+            initializeUI();
 
-            // Initial population of voices based on default language
-            populateVoices(state.language);
-
-            // Initialize audio context
-            function initAudioContext() {
-                if (!state.audio.context) {
-                    try {
-                        window.AudioContext = window.AudioContext || window.webkitAudioContext;
-                        state.audio.context = new AudioContext();
-                    } catch (e) {
-                        showError("Web Audio API is not supported in your browser");
-                    }
-                } else if (state.audio.context.state === 'suspended') {
-                    state.audio.context.resume();
-                }
+            // UI Initialization Functions
+            function initializeUI() {
+                // Populate language dropdown
+                populateLanguages();
+                
+                // Populate voices based on default language
+                populateVoices(state.language);
+                
+                // Set up event listeners
+                setupEventListeners();
+                
+                // Update range displays
+                updateRangeDisplays();
+                
+                // Show ready message
+                showMessage("Ready to generate speech");
             }
 
-            // Event Listeners
-            languageSelect.addEventListener('change', function() {
-                state.language = this.value;
-                populateVoices(state.language);
-            });
-
-            voiceSelect.addEventListener('change', function() {
-                state.voice = this.value;
-            });
-
-            pitchRange.addEventListener('input', function() {
-                state.pitch = parseInt(this.value);
-                pitchValue.textContent = this.value;
-            });
-
-            rateRange.addEventListener('input', function() {
-                state.rate = parseFloat(this.value);
-                rateValue.textContent = state.rate.toFixed(2);
-            });
-
-            chunkSizeRange.addEventListener('input', function() {
-                state.chunkSize = parseInt(this.value);
-                chunkSizeValue.textContent = `${state.chunkSize} characters`;
-            });
-
-            // Toggle buttons for chunk method and processing strategy
-            toggleButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const parent = this.parentElement;
-                    const buttons = parent.querySelectorAll('.toggle-button');
-                    
-                    buttons.forEach(btn => btn.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    const property = parent.parentElement.querySelector('label').textContent.trim().toLowerCase().includes('method') 
-                        ? 'chunkMethod' 
-                        : 'processingStrategy';
-                    
-                    state[property] = this.dataset.value;
+            function populateLanguages() {
+                // Clear existing options
+                languageSelect.innerHTML = '';
+                
+                // Get unique languages
+                const languages = [...new Set(voiceOptions.map(voice => voice.language))];
+                
+                // Add options to select
+                languages.forEach(language => {
+                    const option = document.createElement('option');
+                    option.value = language;
+                    option.textContent = getLanguageName(language);
+                    languageSelect.appendChild(option);
                 });
-            });
-
-            generateButton.addEventListener('click', function() {
-                initAudioContext();
-                startTTSGeneration();
-            });
-
-            playButton.addEventListener('click', playAudio);
-            pauseButton.addEventListener('click', pauseAudio);
-            stopButton.addEventListener('click', stopAudio);
-            rewindButton.addEventListener('click', () => seekAudio(-10));
-            forwardButton.addEventListener('click', () => seekAudio(10));
-
-            timelineContainer.addEventListener('click', function(e) {
-                if (!state.audio.duration) return;
                 
-                const rect = this.getBoundingClientRect();
-                const position = (e.clientX - rect.left) / rect.width;
-                const seekTime = position * state.audio.duration;
-                
-                if (canSeekToTime(seekTime)) {
-                    seekToTime(seekTime);
-                } else {
-                    showMessage("Cannot seek to unbuffered section");
-                }
-            });
+                // Set default language
+                languageSelect.value = state.language;
+            }
 
-            timelineContainer.addEventListener('mousemove', function(e) {
-                if (!state.audio.duration) return;
-                
-                const rect = this.getBoundingClientRect();
-                const position = (e.clientX - rect.left) / rect.width;
-                const time = position * state.audio.duration;
-                
-                timelineTooltip.style.display = 'block';
-                timelineTooltip.style.left = `${e.clientX - rect.left}px`;
-                timelineTooltip.textContent = formatTime(time);
-                
-                if (!canSeekToTime(time)) {
-                    timelineTooltip.style.backgroundColor = 'rgba(234, 67, 53, 0.8)';
-                } else {
-                    timelineTooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                }
-            });
-
-            timelineContainer.addEventListener('mouseout', function() {
-                timelineTooltip.style.display = 'none';
-            });
-
-            downloadButton.addEventListener('click', downloadAudio);
-
-            // Functions
             function populateVoices(language) {
                 // Clear existing options
                 voiceSelect.innerHTML = '';
@@ -765,6 +688,126 @@
                 }
             }
 
+            function setupEventListeners() {
+                // Language and voice selection
+                languageSelect.addEventListener('change', function() {
+                    state.language = this.value;
+                    populateVoices(state.language);
+                });
+                
+                voiceSelect.addEventListener('change', function() {
+                    state.voice = this.value;
+                });
+                
+                // Range sliders
+                pitchRange.addEventListener('input', function() {
+                    state.pitch = parseInt(this.value);
+                    pitchValue.textContent = this.value;
+                });
+                
+                rateRange.addEventListener('input', function() {
+                    state.rate = parseFloat(this.value);
+                    rateValue.textContent = state.rate.toFixed(2);
+                });
+                
+                chunkSizeRange.addEventListener('input', function() {
+                    state.chunkSize = parseInt(this.value);
+                    chunkSizeValue.textContent = `${state.chunkSize} characters`;
+                });
+                
+                // Toggle buttons
+                setupToggleButtons(chunkMethodButtons, 'chunkMethod');
+                setupToggleButtons(processingStrategyButtons, 'processingStrategy');
+                
+                // Main action buttons
+                generateButton.addEventListener('click', function() {
+                    initAudioContext();
+                    startTTSGeneration();
+                });
+                
+                playButton.addEventListener('click', playAudio);
+                pauseButton.addEventListener('click', pauseAudio);
+                stopButton.addEventListener('click', stopAudio);
+                rewindButton.addEventListener('click', function() { seekAudio(-10); });
+                forwardButton.addEventListener('click', function() { seekAudio(10); });
+                
+                // Timeline interaction
+                timelineContainer.addEventListener('click', function(e) {
+                    if (!state.audio.duration) return;
+                    
+                    const rect = this.getBoundingClientRect();
+                    const position = (e.clientX - rect.left) / rect.width;
+                    const seekTime = position * state.audio.duration;
+                    
+                    if (canSeekToTime(seekTime)) {
+                        seekToTime(seekTime);
+                    } else {
+                        showMessage("Cannot seek to unbuffered section");
+                    }
+                });
+                
+                timelineContainer.addEventListener('mousemove', function(e) {
+                    if (!state.audio.duration) return;
+                    
+                    const rect = this.getBoundingClientRect();
+                    const position = (e.clientX - rect.left) / rect.width;
+                    const time = position * state.audio.duration;
+                    
+                    timelineTooltip.style.display = 'block';
+                    timelineTooltip.style.left = `${e.clientX - rect.left}px`;
+                    timelineTooltip.textContent = formatTime(time);
+                    
+                    if (!canSeekToTime(time)) {
+                        timelineTooltip.style.backgroundColor = 'rgba(234, 67, 53, 0.8)';
+                    } else {
+                        timelineTooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                    }
+                });
+                
+                timelineContainer.addEventListener('mouseout', function() {
+                    timelineTooltip.style.display = 'none';
+                });
+                
+                // Download button
+                downloadButton.addEventListener('click', downloadAudio);
+            }
+
+            function setupToggleButtons(buttons, stateProperty) {
+                buttons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        // Remove active class from all buttons in this group
+                        buttons.forEach(btn => btn.classList.remove('active'));
+                        
+                        // Add active class to clicked button
+                        this.classList.add('active');
+                        
+                        // Update state
+                        state[stateProperty] = this.dataset.value;
+                    });
+                });
+            }
+
+            function updateRangeDisplays() {
+                pitchValue.textContent = pitchRange.value;
+                rateValue.textContent = parseFloat(rateRange.value).toFixed(2);
+                chunkSizeValue.textContent = `${chunkSizeRange.value} characters`;
+            }
+
+            // Initialize audio context
+            function initAudioContext() {
+                if (!state.audio.context) {
+                    try {
+                        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                        state.audio.context = new AudioContext();
+                    } catch (e) {
+                        showError("Web Audio API is not supported in your browser");
+                    }
+                } else if (state.audio.context.state === 'suspended') {
+                    state.audio.context.resume();
+                }
+            }
+
+            // Utility Functions
             function getLanguageName(code) {
                 const names = {
                     'en-US': 'English (US)',
@@ -782,6 +825,24 @@
                 return names[code] || code;
             }
 
+            function formatTime(seconds) {
+                seconds = Math.max(0, seconds);
+                const minutes = Math.floor(seconds / 60);
+                seconds = Math.floor(seconds % 60);
+                return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            function showMessage(message) {
+                statusMessage.textContent = message;
+                errorMessage.classList.add('hidden');
+            }
+
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hidden');
+            }
+
+            // TTS Generation Functions
             function startTTSGeneration() {
                 // Validate inputs
                 state.apiKey = apiKeyInput.value.trim();
@@ -1199,6 +1260,7 @@
                 }
             }
 
+            // Playback Functions
             function playAudio() {
                 initAudioContext();
                 
@@ -1514,6 +1576,10 @@
                 timeDisplay.textContent = `${formatTime(current)} / ${formatTime(total || 0)}`;
             }
 
+            function updateProgressBar(percent) {
+                progressFill.style.width = `${percent * 100}%`;
+            }
+
             function highlightCurrentWord(currentTime) {
                 // Find the word that should be highlighted
                 let currentWordIndex = -1;
@@ -1544,53 +1610,4 @@
                         
                         // Scroll the word into view if needed
                         ensureWordVisible(words[currentWordIndex]);
-                    }
-                }
-            }
-
-            function ensureWordVisible(wordElement) {
-                const container = textDisplay;
-                const containerRect = container.getBoundingClientRect();
-                const wordRect = wordElement.getBoundingClientRect();
-                
-                if (wordRect.top < containerRect.top + 50) {
-                    container.scrollTop = container.scrollTop - (containerRect.top - wordRect.top + 50);
-                } else if (wordRect.bottom > containerRect.bottom - 50) {
-                    container.scrollTop = container.scrollTop + (wordRect.bottom - containerRect.bottom + 50);
-                }
-            }
-
-            function updatePlaybackControls(playing) {
-                if (playing) {
-                    playButton.disabled = true;
-                    pauseButton.disabled = false;
-                    stopButton.disabled = false;
-                    rewindButton.disabled = false;
-                    forwardButton.disabled = false;
-                } else {
-                    playButton.disabled = false;
-                    pauseButton.disabled = true;
-                    if (state.audio.pausedAt > 0) {
-                        stopButton.disabled = false;
-                        rewindButton.disabled = false;
-                        forwardButton.disabled = false;
-                    } else {
-                        stopButton.disabled = true;
-                        rewindButton.disabled = true;
-                        forwardButton.disabled = true;
-                    }
-                }
-            }
-
-            function downloadAudio() {
-                if (state.processing.completedChunks !== state.processing.totalChunks) {
-                    showMessage("Please wait for all chunks to process before downloading");
-                    return;
-                }
-                
-                // Combine all audio chunks into a single file
-                const blob = new Blob(state.audio.chunks, { type: 'audio/mp3' });
-                
-                // Create download link
-                const url = URL.createObjectURL(blob);
-                
+                    
