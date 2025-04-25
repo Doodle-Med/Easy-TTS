@@ -484,7 +484,7 @@
                     
                     <div class="controls">
                         <div class="play-controls">
-                            <button class="control-button" id="playButton">▶</button>
+                            <button class="control-button" id="playButton" disabled>▶</button>
                             <button class="control-button" id="pauseButton" disabled>⏸</button>
                             <button class="control-button" id="stopButton" disabled>⏹</button>
                             <button class="control-button" id="rewindButton" disabled>⏪ 10s</button>
@@ -558,28 +558,28 @@
                 processingStrategy: 'sequential',
                 audio: {
                     context: null,
-                    chunks: [],
-                    buffers: [],
-                    wordTimings: [],
-                    source: null,
-                    startTime: 0,
-                    pausedAt: 0,
-                    duration: 0,
+                    chunks: [], // Store ArrayBuffer chunks for download
+                    buffers: [], // Store decoded AudioBuffer chunks for playback
+                    wordTimings: [], // Store { time: Number, wordIndex: Number }
+                    source: null, // Current AudioBufferSourceNode
+                    startTime: 0, // AudioContext.currentTime when playback started
+                    pausedAt: 0, // Time within the audio track where paused
+                    duration: 0, // Total duration of combined audio
                     playing: false,
                     buffering: false,
-                    currentChunk: 0,
-                    currentWord: 0
+                    currentChunk: 0, // Index of chunk currently playing or buffering
+                    currentWord: 0 // Index of word currently highlighted
                 },
                 processing: {
-                    chunks: [],
-                    chunkTimings: [],
+                    chunks: [], // Text chunks to be processed
+                    chunkTimings: [], // Optional: store timing info per chunk if needed
                     totalChunks: 0,
                     completedChunks: 0,
                     inProgress: false
                 }
             };
 
-            // Available languages and voices
+            // Available languages and voices (Consider fetching this dynamically if possible)
             const voiceOptions = [
                 { language: 'en-US', name: 'en-US-Neural2-A', gender: 'FEMALE' },
                 { language: 'en-US', name: 'en-US-Neural2-C', gender: 'MALE' },
@@ -629,67 +629,45 @@
             // Initialize UI
             initializeUI();
 
-            // UI Initialization Functions
+            // --- UI Initialization Functions ---
             function initializeUI() {
-                // Populate language dropdown
                 populateLanguages();
-                
-                // Populate voices based on default language
                 populateVoices(state.language);
-                
-                // Set up event listeners
                 setupEventListeners();
-                
-                // Update range displays
                 updateRangeDisplays();
-                
-                // Show ready message
                 showMessage("Ready to generate speech");
             }
 
             function populateLanguages() {
-                // Clear existing options
                 languageSelect.innerHTML = '';
-                
-                // Get unique languages
                 const languages = [...new Set(voiceOptions.map(voice => voice.language))];
-                
-                // Add options to select
                 languages.forEach(language => {
                     const option = document.createElement('option');
                     option.value = language;
                     option.textContent = getLanguageName(language);
                     languageSelect.appendChild(option);
                 });
-                
-                // Set default language
                 languageSelect.value = state.language;
             }
 
             function populateVoices(language) {
-                // Clear existing options
                 voiceSelect.innerHTML = '';
-                
-                // Filter voices by selected language
                 const filteredVoices = voiceOptions.filter(voice => voice.language === language);
-                
-                // Add options to select
                 filteredVoices.forEach(voice => {
                     const option = document.createElement('option');
                     option.value = voice.name;
                     option.textContent = `${voice.name} (${voice.gender})`;
                     voiceSelect.appendChild(option);
                 });
-                
-                // Set default voice
                 if (filteredVoices.length > 0) {
                     state.voice = filteredVoices[0].name;
                     voiceSelect.value = state.voice;
+                } else {
+                    state.voice = ''; // No voice available for this language
                 }
             }
 
             function setupEventListeners() {
-                // Language and voice selection
                 languageSelect.addEventListener('change', function() {
                     state.language = this.value;
                     populateVoices(state.language);
@@ -699,7 +677,6 @@
                     state.voice = this.value;
                 });
                 
-                // Range sliders
                 pitchRange.addEventListener('input', function() {
                     state.pitch = parseInt(this.value);
                     pitchValue.textContent = this.value;
@@ -715,13 +692,11 @@
                     chunkSizeValue.textContent = `${state.chunkSize} characters`;
                 });
                 
-                // Toggle buttons
                 setupToggleButtons(chunkMethodButtons, 'chunkMethod');
                 setupToggleButtons(processingStrategyButtons, 'processingStrategy');
                 
-                // Main action buttons
                 generateButton.addEventListener('click', function() {
-                    initAudioContext();
+                    initAudioContext(); // Ensure context is ready
                     startTTSGeneration();
                 });
                 
@@ -731,9 +706,8 @@
                 rewindButton.addEventListener('click', function() { seekAudio(-10); });
                 forwardButton.addEventListener('click', function() { seekAudio(10); });
                 
-                // Timeline interaction
                 timelineContainer.addEventListener('click', function(e) {
-                    if (!state.audio.duration) return;
+                    if (!state.audio.duration || state.audio.duration === 0) return;
                     
                     const rect = this.getBoundingClientRect();
                     const position = (e.clientX - rect.left) / rect.width;
@@ -747,7 +721,7 @@
                 });
                 
                 timelineContainer.addEventListener('mousemove', function(e) {
-                    if (!state.audio.duration) return;
+                    if (!state.audio.duration || state.audio.duration === 0) return;
                     
                     const rect = this.getBoundingClientRect();
                     const position = (e.clientX - rect.left) / rect.width;
@@ -768,20 +742,14 @@
                     timelineTooltip.style.display = 'none';
                 });
                 
-                // Download button
                 downloadButton.addEventListener('click', downloadAudio);
             }
 
             function setupToggleButtons(buttons, stateProperty) {
                 buttons.forEach(button => {
                     button.addEventListener('click', function() {
-                        // Remove active class from all buttons in this group
                         buttons.forEach(btn => btn.classList.remove('active'));
-                        
-                        // Add active class to clicked button
                         this.classList.add('active');
-                        
-                        // Update state
                         state[stateProperty] = this.dataset.value;
                     });
                 });
@@ -793,40 +761,38 @@
                 chunkSizeValue.textContent = `${chunkSizeRange.value} characters`;
             }
 
-            // Initialize audio context
+            // --- Audio Context Initialization ---
             function initAudioContext() {
                 if (!state.audio.context) {
                     try {
                         window.AudioContext = window.AudioContext || window.webkitAudioContext;
                         state.audio.context = new AudioContext();
+                        // Resume context if it starts suspended (common in some browsers)
+                        if (state.audio.context.state === 'suspended') {
+                            state.audio.context.resume();
+                        }
                     } catch (e) {
                         showError("Web Audio API is not supported in your browser");
+                        console.error("AudioContext error:", e);
                     }
                 } else if (state.audio.context.state === 'suspended') {
                     state.audio.context.resume();
                 }
             }
 
-            // Utility Functions
+            // --- Utility Functions ---
             function getLanguageName(code) {
                 const names = {
-                    'en-US': 'English (US)',
-                    'en-GB': 'English (UK)',
-                    'fr-FR': 'French',
-                    'de-DE': 'German',
-                    'es-ES': 'Spanish',
-                    'it-IT': 'Italian',
-                    'ja-JP': 'Japanese',
-                    'ko-KR': 'Korean',
-                    'pt-BR': 'Portuguese (Brazil)',
-                    'zh-CN': 'Chinese (Mainland)',
-                    'zh-TW': 'Chinese (Taiwan)'
+                    'en-US': 'English (US)', 'en-GB': 'English (UK)', 'fr-FR': 'French', 
+                    'de-DE': 'German', 'es-ES': 'Spanish', 'it-IT': 'Italian', 
+                    'ja-JP': 'Japanese', 'ko-KR': 'Korean', 'pt-BR': 'Portuguese (Brazil)', 
+                    'zh-CN': 'Chinese (Mainland)', 'zh-TW': 'Chinese (Taiwan)'
                 };
                 return names[code] || code;
             }
 
             function formatTime(seconds) {
-                seconds = Math.max(0, seconds);
+                seconds = Math.max(0, seconds || 0); // Ensure seconds is a non-negative number
                 const minutes = Math.floor(seconds / 60);
                 seconds = Math.floor(seconds % 60);
                 return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -840,43 +806,35 @@
             function showError(message) {
                 errorMessage.textContent = message;
                 errorMessage.classList.remove('hidden');
+                console.error("TTS Error:", message); // Also log to console
             }
 
-            // TTS Generation Functions
+            // --- TTS Generation Functions ---
             function startTTSGeneration() {
-                // Validate inputs
                 state.apiKey = apiKeyInput.value.trim();
                 state.text = textInput.value.trim();
                 
-                if (!state.apiKey) {
-                    showError("API Key is required");
-                    return;
-                }
-                
-                if (!state.text) {
-                    showError("Please enter some text to convert");
-                    return;
-                }
-                
-                // Reset state
+                if (!state.apiKey) return showError("API Key is required");
+                if (!state.text) return showError("Please enter some text to convert");
+                if (!state.audio.context) return showError("Audio system not initialized. Please interact with the page first.");
+
                 resetAudioState();
                 resetProcessingState();
-                
-                // Reset UI
                 updateUIForGeneration(true);
-                
-                // Prepare text display with words
                 prepareTextDisplay();
                 
-                // Split text into chunks
                 const chunks = splitTextIntoChunks();
+                if (!chunks || chunks.length === 0) {
+                    showError("Could not split text into chunks.");
+                    updateUIForGeneration(false);
+                    return;
+                }
                 state.processing.chunks = chunks;
                 state.processing.totalChunks = chunks.length;
                 state.processing.inProgress = true;
                 
                 showMessage(`Splitting text into ${chunks.length} chunks...`);
                 
-                // Process chunks based on strategy
                 if (state.processingStrategy === 'sequential') {
                     processNextChunk(0);
                 } else {
@@ -886,12 +844,11 @@
 
             function resetAudioState() {
                 if (state.audio.source) {
-                    state.audio.source.stop();
+                    try { state.audio.source.stop(); } catch (e) {} // Ignore errors if already stopped
                     state.audio.source = null;
                 }
-                
-                state.audio.chunks = [];
-                state.audio.buffers = [];
+                state.audio.chunks = new Array(state.processing.totalChunks); // Pre-allocate array for order
+                state.audio.buffers = new Array(state.processing.totalChunks);
                 state.audio.wordTimings = [];
                 state.audio.startTime = 0;
                 state.audio.pausedAt = 0;
@@ -901,74 +858,64 @@
                 state.audio.currentChunk = 0;
                 state.audio.currentWord = 0;
                 
-                // Clear word highlighting
-                const highlightedWords = document.querySelectorAll('.word.active');
-                highlightedWords.forEach(word => word.classList.remove('active'));
-                
+                document.querySelectorAll('.word.active').forEach(word => word.classList.remove('active'));
                 updateTimeDisplay(0, 0);
-                updateProgressBar(0);
+                playbackProgress.style.width = '0%';
+                bufferedProgress.style.width = '0%';
             }
 
             function resetProcessingState() {
                 state.processing.chunks = [];
                 state.processing.chunkTimings = [];
+                state.processing.totalChunks = 0;
                 state.processing.completedChunks = 0;
                 state.processing.inProgress = false;
-                
-                // Remove any chunk indicators
-                const chunkIndicators = document.querySelectorAll('.chunk-indicator');
-                chunkIndicators.forEach(indicator => indicator.remove());
+                progressFill.style.width = '0%';
             }
 
             function updateUIForGeneration(starting) {
-                if (starting) {
-                    generateButton.disabled = true;
-                    generateButton.innerHTML = '<span class="spinner"></span> Generating...';
-                    errorMessage.classList.add('hidden');
-                    playButton.disabled = true;
-                    pauseButton.disabled = true;
-                    stopButton.disabled = true;
-                    rewindButton.disabled = true;
-                    forwardButton.disabled = true;
-                    downloadButton.disabled = true;
-                    bufferedProgress.style.width = '0%';
-                    playbackProgress.style.width = '0%';
-                } else {
-                    generateButton.disabled = false;
-                    generateButton.textContent = 'Generate Speech';
-                    if (state.audio.buffers.length > 0) {
+                generateButton.disabled = starting;
+                generateButton.innerHTML = starting ? '<span class="spinner"></span> Generating...' : 'Generate Speech';
+                
+                playButton.disabled = true; // Always disable play initially
+                pauseButton.disabled = true;
+                stopButton.disabled = true;
+                rewindButton.disabled = true;
+                forwardButton.disabled = true;
+                downloadButton.disabled = true; // Disable download until finished
+
+                if (!starting) {
+                    // Re-enable controls only if audio is ready after generation
+                    if (state.audio.buffers.some(b => b)) { // Check if at least one buffer exists
                         playButton.disabled = false;
-                        stopButton.disabled = false;
-                        rewindButton.disabled = false;
-                        forwardButton.disabled = false;
-                        if (state.processing.completedChunks === state.processing.totalChunks) {
-                            downloadButton.disabled = false;
-                        }
+                    }
+                    if (state.processing.completedChunks === state.processing.totalChunks && state.audio.buffers.length > 0) {
+                        downloadButton.disabled = false;
                     }
                 }
             }
 
             function prepareTextDisplay() {
                 textDisplay.innerHTML = '';
-                const words = state.text.split(/\s+/);
+                // Split considering multiple spaces/newlines as single separator
+                const words = state.text.split(/(\s+)/).filter(w => w && w.trim().length > 0); 
+                let wordIndex = 0;
                 
-                words.forEach((word, index) => {
-                    const wordSpan = document.createElement('span');
-                    wordSpan.classList.add('word');
-                    wordSpan.dataset.index = index;
-                    wordSpan.textContent = word;
-                    
-                    // Add click event to jump to word
-                    wordSpan.addEventListener('click', function() {
-                        const wordIndex = parseInt(this.dataset.index);
-                        jumpToWord(wordIndex);
-                    });
-                    
-                    textDisplay.appendChild(wordSpan);
-                    textDisplay.appendChild(document.createTextNode(' '));
+                state.text.split(/(\s+)/).forEach(part => {
+                    if (part && part.trim().length > 0) { // It's a word
+                        const wordSpan = document.createElement('span');
+                        wordSpan.classList.add('word');
+                        wordSpan.dataset.index = wordIndex;
+                        wordSpan.textContent = part;
+                        wordSpan.addEventListener('click', function() {
+                            jumpToWord(parseInt(this.dataset.index));
+                        });
+                        textDisplay.appendChild(wordSpan);
+                        wordIndex++;
+                    } else if (part) { // It's whitespace
+                        textDisplay.appendChild(document.createTextNode(part));
+                    }
                 });
-                
-                // Scroll to top
                 textDisplay.scrollTop = 0;
             }
 
@@ -976,81 +923,70 @@
                 const text = state.text;
                 const chunks = [];
                 const chunkSize = state.chunkSize;
-                
+                let startIndex = 0;
+
                 if (state.chunkMethod === 'exact') {
-                    // Split by exact character count
                     for (let i = 0; i < text.length; i += chunkSize) {
                         chunks.push(text.substring(i, i + chunkSize));
                     }
-                } else if (state.chunkMethod === 'sentence') {
-                    // Split by sentences
-                    const sentences = text.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g) || [text];
+                } else {
+                    let splitRegex = state.chunkMethod === 'paragraph' ? /(\n\s*\n)/ : /([.!?]+(?:\s+|$))/;
                     let currentChunk = '';
-                    
-                    for (const sentence of sentences) {
-                        if ((currentChunk + sentence).length <= chunkSize) {
-                            currentChunk += sentence;
+                    let parts = text.split(splitRegex).filter(Boolean); // Split and keep delimiters
+
+                    for (let i = 0; i < parts.length; i += 2) {
+                        let segment = parts[i];
+                        let delimiter = parts[i+1] || '';
+                        let fullSegment = segment + delimiter;
+
+                        if ((currentChunk + fullSegment).length <= chunkSize) {
+                            currentChunk += fullSegment;
                         } else {
-                            if (currentChunk) chunks.push(currentChunk);
-                            if (sentence.length > chunkSize) {
-                                // If a single sentence is too long, split it by exact character count
-                                let remaining = sentence;
-                                while (remaining.length > 0) {
-                                    chunks.push(remaining.substring(0, chunkSize));
-                                    remaining = remaining.substring(chunkSize);
-                                }
-                                currentChunk = '';
-                            } else {
-                                currentChunk = sentence;
-                            }
-                        }
-                    }
-                    
-                    if (currentChunk) chunks.push(currentChunk);
-                } else if (state.chunkMethod === 'paragraph') {
-                    // Split by paragraphs
-                    const paragraphs = text.split(/\n\s*\n/);
-                    let currentChunk = '';
-                    
-                    for (const paragraph of paragraphs) {
-                        if ((currentChunk + paragraph + '\n\n').length <= chunkSize) {
-                            currentChunk += paragraph + '\n\n';
-                        } else {
-                            if (currentChunk) chunks.push(currentChunk.trim());
-                            if (paragraph.length > chunkSize) {
-                                // If a single paragraph is too long, split it by sentences
-                                const sentences = paragraph.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g) || [paragraph];
-                                let sentenceChunk = '';
-                                
-                                for (const sentence of sentences) {
-                                    if ((sentenceChunk + sentence).length <= chunkSize) {
-                                        sentenceChunk += sentence;
-                                    } else {
-                                        if (sentenceChunk) chunks.push(sentenceChunk);
-                                        if (sentence.length > chunkSize) {
-                                            // If a single sentence is too long, split it by exact character count
-                                            let remaining = sentence;
-                                            while (remaining.length > 0) {
-                                                chunks.push(remaining.substring(0, chunkSize));
-                                                remaining = remaining.substring(chunkSize);
+                            // If adding the segment exceeds chunk size
+                            if (currentChunk) chunks.push(currentChunk); // Push previous chunk
+
+                            // Handle segment larger than chunk size
+                            if (fullSegment.length > chunkSize) {
+                                let remainingSegment = fullSegment;
+                                while(remainingSegment.length > chunkSize) {
+                                    // Try to find a sentence break within the oversized segment first
+                                    let sentenceBreakRegex = /([.!?]+(?:\s+|$))/;
+                                    let subSegments = remainingSegment.substring(0, chunkSize).split(sentenceBreakRegex).filter(Boolean);
+                                    let splitPoint = -1;
+                                    if (subSegments.length > 1) {
+                                        // Find the last sentence end within the chunk size
+                                        let tempChunk = '';
+                                        for (let j=0; j < subSegments.length; j+=2) {
+                                            if ((tempChunk + subSegments[j] + (subSegments[j+1] || '')).length <= chunkSize) {
+                                                tempChunk += subSegments[j] + (subSegments[j+1] || '');
+                                            } else {
+                                                break;
                                             }
-                                            sentenceChunk = '';
-                                        } else {
-                                            sentenceChunk = sentence;
+                                        }
+                                        if (tempChunk) {
+                                            splitPoint = tempChunk.length;
                                         }
                                     }
+                                    
+                                    if (splitPoint > 0 && splitPoint < remainingSegment.length) {
+                                         chunks.push(remainingSegment.substring(0, splitPoint));
+                                         remainingSegment = remainingSegment.substring(splitPoint);
+                                    } else {
+                                        // Force break at chunk size if no sentence break found or segment still too long
+                                        chunks.push(remainingSegment.substring(0, chunkSize));
+                                        remainingSegment = remainingSegment.substring(chunkSize);
+                                    }
                                 }
-                                
-                                if (sentenceChunk) chunks.push(sentenceChunk);
+                                currentChunk = remainingSegment; // The leftover part starts the next chunk
                             } else {
-                                currentChunk = paragraph + '\n\n';
+                                currentChunk = fullSegment; // Start new chunk with current segment
                             }
                         }
                     }
-                    
-                    if (currentChunk) chunks.push(currentChunk.trim());
+                    if (currentChunk) chunks.push(currentChunk); // Push the last chunk
                 }
                 
+                console.log("Chunks:", chunks);
                 return chunks;
             }
 
@@ -1060,29 +996,50 @@
                     return;
                 }
                 
-                const chunk = state.processing.chunks[index];
+                const chunkText = state.processing.chunks[index];
+                if (!chunkText || chunkText.trim().length === 0) {
+                     console.log(`Skipping empty chunk ${index + 1}`);
+                     state.processing.completedChunks++; // Count as completed
+                     updateProgress();
+                     processNextChunk(index + 1);
+                     return;
+                }
+
                 showMessage(`Processing chunk ${index + 1} of ${state.processing.totalChunks}`);
                 
-                // Call Google TTS API
-                callGoogleTTSAPI(chunk, index)
+                callGoogleTTSAPI(chunkText, index)
                     .then(audioData => {
-                        processAudioData(audioData, index);
+                        return processAudioData(audioData, index); // Return promise from decodeAudioData
+                    })
+                    .then(() => {
                         updateProgress();
-                        processNextChunk(index + 1);
+                        processNextChunk(index + 1); // Process next only after decoding finishes
                     })
                     .catch(error => {
                         showError(`Error processing chunk ${index + 1}: ${error.message}`);
-                        updateUIForGeneration(false);
+                        updateUIForGeneration(false); // Stop generation on error
                     });
             }
 
             function processAllChunksInParallel() {
-                const promises = state.processing.chunks.map((chunk, index) => {
-                    return callGoogleTTSAPI(chunk, index)
-                        .then(audioData => {
-                            processAudioData(audioData, index);
+                const promises = state.processing.chunks.map((chunkText, index) => {
+                     if (!chunkText || chunkText.trim().length === 0) {
+                         console.log(`Skipping empty chunk ${index + 1}`);
+                         state.processing.completedChunks++; // Count as completed immediately
+                         updateProgress();
+                         return Promise.resolve(index); // Resolve immediately for empty chunks
+                     }
+                     
+                    return callGoogleTTSAPI(chunkText, index)
+                        .then(audioData => processAudioData(audioData, index)) // Chain decoding
+                        .then(() => {
                             updateProgress();
-                            return index;
+                            return index; // Return index on success
+                        })
+                        .catch(error => {
+                            showError(`Error processing chunk ${index + 1}: ${error.message}`);
+                            // Don't reject all, just log error for this chunk
+                            return Promise.resolve(index); // Resolve even on error to allow others to finish
                         });
                 });
                 
@@ -1091,56 +1048,91 @@
                         finishProcessing();
                     })
                     .catch(error => {
-                        showError(`Error processing chunks: ${error.message}`);
-                        updateUIForGeneration(false);
+                        // This catch might not be reached if individual promises resolve on error
+                        showError(`Error during parallel processing: ${error.message}`);
+                        finishProcessing(); // Still attempt to finish
                     });
             }
 
             function callGoogleTTSAPI(text, chunkIndex) {
+                console.log(`Calling API for chunk ${chunkIndex + 1}, length ${text.length}`);
                 return new Promise((resolve, reject) => {
                     const request = {
-                        input: {
-                            text: text
-                        },
+                        input: { text: text },
                         voice: {
-                            languageCode: state.voice.split('-')[0] + '-' + state.voice.split('-')[1],
+                            languageCode: state.language, // Use full language code like 'en-US'
                             name: state.voice
                         },
                         audioConfig: {
                             audioEncoding: 'MP3',
                             pitch: state.pitch,
                             speakingRate: state.rate,
-                            enableTimePointing: ['WORD_END']
+                            // Request timepoints for word highlighting
+                            enableTimePointing: ['SSML_MARK'] // Use SSML_MARK for word timings
                         }
                     };
-                    
+
+                    // Wrap text in SSML speak tags and add marks for timing
+                    const words = text.split(/(\s+)/).filter(w => w && w.trim().length > 0);
+                    let ssmlText = '<speak>';
+                    let wordCounter = 0;
+                     text.split(/(\s+)/).forEach(part => {
+                        if (part && part.trim().length > 0) {
+                            // Escape special SSML characters
+                            const escapedWord = part.replace(/&/g, '&amp;')
+                                                 .replace(/</g, '&lt;')
+                                                 .replace(/>/g, '&gt;')
+                                                 .replace(/"/g, '&quot;')
+                                                 .replace(/'/g, '&apos;');
+                            ssmlText += `<mark name="${wordCounter}"/>${escapedWord}`;
+                            wordCounter++;
+                        } else if (part) {
+                            ssmlText += part; // Keep whitespace
+                        }
+                    });
+                    ssmlText += '</speak>';
+                    request.input = { ssml: ssmlText }; // Use SSML input
+
                     fetch(`${GOOGLE_TTS_API_URL}?key=${state.apiKey}`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(request)
                     })
                     .then(response => {
                         if (!response.ok) {
                             return response.json().then(err => {
-                                throw new Error(`API Error: ${err.error.message}`);
+                                const message = err.error?.message || `HTTP error! status: ${response.status}`;
+                                reject(new Error(message));
+                            }).catch(() => {
+                                reject(new Error(`HTTP error! status: ${response.status}`));
                             });
                         }
                         return response.json();
                     })
                     .then(data => {
                         if (!data.audioContent) {
-                            throw new Error('No audio content returned from API');
+                            return reject(new Error('No audio content returned from API'));
                         }
                         
-                        // Calculate word timings if available
+                        // Process timepoints (now using SSML marks)
                         let wordTimings = [];
                         if (data.timepoints) {
+                             // Calculate word offset based on previous chunks' word count
+                             let wordOffset = 0;
+                             if (chunkIndex > 0) {
+                                 for (let i = 0; i < chunkIndex; i++) {
+                                     const prevChunkText = state.processing.chunks[i] || '';
+                                     wordOffset += prevChunkText.split(/(\s+)/).filter(w => w && w.trim().length > 0).length;
+                                 }
+                             }
+                             
+                             // Calculate absolute start time of this chunk
+                             const chunkStartTime = getChunkStartTime(chunkIndex);
+
                             wordTimings = data.timepoints.map(point => ({
-                                time: point.timeSeconds,
-                                wordIndex: point.markName
-                            }));
+                                time: point.timeSeconds + chunkStartTime, // Add chunk start time
+                                wordIndex: parseInt(point.markName) + wordOffset // Add word offset
+                            })).sort((a, b) => a.wordIndex - b.wordIndex); // Ensure timings are sorted by word index
                         }
                         
                         resolve({
@@ -1149,128 +1141,137 @@
                             chunkIndex
                         });
                     })
-                    .catch(reject);
+                    .catch(error => {
+                         console.error("Fetch Error:", error);
+                         reject(new Error(`Network or API call failed: ${error.message}`));
+                    });
                 });
             }
 
-            function processAudioData(data, chunkIndex) {
-                // Decode base64 audio
-                const audioData = atob(data.audio);
-                const arrayBuffer = new ArrayBuffer(audioData.length);
-                const view = new Uint8Array(arrayBuffer);
-                
-                for (let i = 0; i < audioData.length; i++) {
-                    view[i] = audioData.charCodeAt(i);
-                }
-                
-                // Store the audio chunk
-                state.audio.chunks[chunkIndex] = arrayBuffer;
-                
-                // Store word timings for this chunk
-                if (data.timings && data.timings.length > 0) {
-                    // Calculate word offset for this chunk
-                    let wordOffset = 0;
-                    if (chunkIndex > 0) {
-                        const prevChunksText = state.processing.chunks.slice(0, chunkIndex).join(' ');
-                        wordOffset = prevChunksText.split(/\s+/).length;
-                    }
-                    
-                    // Process timings with offset
-                    data.timings.forEach(timing => {
-                        const wordIndex = parseInt(timing.wordIndex) + wordOffset;
-                        state.audio.wordTimings.push({
-                            time: timing.time + getChunkStartTime(chunkIndex),
-                            wordIndex
-                        });
-                    });
-                }
-                
-                // Decode audio for playback
-                state.audio.context.decodeAudioData(arrayBuffer.slice(0), buffer => {
-                    state.audio.buffers[chunkIndex] = buffer;
-                    
-                    // If this is the first chunk and we're not playing yet, enable play button
-                    if (chunkIndex === 0 && !state.audio.playing) {
-                        playButton.disabled = false;
-                    }
-                    
-                    // If already playing and this is the next chunk we need, schedule it
-                    if (state.audio.playing && chunkIndex === state.audio.currentChunk + 1) {
-                        scheduleNextChunk();
-                    }
-                    
-                    // Update buffered progress
-                    updateBufferedProgress();
-                    
-                    state.processing.completedChunks++;
-                });
-            }
+             function processAudioData(data, chunkIndex) {
+                 return new Promise((resolve, reject) => {
+                     try {
+                         const audioData = atob(data.audio);
+                         const arrayBuffer = new ArrayBuffer(audioData.length);
+                         const view = new Uint8Array(arrayBuffer);
+                         for (let i = 0; i < audioData.length; i++) {
+                             view[i] = audioData.charCodeAt(i);
+                         }
+                         
+                         state.audio.chunks[chunkIndex] = arrayBuffer; // Store raw chunk for download
+                         
+                         // Add word timings for this chunk to the global list
+                         if (data.timings && data.timings.length > 0) {
+                             state.audio.wordTimings.push(...data.timings);
+                         }
+                         
+                         // Decode audio data for playback
+                         state.audio.context.decodeAudioData(
+                             arrayBuffer.slice(0), // Use slice to create a copy for decoding
+                             buffer => {
+                                 state.audio.buffers[chunkIndex] = buffer;
+                                 console.log(`Chunk ${chunkIndex + 1} decoded, duration: ${buffer.duration}`);
+                                 
+                                 // Update total duration and buffered progress
+                                 calculateTotalDuration();
+                                 updateBufferedProgress(); 
+
+                                 // If this is the first chunk, enable play
+                                 if (chunkIndex === 0 && !state.audio.playing && !playButton.disabled) {
+                                     playButton.disabled = false;
+                                     stopButton.disabled = false; // Enable stop if play is enabled
+                                     rewindButton.disabled = false;
+                                     forwardButton.disabled = false;
+                                 }
+
+                                 // If playing and waiting for this chunk, continue playback
+                                 if (state.audio.playing && state.audio.buffering && chunkIndex === state.audio.currentChunk) {
+                                     playCurrentChunk(state.audio.pausedAt > 0 ? state.audio.pausedAt : (state.audio.context.currentTime - state.audio.startTime));
+                                 }
+                                 
+                                 resolve(); // Resolve promise after decoding
+                             },
+                             error => {
+                                 console.error(`Error decoding audio data for chunk ${chunkIndex + 1}:`, error);
+                                 showError(`Failed to decode audio for chunk ${chunkIndex + 1}`);
+                                 reject(error); // Reject promise on decoding error
+                             }
+                         );
+                     } catch (error) {
+                         console.error(`Error processing base64 data for chunk ${chunkIndex + 1}:`, error);
+                         showError(`Failed to process audio data for chunk ${chunkIndex + 1}`);
+                         reject(error);
+                     }
+                 });
+             }
+
+             function calculateTotalDuration() {
+                 state.audio.duration = state.audio.buffers.reduce((sum, buffer) => sum + (buffer ? buffer.duration : 0), 0);
+                 updateTimeDisplay(state.audio.pausedAt > 0 ? state.audio.pausedAt : 0, state.audio.duration);
+             }
+
 
             function getChunkStartTime(chunkIndex) {
                 let startTime = 0;
                 for (let i = 0; i < chunkIndex; i++) {
-                    if (state.audio.buffers[i]) {
-                        startTime += state.audio.buffers[i].duration;
-                    }
+                    startTime += state.audio.buffers[i] ? state.audio.buffers[i].duration : 0;
                 }
                 return startTime;
             }
 
             function updateProgress() {
-                const percent = (state.processing.completedChunks / state.processing.totalChunks) * 100;
+                const percent = state.processing.totalChunks > 0 ? (state.processing.completedChunks / state.processing.totalChunks) * 100 : 0;
                 progressFill.style.width = `${percent}%`;
                 showMessage(`Processed ${state.processing.completedChunks} of ${state.processing.totalChunks} chunks (${Math.round(percent)}%)`);
             }
 
             function updateBufferedProgress() {
-                let totalDuration = 0;
-                let bufferedDuration = 0;
-                
-                // Calculate total duration and buffered duration
-                for (let i = 0; i < state.processing.totalChunks; i++) {
-                    if (state.audio.buffers[i]) {
-                        const chunkDuration = state.audio.buffers[i].duration;
-                        totalDuration += chunkDuration;
-                        
-                        if (i < state.audio.currentChunk || 
-                            (i === state.audio.currentChunk && state.audio.playing)) {
-                            bufferedDuration += chunkDuration;
-                        }
-                    }
-                }
-                
-                state.audio.duration = totalDuration;
-                
-                // Update buffered progress
-                if (totalDuration > 0) {
-                    const percent = (bufferedDuration / totalDuration) * 100;
-                    bufferedProgress.style.width = `${percent}%`;
-                }
+                 let bufferedDuration = 0;
+                 let contiguousBuffer = true;
+                 for (let i = 0; i < state.processing.totalChunks; i++) {
+                     if (state.audio.buffers[i] && contiguousBuffer) {
+                         bufferedDuration += state.audio.buffers[i].duration;
+                     } else {
+                         contiguousBuffer = false; // Stop counting once a gap is found
+                     }
+                 }
+                 
+                 const percent = state.audio.duration > 0 ? (bufferedDuration / state.audio.duration) * 100 : 0;
+                 bufferedProgress.style.width = `${percent}%`;
             }
 
             function finishProcessing() {
                 state.processing.inProgress = false;
-                updateUIForGeneration(false);
+                calculateTotalDuration(); // Recalculate final duration
+                state.audio.wordTimings.sort((a, b) => a.time - b.time); // Sort all timings
+                updateUIForGeneration(false); // Re-enable relevant buttons
                 
-                if (state.processing.completedChunks === state.processing.totalChunks) {
+                if (state.processing.completedChunks === state.processing.totalChunks && state.audio.duration > 0) {
                     showMessage(`Speech generation complete! Total duration: ${formatTime(state.audio.duration)}`);
-                    downloadButton.disabled = false;
+                    downloadButton.disabled = false; // Enable download
+                } else if (state.audio.duration === 0) {
+                     showError(`Speech generation failed. No audio was produced.`);
                 } else {
-                    showError(`Speech generation incomplete. ${state.processing.completedChunks} of ${state.processing.totalChunks} chunks processed.`);
+                    showError(`Speech generation may be incomplete. ${state.processing.completedChunks} of ${state.processing.totalChunks} chunks processed successfully.`);
+                    // Optionally enable download even if incomplete
+                    if (state.audio.chunks.some(c => c)) downloadButton.disabled = false; 
                 }
             }
 
-            // Playback Functions
+            // --- Playback Functions ---
             function playAudio() {
-                initAudioContext();
+                if (!state.audio.context || state.audio.context.state === 'suspended') {
+                    initAudioContext(); // Try to resume/initialize context
+                    if (!state.audio.context || state.audio.context.state === 'suspended') {
+                         return showError("Audio context is not running. Please interact with the page (e.g., click) and try again.");
+                    }
+                }
                 
                 if (state.audio.playing) return;
                 
                 if (state.audio.pausedAt > 0) {
-                    // Resume from pause
                     resumeFromPause();
                 } else {
-                    // Start new playback
                     startPlayback();
                 }
                 
@@ -1278,39 +1279,62 @@
             }
 
             function startPlayback() {
+                if (!state.audio.buffers[0]) {
+                    return showMessage("Waiting for the first audio chunk...");
+                }
+                
                 state.audio.playing = true;
-                state.audio.startTime = state.audio.context.currentTime;
-                state.audio.currentChunk = 0;
+                state.audio.pausedAt = 0;
+                state.audio.currentChunk = 0; // Start from the beginning
+                state.audio.startTime = state.audio.context.currentTime; // Set start time relative to context
                 
-                // Start playing the first chunk
-                playCurrentChunk();
-                
-                // Start updating the progress bar
+                playCurrentChunk(0); // Play from time 0
                 requestAnimationFrame(updatePlayback);
             }
 
             function resumeFromPause() {
+                if (state.audio.pausedAt <= 0) return startPlayback(); // Should not happen, but safety check
+
                 state.audio.playing = true;
-                state.audio.startTime = state.audio.context.currentTime - state.audio.pausedAt;
+                // Adjust startTime based on paused position
+                state.audio.startTime = state.audio.context.currentTime - state.audio.pausedAt; 
                 
-                // Resume playing the current chunk
-                playCurrentChunk(state.audio.pausedAt);
+                // Find the correct chunk and offset to resume from
+                const { chunkIndex, chunkTime } = findChunkForTime(state.audio.pausedAt);
+                state.audio.currentChunk = chunkIndex;
                 
-                // Start updating the progress bar
+                playCurrentChunk(state.audio.pausedAt); // Play from the paused position
+                state.audio.pausedAt = 0; // Clear paused state
                 requestAnimationFrame(updatePlayback);
             }
 
             function playCurrentChunk(offset = 0) {
                 const chunkIndex = state.audio.currentChunk;
-                const buffer = state.audio.buffers[chunkIndex];
                 
-                if (!buffer) {
-                    // If buffer isn't available yet, show buffering message
-                    showMessage("Buffering audio...");
-                    state.audio.buffering = true;
+                if (chunkIndex >= state.processing.totalChunks) {
+                    stopAudio(); // Reached end
                     return;
                 }
                 
+                const buffer = state.audio.buffers[chunkIndex];
+                
+                if (!buffer) {
+                    showMessage("Buffering audio...");
+                    state.audio.buffering = true;
+                    // Stop current playback if any
+                    if (state.audio.source) {
+                        try { state.audio.source.stop(); } catch(e) {}
+                        state.audio.source = null;
+                    }
+                    // We need to wait for processAudioData to potentially resume
+                    return;
+                }
+                
+                // Stop previous source if it exists
+                if (state.audio.source) {
+                    try { state.audio.source.stop(); } catch(e) {}
+                }
+
                 const source = state.audio.context.createBufferSource();
                 source.buffer = buffer;
                 source.connect(state.audio.context.destination);
@@ -1318,113 +1342,118 @@
                 state.audio.source = source;
                 state.audio.buffering = false;
                 
-                // Calculate when to play this chunk
                 const chunkStartTime = getChunkStartTime(chunkIndex);
-                const playbackTime = Math.max(0, offset - chunkStartTime);
-                
-                // Start playing with offset
-                source.start(0, playbackTime);
-                
-                // Schedule the next chunk when this one finishes
-                const remaining = buffer.duration - playbackTime;
-                setTimeout(() => {
-                    if (state.audio.playing) {
+                const playbackOffsetInChunk = Math.max(0, offset - chunkStartTime); // Time offset within the current buffer
+                const durationToPlay = buffer.duration - playbackOffsetInChunk;
+
+                console.log(`Playing chunk ${chunkIndex + 1} from offset ${playbackOffsetInChunk.toFixed(3)}s (absolute ${offset.toFixed(3)}s)`);
+
+                source.onended = () => {
+                    // Only schedule next chunk if this chunk finished naturally (not stopped)
+                    if (state.audio.playing && state.audio.source === source) { 
                         state.audio.currentChunk++;
                         scheduleNextChunk();
                     }
-                }, remaining * 1000);
+                };
+
+                source.start(0, playbackOffsetInChunk); // Start immediately from the calculated offset within the buffer
                 
                 showMessage(`Playing chunk ${chunkIndex + 1} of ${state.processing.totalChunks}`);
             }
 
             function scheduleNextChunk() {
-                const nextChunkIndex = state.audio.currentChunk;
-                
-                if (nextChunkIndex >= state.processing.totalChunks) {
-                    // Playback complete
-                    stopAudio();
-                    return;
-                }
-                
-                if (state.audio.buffers[nextChunkIndex]) {
-                    playCurrentChunk();
-                } else {
-                    // Buffer not available yet
-                    showMessage("Buffering next chunk...");
-                    state.audio.buffering = true;
-                }
+                 // Called when a chunk ends naturally
+                 const nextChunkIndex = state.audio.currentChunk;
+
+                 if (nextChunkIndex >= state.processing.totalChunks) {
+                     console.log("Playback finished");
+                     stopAudio(); // All chunks played
+                     return;
+                 }
+
+                 playCurrentChunk(getChunkStartTime(nextChunkIndex)); // Start next chunk from its beginning
             }
 
             function pauseAudio() {
                 if (!state.audio.playing) return;
                 
                 state.audio.playing = false;
+                // Calculate exact pause time relative to the start of the audio track
+                state.audio.pausedAt = state.audio.context.currentTime - state.audio.startTime; 
                 
                 if (state.audio.source) {
-                    state.audio.source.stop();
+                    state.audio.source.onended = null; // Prevent onended from triggering next chunk
+                    try { state.audio.source.stop(); } catch(e) {}
                     state.audio.source = null;
                 }
                 
-                // Calculate paused position
-                state.audio.pausedAt = state.audio.context.currentTime - state.audio.startTime;
-                
                 updatePlaybackControls(false);
-                showMessage("Playback paused");
+                showMessage(`Playback paused at ${formatTime(state.audio.pausedAt)}`);
             }
 
             function stopAudio() {
                 state.audio.playing = false;
+                state.audio.pausedAt = 0; // Reset paused position
                 
                 if (state.audio.source) {
-                    state.audio.source.stop();
+                    state.audio.source.onended = null; // Prevent onended callback
+                    try { state.audio.source.stop(); } catch(e) {}
                     state.audio.source = null;
                 }
                 
-                state.audio.pausedAt = 0;
-                state.audio.currentChunk = 0;
+                state.audio.currentChunk = 0; // Reset to beginning
                 
-                // Reset word highlighting
-                const activeWords = document.querySelectorAll('.word.active');
-                activeWords.forEach(word => word.classList.remove('active'));
-                
+                document.querySelectorAll('.word.active').forEach(word => word.classList.remove('active'));
                 updatePlaybackControls(false);
-                updatePlaybackProgress(0);
+                updatePlaybackProgress(0); // Reset playback progress bar
+                updateTimeDisplay(0, state.audio.duration); // Reset time display
                 showMessage("Playback stopped");
             }
 
             function seekAudio(seconds) {
-                if (!state.audio.playing && state.audio.pausedAt === 0) return;
+                if (state.audio.duration === 0) return; // No audio loaded
+
+                const currentTime = state.audio.playing 
+                    ? (state.audio.context.currentTime - state.audio.startTime) 
+                    : state.audio.pausedAt;
                 
-                const wasPaused = !state.audio.playing;
-                const currentTime = wasPaused ? state.audio.pausedAt : (state.audio.context.currentTime - state.audio.startTime);
                 const newTime = Math.max(0, Math.min(currentTime + seconds, state.audio.duration));
                 
+                seekToTime(newTime);
+            }
+
+            function seekToTime(time) {
+                if (state.audio.duration === 0) return; // No audio loaded
+                
+                const newTime = Math.max(0, Math.min(time, state.audio.duration)); // Clamp time to valid range
+
                 if (!canSeekToTime(newTime)) {
                     showMessage("Cannot seek to unbuffered section");
                     return;
                 }
                 
-                if (state.audio.playing) {
-                    // Stop current playback
-                    if (state.audio.source) {
-                        state.audio.source.stop();
-                        state.audio.source = null;
-                    }
-                    
-                    // Find the chunk for the new time
-                    const { chunkIndex } = findChunkForTime(newTime);
-                    state.audio.currentChunk = chunkIndex;
-                    
-                    // Reset start time for accurate progress calculation
-                    state.audio.startTime = state.audio.context.currentTime - newTime;
-                    
-                    // Start playing from new position
-                    playCurrentChunk(newTime);
+                const wasPlaying = state.audio.playing;
+
+                // Stop current playback regardless of state
+                if (state.audio.source) {
+                    state.audio.source.onended = null;
+                    try { state.audio.source.stop(); } catch(e) {}
+                    state.audio.source = null;
+                }
+                
+                // Find the chunk and offset for the new time
+                const { chunkIndex, chunkTime } = findChunkForTime(newTime);
+                state.audio.currentChunk = chunkIndex;
+                
+                // Update pausedAt if paused, or adjust startTime if playing
+                if (wasPlaying) {
+                    state.audio.playing = true; // Ensure playing state is set
+                    state.audio.startTime = state.audio.context.currentTime - newTime; // Adjust start time
+                    playCurrentChunk(newTime); // Start playing from the new time
                 } else {
-                    // Just update the paused position
-                    state.audio.pausedAt = newTime;
-                    
-                    // Update UI
+                    state.audio.playing = false;
+                    state.audio.pausedAt = newTime; // Update paused position
+                    // Update UI immediately for paused state
                     updatePlaybackProgress(newTime / state.audio.duration);
                     updateTimeDisplay(newTime, state.audio.duration);
                     highlightCurrentWord(newTime);
@@ -1433,181 +1462,215 @@
                 showMessage(`Seeked to ${formatTime(newTime)}`);
             }
 
-            function seekToTime(time) {
-                if (!canSeekToTime(time)) return;
-                
-                const wasPaused = !state.audio.playing;
-                
-                if (state.audio.playing) {
-                    // Stop current playback
-                    if (state.audio.source) {
-                        state.audio.source.stop();
-                        state.audio.source = null;
-                    }
-                    
-                    // Find the chunk for the new time
-                    const { chunkIndex } = findChunkForTime(time);
-                    state.audio.currentChunk = chunkIndex;
-                    
-                    // Reset start time for accurate progress calculation
-                    state.audio.startTime = state.audio.context.currentTime - time;
-                    
-                    // Start playing from new position
-                    playCurrentChunk(time);
-                } else {
-                    // Just update the paused position
-                    state.audio.pausedAt = time;
-                    
-                    // Update UI
-                    updatePlaybackProgress(time / state.audio.duration);
-                    updateTimeDisplay(time, state.audio.duration);
-                    highlightCurrentWord(time);
-                }
-                
-                showMessage(`Seeked to ${formatTime(time)}`);
-            }
 
             function canSeekToTime(time) {
-                // Check if the time is within buffered audio
-                const { chunkIndex, chunkTime } = findChunkForTime(time);
-                return chunkIndex < state.processing.totalChunks && state.audio.buffers[chunkIndex] !== undefined;
+                 if (time < 0 || !state.audio.duration || time > state.audio.duration) return false;
+
+                 const { chunkIndex } = findChunkForTime(time);
+                 // Allow seeking if the target chunk's buffer is available
+                 return chunkIndex < state.processing.totalChunks && state.audio.buffers[chunkIndex] !== undefined;
             }
 
             function findChunkForTime(time) {
                 let currentDuration = 0;
-                
+                time = Math.max(0, time); // Ensure time is not negative
+
                 for (let i = 0; i < state.processing.totalChunks; i++) {
-                    if (state.audio.buffers[i]) {
-                        const chunkDuration = state.audio.buffers[i].duration;
-                        if (time < currentDuration + chunkDuration) {
+                    const buffer = state.audio.buffers[i];
+                    if (buffer) {
+                        if (time < currentDuration + buffer.duration || i === state.processing.totalChunks - 1) {
+                            // Found the chunk or it's the last chunk
                             return {
                                 chunkIndex: i,
-                                chunkTime: time - currentDuration
+                                chunkTime: time - currentDuration // Time offset within this chunk
                             };
                         }
-                        currentDuration += chunkDuration;
+                        currentDuration += buffer.duration;
+                    } else {
+                        // If a buffer is missing before the target time, we can't reliably determine the chunk
+                        if (time >= currentDuration) {
+                             // We might hit this if seeking into a gap, return the gap index
+                             return { chunkIndex: i, chunkTime: 0 };
+                        }
                     }
                 }
                 
+                // Fallback if time is beyond calculated duration (should be caught by clamping)
                 return {
-                    chunkIndex: state.processing.totalChunks - 1,
-                    chunkTime: 0
+                    chunkIndex: Math.max(0, state.processing.totalChunks - 1),
+                    chunkTime: 0 
                 };
             }
 
             function jumpToWord(wordIndex) {
-                // Find the time for this word using the word timings
-                let wordTime = 0;
-                
-                // First check if we have specific timing for this word
-                for (const timing of state.audio.wordTimings) {
-                    if (timing.wordIndex === wordIndex) {
-                        wordTime = timing.time;
+                if (state.audio.wordTimings.length === 0 || state.audio.duration === 0) {
+                     // Estimate based on word position if no timings
+                     const words = document.querySelectorAll('.word');
+                     if (words.length > 0) {
+                         const estimatedTime = (wordIndex / words.length) * state.audio.duration;
+                         console.log(`Estimating jump to word ${wordIndex} at ${estimatedTime.toFixed(3)}s`);
+                         seekToTime(estimatedTime);
+                     }
+                     return;
+                }
+
+                // Find the closest timing <= the target word index
+                let targetTime = -1;
+                for(let i = 0; i < state.audio.wordTimings.length; i++) {
+                    if (state.audio.wordTimings[i].wordIndex === wordIndex) {
+                         targetTime = state.audio.wordTimings[i].time;
+                         break;
+                    }
+                    // If exact match not found, use the time of the last word before the target
+                    if (state.audio.wordTimings[i].wordIndex < wordIndex) {
+                        targetTime = state.audio.wordTimings[i].time; 
+                    } else {
+                        // Found a word index > target, use the previous time if set
                         break;
                     }
                 }
-                
-                // If no timing found, estimate based on nearby words
-                if (wordTime === 0 && state.audio.wordTimings.length > 0) {
-                    // Find closest word with timing before and after
-                    let beforeIndex = -1;
-                    let afterIndex = -1;
-                    let beforeTime = 0;
-                    let afterTime = 0;
-                    
-                    for (const timing of state.audio.wordTimings) {
-                        if (timing.wordIndex < wordIndex && (beforeIndex === -1 || timing.wordIndex > beforeIndex)) {
-                            beforeIndex = timing.wordIndex;
-                            beforeTime = timing.time;
-                        }
-                        if (timing.wordIndex > wordIndex && (afterIndex === -1 || timing.wordIndex < afterIndex)) {
-                            afterIndex = timing.wordIndex;
-                            afterTime = timing.time;
-                        }
-                    }
-                    
-                    if (beforeIndex >= 0 && afterIndex >= 0) {
-                        // Interpolate time
-                        const progress = (wordIndex - beforeIndex) / (afterIndex - beforeIndex);
-                        wordTime = beforeTime + progress * (afterTime - beforeTime);
-                    } else if (beforeIndex >= 0) {
-                        // Use time of previous word
-                        wordTime = beforeTime;
-                    } else if (afterIndex >= 0) {
-                        // Use time of next word
-                        wordTime = afterTime;
-                    }
-                }
-                
-                // If still no timing found, estimate based on word position and total duration
-                if (wordTime === 0 && state.audio.duration > 0) {
-                    const totalWords = document.querySelectorAll('.word').length;
-                    wordTime = (wordIndex / totalWords) * state.audio.duration;
-                }
-                
-                // Seek to the word time
-                if (wordTime > 0) {
-                    seekToTime(wordTime);
+
+                if (targetTime >= 0) {
+                    console.log(`Jumping to word ${wordIndex} at ${targetTime.toFixed(3)}s`);
+                    seekToTime(targetTime);
+                } else {
+                     console.warn(`Could not find timing for word index ${wordIndex}`);
+                     // Fallback to estimation
+                     const words = document.querySelectorAll('.word');
+                     if (words.length > 0) {
+                         const estimatedTime = (wordIndex / words.length) * state.audio.duration;
+                         seekToTime(estimatedTime);
+                     }
                 }
             }
+
 
             function updatePlayback() {
                 if (!state.audio.playing) return;
                 
-                // Calculate current playback time
                 const currentTime = state.audio.context.currentTime - state.audio.startTime;
                 
-                // Update progress bar and time display
-                updatePlaybackProgress(currentTime / state.audio.duration);
-                updateTimeDisplay(currentTime, state.audio.duration);
+                // Ensure currentTime doesn't exceed duration
+                const displayTime = Math.min(currentTime, state.audio.duration); 
                 
-                // Highlight current word
-                highlightCurrentWord(currentTime);
+                if (displayTime >= state.audio.duration) {
+                    // Reached end, stop cleanly
+                    stopAudio(); 
+                    updatePlaybackProgress(1); // Set progress to 100%
+                    updateTimeDisplay(state.audio.duration, state.audio.duration);
+                    return; 
+                }
+
+                updatePlaybackProgress(displayTime / state.audio.duration);
+                updateTimeDisplay(displayTime, state.audio.duration);
+                highlightCurrentWord(displayTime);
                 
-                // Continue updating
                 requestAnimationFrame(updatePlayback);
             }
 
-            function updatePlaybackProgress(percent) {
-                playbackProgress.style.width = `${percent * 100}%`;
-            }
-
-            function updateTimeDisplay(current, total) {
-                timeDisplay.textContent = `${formatTime(current)} / ${formatTime(total || 0)}`;
-            }
-
-            function updateProgressBar(percent) {
-                progressFill.style.width = `${percent * 100}%`;
+            function updatePlaybackProgress(fraction) {
+                playbackProgress.style.width = `${Math.min(1, Math.max(0, fraction)) * 100}%`;
             }
 
             function highlightCurrentWord(currentTime) {
-                // Find the word that should be highlighted
                 let currentWordIndex = -1;
+
+                // Find the latest word timing that is less than or equal to the current time
+                 for (let i = state.audio.wordTimings.length - 1; i >= 0; i--) {
+                     if (state.audio.wordTimings[i].time <= currentTime) {
+                         currentWordIndex = state.audio.wordTimings[i].wordIndex;
+                         break;
+                     }
+                 }
                 
-                // Use word timings if available
-                for (let i = state.audio.wordTimings.length - 1; i >= 0; i--) {
-                    if (state.audio.wordTimings[i].time <= currentTime) {
-                        currentWordIndex = state.audio.wordTimings[i].wordIndex;
-                        break;
-                    }
-                }
-                
-                // If no timing found, estimate based on position
-                if (currentWordIndex === -1 && state.audio.duration > 0) {
+                // Fallback estimation if no timing found (e.g., before first word)
+                if (currentWordIndex === -1 && state.audio.duration > 0 && currentTime > 0) {
                     const words = document.querySelectorAll('.word');
                     currentWordIndex = Math.floor((currentTime / state.audio.duration) * words.length);
+                    currentWordIndex = Math.min(currentWordIndex, words.length - 1); // Clamp to max index
                 }
-                
-                // Remove highlight from all words
-                const activeWords = document.querySelectorAll('.word.active');
-                activeWords.forEach(word => word.classList.remove('active'));
-                
-                // Add highlight to current word
-                if (currentWordIndex >= 0) {
-                    const words = document.querySelectorAll('.word');
-                    if (words[currentWordIndex]) {
-                        words[currentWordIndex].classList.add('active');
-                        
-                        // Scroll the word into view if needed
-                        ensureWordVisible(words[currentWordIndex]);
+
+                if (currentWordIndex !== state.audio.currentWord) {
+                    // Remove highlight from previous word
+                    const previousWord = textDisplay.querySelector(`.word[data-index="${state.audio.currentWord}"]`);
+                    if (previousWord) previousWord.classList.remove('active');
                     
+                    // Add highlight to current word
+                    const currentWord = textDisplay.querySelector(`.word[data-index="${currentWordIndex}"]`);
+                    if (currentWord) {
+                        currentWord.classList.add('active');
+                        ensureWordVisible(currentWord);
+                    }
+                    state.audio.currentWord = currentWordIndex;
+                }
+            }
+
+            function ensureWordVisible(wordElement) {
+                const container = textDisplay;
+                const containerRect = container.getBoundingClientRect();
+                const wordRect = wordElement.getBoundingClientRect();
+
+                // Check if word is above the visible area (with some padding)
+                if (wordRect.top < containerRect.top + 30) {
+                    // Scroll up to bring the word into view near the top
+                     container.scrollTop -= (containerRect.top - wordRect.top + 30);
+                } 
+                // Check if word is below the visible area (with some padding)
+                else if (wordRect.bottom > containerRect.bottom - 30) {
+                    // Scroll down to bring the word into view near the bottom
+                    container.scrollTop += (wordRect.bottom - containerRect.bottom + 30);
+                }
+            }
+
+            function updatePlaybackControls(playing) {
+                playButton.disabled = playing;
+                pauseButton.disabled = !playing;
+                // Stop, rewind, forward are enabled if there's audio loaded, regardless of playing state
+                const hasAudio = state.audio.duration > 0;
+                stopButton.disabled = !hasAudio;
+                rewindButton.disabled = !hasAudio;
+                forwardButton.disabled = !hasAudio;
+            }
+
+            // --- Download Function ---
+            function downloadAudio() {
+                if (state.audio.chunks.length === 0 || !state.audio.chunks.some(c => c)) {
+                    showError("No audio data available to download.");
+                    return;
+                }
+
+                // Filter out any undefined/null chunks before creating the blob
+                const validChunks = state.audio.chunks.filter(chunk => chunk instanceof ArrayBuffer);
+
+                if (validChunks.length === 0) {
+                     showError("No valid audio data found for download.");
+                     return;
+                }
+
+                try {
+                    const blob = new Blob(validChunks, { type: 'audio/mp3' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'tts_output.mp3'; // Set desired filename
+                    document.body.appendChild(a);
+                    
+                    a.click(); // Trigger download
+                    
+                    // Clean up
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showMessage("Download started.");
+                } catch (error) {
+                    showError("Failed to create download link.");
+                    console.error("Download error:", error);
+                }
+            }
+
+        }); // End DOMContentLoaded
+    </script>
+</body>
+</html>
