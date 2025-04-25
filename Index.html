@@ -64,7 +64,6 @@ button:disabled{background:var(--bd);cursor:not-allowed;}
 </head>
 <body>
 <h1>Google Cloud TTS Playground</h1>
-  <!-- Paste right after <h1>Google Cloud TTS Playground</h1> -->
 <button id="themeToggle" class="small-btn" style="position:absolute;top:1rem;right:1rem;">🌓 Toggle Theme</button>
 <div class="grid two">
   <div class="card">
@@ -113,8 +112,7 @@ button:disabled{background:var(--bd);cursor:not-allowed;}
       <h2>🔊 Playback</h2>
     </div>
     <div id="text" class="text-box"><p style="opacity:.6;text-align:center;">Words will appear here...</p></div>
-    <!-- Paste right after <div id="text" class="text-box">...</div> -->
-<canvas id="visualizer" width="100%" height="100"></canvas>
+    <canvas id="visualizer" height="80" style="width:100%;margin:0.8rem 0;border:1px solid var(--bd);border-radius:var(--r);"></canvas>
     <div class="bar" id="prog">
       <div class="fill" id="fill"></div>
     </div>
@@ -169,13 +167,26 @@ window.addEventListener('DOMContentLoaded', () => {
     fill: Q('fill'),
     time: Q('time'),
     toggleDebug: Q('toggleDebug'),
-    debugPanel: Q('debugPanel')
+    debugPanel: Q('debugPanel'),
+    themeToggle: Q('themeToggle')
   };
   
   // Debug logging
   let debugEnabled = localStorage.getItem('debugEnabled') === 'true';
   const maxDebugEntries = 100;
   let debugEntries = [];
+  
+  // Theme toggle
+  let isDarkMode = localStorage.getItem('darkMode') === 'true';
+  if (isDarkMode) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+  
+  E.themeToggle.addEventListener('click', () => {
+    isDarkMode = !isDarkMode;
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    localStorage.setItem('darkMode', isDarkMode);
+  });
   
   // Toggle debug panel
   E.toggleDebug.addEventListener('click', () => {
@@ -526,12 +537,16 @@ window.addEventListener('DOMContentLoaded', () => {
         span.dataset.chunk = currentChunk;
         wordOffsets[globalWordIndex] = currentChunk;
         
-        span.addEventListener('click', () => {
+        // Updated click handler to use the correct index
+        span.addEventListener('click', (e) => {
           if (span.classList.contains('loading')) {
             status('That part is still loading...');
             return;
           }
-          seekToWord(globalWordIndex);
+          // Use the index stored in the dataset property
+          const clickedIndex = parseInt(e.currentTarget.dataset.index);
+          log(`Word clicked: ${e.currentTarget.textContent} (index ${clickedIndex})`);
+          seekToWord(clickedIndex);
         });
         
         wordElements.push(span);
@@ -609,56 +624,34 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-// Replace your current seekToWord function with this improved version:
-const seekToWord = (wordIndex) => {
-  // Convert wordIndex to a number if it's a string (which can happen from dataset values)
-  wordIndex = parseInt(wordIndex);
-  
-  // Check valid conditions - notice the updated bounds check (length-1)
-  if (!buffers.some(b => b) || wordIndex < 0 || wordIndex >= wordElements.length) {
-    log(`Cannot seek to word ${wordIndex}: invalid conditions`, {
-      hasBuffers: buffers.some(b => b),
-      wordCount: wordElements.length,
-      maxValidIndex: wordElements.length - 1
-    });
-    return;
-  }
-  
-  // Make sure the corresponding chunk is loaded
-  const chunkIndex = wordOffsets[wordIndex];
-  if (chunkIndex === undefined || !buffers[chunkIndex]) {
-    log(`Word ${wordIndex} is in chunk ${chunkIndex} which is not loaded yet`);
-    return;
-  }
-  
-  // Calculate time based on word position in text
-  const time = estimateTimeForWord(wordIndex);
-  log(`Seeking to word ${wordIndex} at estimated time ${time.toFixed(2)}s`);
-  
-  seekToTime(time);
-};
-
-// Also modify the prepareTextDisplay function - specifically the click handler part:
-// Find this section in prepareTextDisplay function:
-span.addEventListener('click', () => {
-  if (span.classList.contains('loading')) {
-    status('That part is still loading...');
-    return;
-  }
-  seekToWord(globalWordIndex); // This is passing the current loop index
-});
-
-// Replace it with this:
-span.addEventListener('click', (e) => {
-  if (span.classList.contains('loading')) {
-    status('That part is still loading...');
-    return;
-  }
-  // Use the index stored in the dataset property
-  const clickedIndex = parseInt(e.currentTarget.dataset.index);
-  log(`Word clicked: ${e.currentTarget.textContent} (index ${clickedIndex})`);
-  seekToWord(clickedIndex);
-});
+  // Seek to a specific word - FIXED VERSION
+  const seekToWord = (wordIndex) => {
+    // Convert wordIndex to a number if it's a string (which can happen from dataset values)
+    wordIndex = parseInt(wordIndex);
+    
+    // Check valid conditions - notice the updated bounds check
+    if (!buffers.some(b => b) || wordIndex < 0 || wordIndex >= wordElements.length) {
+      log(`Cannot seek to word ${wordIndex}: invalid conditions`, {
+        hasBuffers: buffers.some(b => b),
+        wordCount: wordElements.length,
+        maxValidIndex: wordElements.length - 1
+      });
+      return;
+    }
+    
+    // Make sure the corresponding chunk is loaded
+    const chunkIndex = wordOffsets[wordIndex];
+    if (chunkIndex === undefined || !buffers[chunkIndex]) {
+      log(`Word ${wordIndex} is in chunk ${chunkIndex} which is not loaded yet`);
+      return;
+    }
+    
+    // Calculate time based on word position in text
+    const time = estimateTimeForWord(wordIndex);
+    log(`Seeking to word ${wordIndex} at estimated time ${time.toFixed(2)}s`);
+    
+    seekToTime(time);
+  };
 
   // Estimate time for a word
   const estimateTimeForWord = (wordIndex) => {
@@ -706,10 +699,12 @@ span.addEventListener('click', (e) => {
       gainNode = ctx.createGain();
       gainNode.gain.value = E.volume.value;
       gainNode.connect(ctx.destination);
-visualizer = new VoiceVisualizer('visualizer', ctx, {
-  mode: 'waveform',
-  color: 'gradient'
-});
+      
+      visualizer = new VoiceVisualizer('visualizer', ctx, {
+        mode: 'waveform',
+        color: 'gradient'
+      });
+      
       log('AudioContext initialized', {
         sampleRate: ctx.sampleRate
       });
@@ -781,7 +776,7 @@ visualizer = new VoiceVisualizer('visualizer', ctx, {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(visualizer.analyser);
-visualizer.analyser.connect(gainNode);
+    visualizer.analyser.connect(gainNode);
     
     // When this chunk ends, play the next one
     source.onended = () => {
@@ -1236,6 +1231,12 @@ visualizer.analyser.connect(gainNode);
       e.preventDefault();
       E.download.click();
     }
+    
+    // T - Toggle theme
+    if (e.code === 'KeyT') {
+      e.preventDefault();
+      E.themeToggle.click();
+    }
   });
   
   // Log initial state
@@ -1246,8 +1247,6 @@ visualizer.analyser.connect(gainNode);
   });
 });
 </script>
-    <!-- Paste right before the closing </body> tag -->
 <script src="voice-visualizer.js"></script>
 </body>
-
 </html>
