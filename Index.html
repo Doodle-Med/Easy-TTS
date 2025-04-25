@@ -249,6 +249,7 @@ button:disabled {
   border-radius:3px;
   padding:1px 2px;
   transition: all 0.15s ease;
+  position: relative;
 }
 
 .word:hover {
@@ -268,6 +269,22 @@ button:disabled {
   animation: shine 1.5s infinite;
   cursor:wait;
   opacity:0.6;
+}
+
+/* Word timing tooltip */
+.word[data-time]:hover::after {
+  content: attr(data-time) "s";
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--c1);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  z-index: 10;
 }
 
 @keyframes shine {
@@ -383,6 +400,66 @@ button:disabled {
   transform: none;
 }
 
+/* Timeline visualization */
+.timeline {
+  height: 40px;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  margin: 10px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.chunk-marker {
+  position: absolute;
+  height: 100%;
+  background: rgba(66,133,244,0.3);
+  border-right: 1px solid var(--c1);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  color: var(--c1);
+}
+
+.chunk-marker:nth-child(odd) {
+  background: rgba(52,168,83,0.2);
+  border-right: 1px solid var(--c2);
+  color: var(--c2);
+}
+
+.word-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--c1);
+  border-radius: 50%;
+  bottom: 2px;
+  transform: translateX(-2px);
+}
+
+.word-dot.active {
+  width: 8px;
+  height: 8px;
+  background: var(--c3);
+  bottom: 0;
+  transform: translateX(-4px);
+}
+
+.playhead {
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  background: var(--c3);
+  top: 0;
+  left: 0;
+  z-index: 5;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -460,6 +537,12 @@ button:disabled {
       <h2>🔊 Playback</h2>
     </div>
     <div id="text" class="text-box"><p style="opacity:.6;text-align:center;">Words will appear here...</p></div>
+    
+    <!-- Timeline visualization for word timings - NEW -->
+    <div id="timeline" class="timeline hidden">
+      <div id="playhead" class="playhead"></div>
+    </div>
+    
     <canvas id="visualizer" height="80" style="width:100%;margin:0.8rem 0;border:1px solid var(--bd);border-radius:var(--r);"></canvas>
     <div class="bar" id="prog">
       <div class="fill" id="fill"></div>
@@ -486,6 +569,14 @@ button:disabled {
 
 <script>
 window.addEventListener('DOMContentLoaded', () => {
+  // Current date and user info
+  const APP_INFO = {
+    version: '1.3.0',
+    date: '2025-04-25',
+    user: 'Doodle-Med',
+    timestamp: '2025-04-25 21:58:56'
+  };
+  
   // API endpoints & DOM elements
   const VO = 'https://texttospeech.googleapis.com/v1/voices';
   const SY = 'https://texttospeech.googleapis.com/v1/text:synthesize';
@@ -516,7 +607,9 @@ window.addEventListener('DOMContentLoaded', () => {
     time: Q('time'),
     toggleDebug: Q('toggleDebug'),
     debugPanel: Q('debugPanel'),
-    themeToggle: Q('themeToggle')
+    themeToggle: Q('themeToggle'),
+    timeline: Q('timeline'),
+    playhead: Q('playhead')
   };
   
   // Debug logging
@@ -544,6 +637,9 @@ window.addEventListener('DOMContentLoaded', () => {
     E.debugPanel.classList.toggle('hidden', !debugEnabled);
     E.toggleDebug.textContent = debugEnabled ? 'Hide Debug Info' : 'Show Debug Info';
     
+    // Show/hide timeline visualization based on debug state
+    E.timeline.classList.toggle('hidden', !debugEnabled);
+    
     if (debugEnabled) {
       updateDebugPanel();
     }
@@ -553,6 +649,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (debugEnabled) {
     E.debugPanel.classList.remove('hidden');
     E.toggleDebug.textContent = 'Hide Debug Info';
+    E.timeline.classList.remove('hidden');
   }
 
   // Enhanced logging with debug panel support
@@ -626,7 +723,7 @@ window.addEventListener('DOMContentLoaded', () => {
   let audioBlobs = []; // Store audio as blobs for download
   let audioSources = []; // Track all audio sources
   let wordElements = []; // Store word elements for efficient lookup
-  let wordTimings = []; // NEW: More accurate timing data for words
+  let wordTimings = []; // Store precise timing data for words
   let totalDuration = 0; // Total final duration
   let loadedDuration = 0; // Duration of loaded chunks so far
   let startTime = 0; // When playback started
@@ -639,8 +736,9 @@ window.addEventListener('DOMContentLoaded', () => {
   let loadingComplete = false;
   let chunksReceived = 0;
   let totalChunks = 0;
-  let chunksData = []; // NEW: Store detailed data about each chunk
+  let chunksData = []; // Store detailed data about each chunk
   let visualizer;
+  let showTimingDebug = true; // Always show timing debug info when in debug mode
   
   // Initialize API key if saved
   if (API) {
@@ -856,78 +954,112 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // NEW: Prepare text display with clickable words and improved timing calculations
+  // IMPROVED: Prepare text display with clickable words
   const prepareTextDisplay = (text, chunks) => {
     log(`Preparing text display with ${text.length} chars and ${chunks.length} chunks`);
     
+    // Reset UI
     E.textBox.innerHTML = '';
     wordElements = [];
-    wordTimings = []; // Reset word timings
-    chunksData = []; // Reset chunks data
+    wordTimings = [];
+    
+    // Clear timeline visualization
+    E.timeline.innerHTML = '';
+    E.timeline.appendChild(E.playhead);
     
     // Initialize chunks data
-    for (let i = 0; i < chunks.length; i++) {
-      chunksData[i] = {
-        text: chunks[i],
-        startTime: 0, // Will be calculated when audio is loaded
-        endTime: 0,   // Will be calculated when audio is loaded
-        wordCount: 0, // Will be calculated below
-        duration: 0,  // Will be updated when audio is loaded
-        loaded: false
-      };
+    chunksData = chunks.map((chunk, index) => ({
+      text: chunk,
+      startTime: 0,
+      endTime: 0,
+      startIndex: index > 0 ? chunksData[index-1]?.endIndex || 0 : 0,
+      endIndex: 0, // Will be set later
+      wordCount: countWords(chunk),
+      duration: 0,
+      loaded: false
+    }));
+    
+    // Set end indices for each chunk
+    for (let i = 0; i < chunksData.length; i++) {
+      chunksData[i].endIndex = chunksData[i].startIndex + chunksData[i].wordCount - 1;
+      
+      if (debugEnabled) {
+        log(`Chunk ${i}: words ${chunksData[i].startIndex} to ${chunksData[i].endIndex} (${chunksData[i].wordCount} words)`);
+      }
     }
     
-    // Split text into words and spaces, tracking chunk boundaries
-    let currentChunk = 0;
-    let chunkWordCount = 0;
-    let chunkStartPos = 0;
-    let globalWordIndex = 0;
-    
-    // Pre-calculate how many words are in each chunk
-    chunks.forEach((chunk, idx) => {
-      const wordCount = chunk.split(/\s+/).filter(Boolean).length;
-      chunksData[idx].wordCount = wordCount;
-    });
+    // Total word count
+    const totalWordCount = chunksData.reduce((total, chunk) => total + chunk.wordCount, 0);
     
     // Process words with knowledge of which chunk they belong to
-    text.split(/(\s+)/).forEach((part) => {
-      if (part.trim()) {
-        // This is a word (not whitespace)
-        const span = document.createElement('span');
-        span.textContent = part;
-        span.className = 'word loading'; // Start as loading
-        span.dataset.index = globalWordIndex;
-        
+    let globalWordIndex = 0;
+    let currentChunk = 0;
+    
+    // Process text to extract words and spaces
+    const parts = [];
+    let currentWord = '';
+    let inWord = false;
+    
+    // Simple tokenizer
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const isWordChar = /[\w\d''-]/.test(char);
+      
+      if (isWordChar) {
+        currentWord += char;
+        inWord = true;
+      } else {
+        if (inWord) {
+          parts.push({ type: 'word', text: currentWord });
+          currentWord = '';
+          inWord = false;
+        }
+        parts.push({ type: 'space', text: char });
+      }
+    }
+    
+    // Add the last word if needed
+    if (inWord) {
+      parts.push({ type: 'word', text: currentWord });
+    }
+    
+    // Create dynamic word boundaries based on processed text
+    parts.forEach(part => {
+      if (part.type === 'word') {
         // Find which chunk this word belongs to
-        while (chunkStartPos + chunksData[currentChunk].text.length < text.indexOf(part, chunkStartPos) && 
-               currentChunk < chunks.length - 1) {
-          chunkStartPos += chunksData[currentChunk].text.length;
+        while (globalWordIndex > chunksData[currentChunk].endIndex && currentChunk < chunksData.length - 1) {
           currentChunk++;
-          chunkWordCount = 0;
         }
         
-        // Store chunk association
+        // Create word element
+        const span = document.createElement('span');
+        span.textContent = part.text;
+        span.className = 'word loading';
+        span.dataset.index = globalWordIndex;
         span.dataset.chunk = currentChunk;
         
-        // Store timing data (will be updated later)
+        // Calculate index within chunk
+        const indexInChunk = globalWordIndex - chunksData[currentChunk].startIndex;
+        
+        // Store timing data (to be filled later)
         wordTimings[globalWordIndex] = {
-          word: part,
+          word: part.text,
           chunk: currentChunk,
-          indexInChunk: chunkWordCount,
-          startTime: 0, // Will be calculated when audio is loaded
-          endTime: 0    // Will be calculated when audio is loaded
+          indexInChunk: indexInChunk, 
+          globalIndex: globalWordIndex,
+          startTime: 0,
+          endTime: 0
         };
         
-        chunkWordCount++;
-        
         // Add click handler
-        span.addEventListener('click', (e) => {
+        span.addEventListener('click', e => {
           if (span.classList.contains('loading')) {
             status('That part is still loading...');
             return;
           }
+          
           const clickedIndex = parseInt(e.currentTarget.dataset.index);
-          log(`Word clicked: ${e.currentTarget.textContent} (index ${clickedIndex})`);
+          log(`Word clicked: ${part.text} (index ${clickedIndex}, chunk ${currentChunk})`);
           seekToWord(clickedIndex);
         });
         
@@ -936,18 +1068,25 @@ window.addEventListener('DOMContentLoaded', () => {
         globalWordIndex++;
       } else {
         // This is whitespace
-        E.textBox.appendChild(document.createTextNode(part));
+        E.textBox.appendChild(document.createTextNode(part.text));
       }
     });
     
     log(`Text display prepared with ${globalWordIndex} words`);
   };
   
-  // NEW: Update word timings when a chunk is loaded
+  // Count words in a string
+  const countWords = text => {
+    return text.split(/\s+/).filter(w => w.trim().length > 0).length;
+  };
+  
+  // COMPLETELY REVISED: Update word timings based on actual audio durations
   const updateWordTimings = (chunkIndex, duration) => {
     if (!chunksData[chunkIndex]) return;
     
-    log(`Updating word timings for chunk ${chunkIndex}, duration ${duration.toFixed(2)}s`);
+    log(`Updating word timings for chunk ${chunkIndex}, duration ${duration.toFixed(2)}s`, {
+      wordCount: chunksData[chunkIndex].wordCount
+    });
     
     // Update chunk data
     chunksData[chunkIndex].loaded = true;
@@ -964,64 +1103,127 @@ window.addEventListener('DOMContentLoaded', () => {
     chunksData[chunkIndex].startTime = chunkStartTime;
     chunksData[chunkIndex].endTime = chunkStartTime + duration;
     
-    // Find all words in this chunk
-    const chunkWordCount = chunksData[chunkIndex].wordCount;
+    // Get word count for this chunk
+    const wordCount = chunksData[chunkIndex].wordCount;
     
-    // Update timings for all words in this chunk
-    wordTimings.forEach((timing, i) => {
-      if (timing.chunk === chunkIndex) {
-        // Calculate word timing within the chunk
-        // This uses a more sophisticated approach considering:
-        // 1. Words near the beginning/end have more spacing
-        // 2. The middle of the speech tends to be faster
+    // Skip empty chunks
+    if (wordCount === 0) {
+      log(`Chunk ${chunkIndex} has no words, skipping timing update`);
+      return;
+    }
+    
+    // Calculate average word duration, adjusting for speaking rhythm
+    const avgWordDuration = duration / wordCount;
+    
+    // Log detailed information
+    log(`Chunk ${chunkIndex} timing details:`, {
+      startTime: chunkStartTime.toFixed(2) + 's',
+      endTime: (chunkStartTime + duration).toFixed(2) + 's',
+      duration: duration.toFixed(2) + 's',
+      wordCount,
+      avgWordDuration: avgWordDuration.toFixed(3) + 's'
+    });
+    
+    // Linear mapping approach
+    for (let i = chunksData[chunkIndex].startIndex; i <= chunksData[chunkIndex].endIndex; i++) {
+      if (i < 0 || i >= wordTimings.length) continue;
+      
+      const timing = wordTimings[i];
+      if (timing.chunk !== chunkIndex) continue;
+      
+      // Calculate word position as fraction of chunk (0 to 1)
+      const position = timing.indexInChunk / (wordCount - 1 || 1);
+      
+      // Apply a simple distribution model
+      const startOffset = position * duration;
+      const endOffset = (position + (1 / (wordCount - 1 || 1))) * duration;
+      
+      timing.startTime = chunkStartTime + startOffset;
+      timing.endTime = chunkStartTime + endOffset;
+      
+      // Remove loading state from word element
+      const el = wordElements[i];
+      if (el) {
+        el.classList.remove('loading');
         
-        const relPos = timing.indexInChunk / chunkWordCount;
-        let timeRatio;
-        
-        // Apply a curve to simulate natural speech rhythm
-        // Words at beginning and end tend to have more time allocated
-        if (relPos < 0.1) {
-          // First 10% of words get a bit more time (slow start)
-          timeRatio = relPos * 0.8; // Slightly compressed
-        } else if (relPos > 0.9) {
-          // Last 10% of words get a bit more time (slow ending)
-          timeRatio = 0.8 + (relPos - 0.9) * 2; // Slightly expanded
-        } else {
-          // Middle words follow a more linear pattern
-          timeRatio = 0.08 + (relPos - 0.1) * 0.84;
+        // Add timing data to the element for debugging
+        if (showTimingDebug) {
+          el.dataset.time = timing.startTime.toFixed(2);
         }
-        
-        // Allocate time slices
-        const wordStartTime = chunkStartTime + (timeRatio * duration);
-        const nextWordTime = chunkStartTime + (((timing.indexInChunk + 1) / chunkWordCount) * duration);
-        
-        // Apply some smoothing to prevent unrealistic timing
-        const minWordDuration = Math.min(0.2, duration / (chunkWordCount * 2));
-        const wordEndTime = Math.min(nextWordTime, wordStartTime + minWordDuration + (0.5 * duration / chunkWordCount));
-        
-        timing.startTime = wordStartTime;
-        timing.endTime = wordEndTime;
-        
-        // Remove loading state from the word element
-        const el = wordElements[i];
-        if (el) {
-          el.classList.remove('loading');
-        }
+      }
+    }
+    
+    // Update timeline visualization if debugging enabled
+    if (debugEnabled) {
+      updateTimelineVisualization();
+      
+      // Log first few word timings as sample
+      const sample = wordTimings
+        .filter(t => t.chunk === chunkIndex)
+        .slice(0, 5)
+        .map(t => ({
+          word: t.word,
+          start: t.startTime.toFixed(2) + 's',
+          end: t.endTime.toFixed(2) + 's'
+        }));
+      
+      log(`Sample word timings for chunk ${chunkIndex}:`, sample);
+    }
+  };
+  
+  // NEW: Update timeline visualization 
+  const updateTimelineVisualization = () => {
+    // Clear existing visualization (except playhead)
+    Array.from(E.timeline.children).forEach(child => {
+      if (child !== E.playhead) {
+        E.timeline.removeChild(child);
       }
     });
     
-    log(`Updated timings for words in chunk ${chunkIndex}`);
+    // Add chunk markers
+    chunksData.forEach((chunk, i) => {
+      if (!chunk.loaded) return;
+      
+      const startPercent = (chunk.startTime / totalDuration) * 100;
+      const widthPercent = (chunk.duration / totalDuration) * 100;
+      
+      const marker = document.createElement('div');
+      marker.className = 'chunk-marker';
+      marker.style.left = `${startPercent}%`;
+      marker.style.width = `${widthPercent}%`;
+      marker.textContent = `${i}: ${chunk.wordCount}w`;
+      marker.title = `Chunk ${i}: ${chunk.duration.toFixed(2)}s, ${chunk.wordCount} words`;
+      
+      E.timeline.appendChild(marker);
+    });
+    
+    // Add word markers (just a sample to avoid overloading)
+    const sampleRate = Math.ceil(wordTimings.length / 100); // Show about 100 word markers
+    
+    wordTimings.forEach((timing, i) => {
+      if (i % sampleRate !== 0) return; // Skip most words for performance
+      
+      const position = (timing.startTime / totalDuration) * 100;
+      
+      const dot = document.createElement('div');
+      dot.className = 'word-dot';
+      dot.style.left = `${position}%`;
+      dot.title = `${timing.word} (${timing.startTime.toFixed(2)}s)`;
+      
+      E.timeline.appendChild(dot);
+    });
+  };
+  
+  // NEW: Update playhead position in timeline
+  const updatePlayhead = (time) => {
+    if (!debugEnabled || totalDuration === 0) return;
+    
+    const position = (time / totalDuration) * 100;
+    E.playhead.style.left = `${position}%`;
   };
 
-  // NEW: Find current time position with optimized approach
+  // Find which chunk and offset to play for a given time
   const locateTimePosition = (time) => {
-    // Throttle debug logging for this frequently called function
-    const shouldLog = Math.random() < 0.01;
-    
-    if (shouldLog) {
-      log(`Locating position for time ${time.toFixed(2)}s`);
-    }
-    
     // Handle case where time is beyond loaded duration
     if (time >= loadedDuration) {
       const lastIndex = buffers.findLastIndex(b => b);
@@ -1035,9 +1237,6 @@ window.addEventListener('DOMContentLoaded', () => {
           time < chunksData[i].endTime) {
         
         const offset = time - chunksData[i].startTime;
-        if (shouldLog) {
-          log(`Found time ${time.toFixed(2)}s in chunk ${i} at offset ${offset.toFixed(2)}s`);
-        }
         return { chunk: i, offset: offset };
       }
     }
@@ -1051,9 +1250,6 @@ window.addEventListener('DOMContentLoaded', () => {
       const duration = buffer.duration;
       if (time < currentTime + duration) {
         const offset = time - currentTime;
-        if (shouldLog) {
-          log(`Fallback: found time ${time.toFixed(2)}s in chunk ${i} at offset ${offset.toFixed(2)}s`);
-        }
         return { chunk: i, offset: offset };
       }
       
@@ -1062,9 +1258,6 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Final fallback: use last loaded chunk
     const lastLoaded = buffers.findLastIndex(b => b);
-    if (shouldLog) {
-      log(`Could not locate time ${time.toFixed(2)}s, using last loaded chunk`);
-    }
     return { chunk: lastLoaded === -1 ? 0 : lastLoaded, offset: 0 };
   };
 
@@ -1097,14 +1290,14 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // NEW: Completely revamped word navigation approach
+  // COMPLETELY REVISED: Seek to a specific word
   const seekToWord = (wordIndex) => {
+    // Validate word index
     wordIndex = parseInt(wordIndex);
     
-    if (isNaN(wordIndex) || wordIndex < 0 || wordIndex >= wordElements.length) {
-      log(`Cannot seek to word ${wordIndex}: out of range`, {
-        wordCount: wordElements.length,
-        maxValidIndex: wordElements.length - 1
+    if (isNaN(wordIndex) || wordIndex < 0 || wordIndex >= wordTimings.length) {
+      log(`Cannot seek to word ${wordIndex}: invalid index`, {
+        wordCount: wordTimings.length,
       });
       return;
     }
@@ -1119,7 +1312,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Make sure the chunk is loaded
     const chunkIndex = timing.chunk;
     if (!chunksData[chunkIndex]?.loaded || !buffers[chunkIndex]) {
-      log(`Word ${wordIndex} (${timing.word}) is in chunk ${chunkIndex} which is not loaded yet`);
+      log(`Word ${wordIndex} ("${timing.word}") is in chunk ${chunkIndex} which is not loaded yet`);
       return;
     }
     
@@ -1324,6 +1517,9 @@ window.addEventListener('DOMContentLoaded', () => {
       E.play.disabled = false;
       E.pause.disabled = true;
       E.stop.disabled = false;
+      
+      // Reset playhead
+      updatePlayhead(0);
     }
   };
 
@@ -1357,65 +1553,87 @@ window.addEventListener('DOMContentLoaded', () => {
     // Update time display
     E.time.textContent = `${fmt(time)} / ${fmt(totalDuration)}`;
     
+    // Update playhead position
+    updatePlayhead(time);
+    
     // Update word highlighting
     updateWordHighlight(time);
   };
 
-  // NEW: Improved word highlighting based on actual word timings
+  // IMPROVED: Word highlighting with direct timing data lookup
   const updateWordHighlight = (time) => {
-    // Find the word that should be highlighted at the current time
-    // using the timing data we calculated
+    // Throttle updates for performance
+    const now = Date.now();
+    if (now - (updateWordHighlight.lastUpdate || 0) < 50) return;
+    updateWordHighlight.lastUpdate = now;
+    
     let newWordIndex = -1;
     
-    // Find the word whose timing range contains the current time
+    // Direct approach: find the word whose timing contains the current time
     for (let i = 0; i < wordTimings.length; i++) {
       const timing = wordTimings[i];
+      
+      // Check if time is within this word's timing boundary
       if (timing.startTime <= time && time <= timing.endTime) {
         newWordIndex = i;
         break;
       }
     }
     
-    // If no exact match, find the closest word
+    // If no direct match, find the closest upcoming word
     if (newWordIndex === -1) {
-      // Find the word that will be spoken next
+      let closestTime = Infinity;
+      let closestIndex = -1;
+      
       for (let i = 0; i < wordTimings.length; i++) {
-        if (time < wordTimings[i].startTime) {
-          newWordIndex = i;
-          break;
+        const timing = wordTimings[i];
+        
+        // If word has valid timing and is in the future
+        if (timing.startTime >= time && timing.startTime < closestTime) {
+          closestTime = timing.startTime;
+          closestIndex = i;
         }
       }
       
-      // If we're past all words, highlight the last one
-      if (newWordIndex === -1 && wordTimings.length > 0) {
+      // If we found a close upcoming word
+      if (closestIndex !== -1) {
+        newWordIndex = closestIndex;
+      } else {
+        // If everything is in the past, use the last word
         newWordIndex = wordTimings.length - 1;
       }
     }
     
     // Only update if it's a different word
-    if (newWordIndex !== currentWordIndex) {
+    if (newWordIndex !== currentWordIndex && newWordIndex >= 0 && newWordIndex < wordElements.length) {
       // Remove highlight from previous word
       if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
         wordElements[currentWordIndex].classList.remove('active');
+        
+        // Also update timeline dots
+        const prevDot = document.querySelector(`.word-dot[data-index="${currentWordIndex}"]`);
+        if (prevDot) prevDot.classList.remove('active');
       }
       
       // Add highlight to current word
-      if (newWordIndex >= 0 && newWordIndex < wordElements.length) {
-        const wordEl = wordElements[newWordIndex];
-        wordEl.classList.add('active');
-        
-        // Ensure word is visible
-        const container = E.textBox;
-        const wordTop = wordEl.offsetTop;
-        const wordBottom = wordTop + wordEl.offsetHeight;
-        const containerTop = container.scrollTop;
-        const containerBottom = containerTop + container.offsetHeight;
-        
-        if (wordTop < containerTop + 30) {
-          container.scrollTop = wordTop - 30;
-        } else if (wordBottom > containerBottom - 30) {
-          container.scrollTop = wordBottom - container.offsetHeight + 30;
-        }
+      const wordEl = wordElements[newWordIndex];
+      wordEl.classList.add('active');
+      
+      // Highlight timeline dot if it exists
+      const dot = document.querySelector(`.word-dot[data-index="${newWordIndex}"]`);
+      if (dot) dot.classList.add('active');
+      
+      // Ensure word is visible
+      const container = E.textBox;
+      const wordTop = wordEl.offsetTop;
+      const wordBottom = wordTop + wordEl.offsetHeight;
+      const containerTop = container.scrollTop;
+      const containerBottom = containerTop + container.offsetHeight;
+      
+      if (wordTop < containerTop + 30) {
+        container.scrollTop = wordTop - 30;
+      } else if (wordBottom > containerBottom - 30) {
+        container.scrollTop = wordBottom - container.offsetHeight + 30;
       }
       
       currentWordIndex = newWordIndex;
@@ -1431,6 +1649,18 @@ window.addEventListener('DOMContentLoaded', () => {
     const targetTime = ratio * totalDuration;
     
     log(`Progress bar clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`);
+    seekToTime(targetTime);
+  };
+  
+  // Timeline click handler
+  E.timeline.onclick = e => {
+    if (!totalDuration || !debugEnabled) return;
+    
+    const rect = E.timeline.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    const targetTime = ratio * totalDuration;
+    
+    log(`Timeline clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`);
     seekToTime(targetTime);
   };
 
@@ -1586,130 +1816,4 @@ window.addEventListener('DOMContentLoaded', () => {
             const audioBuffer = await decodeBuffer(bufferCopy);
             
             // Store the decoded buffer
-            buffers[index] = audioBuffer;
-            
-            // Update word timings with actual audio duration
-            updateWordTimings(index, audioBuffer.duration);
-            
-            // Update durations
-            loadedDuration += audioBuffer.duration;
-            totalDuration += audioBuffer.duration;
-            
-            log(`Chunk ${index + 1} decoded: ${audioBuffer.duration.toFixed(2)}s`);
-            
-            // Update progress
-            chunksReceived++;
-            
-            // Autoplay first chunk when it's ready
-            if (index === 0 && !playing && !paused) {
-              startPlayback(0, 0, 0);
-            }
-            
-            return index;
-          } catch (decodeError) {
-            log(`Error decoding chunk ${index + 1}`, decodeError, 'error');
-            throw new Error(`Failed to decode audio for chunk ${index + 1}: ${decodeError.message}`);
-          }
-        } catch (error) {
-          log(`Error processing chunk ${index + 1}`, error, 'error');
-          status(`Chunk ${index + 1} failed: ${error.message}`, true);
-          return null;
-        }
-      });
-      
-      // Wait for all chunks to complete
-      await Promise.all(chunkPromises);
-      
-      // Check if all chunks were processed successfully
-      const success = chunksReceived === totalChunks;
-      loadingComplete = true;
-      
-      if (success) {
-        log('All chunks processed successfully', { totalDuration });
-        status(`All chunks processed. Duration: ${fmt(totalDuration)}`, false);
-        E.download.disabled = false;
-      } else {
-        log(`Some chunks failed (${chunksReceived}/${totalChunks})`, null, 'warn');
-        status(`Completed ${chunksReceived}/${totalChunks} chunks`, true);
-      }
-    } catch (e) {
-      log('Generation failed', e, 'error');
-      status(`Generation failed: ${e.message}`, true);
-    } finally {
-      E.gen.disabled = false;
-    }
-  };
-  
-  // Add keyboard shortcuts
-  document.addEventListener('keydown', (e) => {
-    // Don't trigger shortcuts when typing in inputs
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    
-    // Space - Play/Pause
-    if (e.code === 'Space') {
-      e.preventDefault();
-      if (playing) E.pause.click();
-      else if (paused || loadingComplete) E.play.click();
-    }
-    
-    // Escape - Stop
-    if (e.code === 'Escape' && (playing || paused)) {
-      e.preventDefault();
-      E.stop.click();
-    }
-    
-    // G - Generate
-    if (e.code === 'KeyG' && !E.gen.disabled) {
-      e.preventDefault();
-      E.gen.click();
-    }
-    
-    // D - Download
-    if (e.code === 'KeyD' && !E.download.disabled) {
-      e.preventDefault();
-      E.download.click();
-    }
-    
-    // T - Toggle theme
-    if (e.code === 'KeyT') {
-      e.preventDefault();
-      E.themeToggle.click();
-    }
-    
-    // Left/Right arrow - Skip 5 seconds
-    if (e.code === 'ArrowLeft' && (playing || paused)) {
-      e.preventDefault();
-      const currentTime = playing ? ctx.currentTime - startTime : pausedAt;
-      seekToTime(Math.max(0, currentTime - 5));
-    }
-    if (e.code === 'ArrowRight' && (playing || paused)) {
-      e.preventDefault();
-      const currentTime = playing ? ctx.currentTime - startTime : pausedAt;
-      seekToTime(Math.min(totalDuration, currentTime + 5));
-    }
-    
-    // Up/Down arrow - Adjust volume
-    if (e.code === 'ArrowUp') {
-      e.preventDefault();
-      E.volume.value = Math.min(1, parseFloat(E.volume.value) + 0.1);
-      if (gainNode) gainNode.gain.value = E.volume.value;
-    }
-    if (e.code === 'ArrowDown') {
-      e.preventDefault();
-      E.volume.value = Math.max(0, parseFloat(E.volume.value) - 0.1);
-      if (gainNode) gainNode.gain.value = E.volume.value;
-    }
-  });
-  
-  // Log initial state
-  log('Application initialized', {
-    version: '1.2.0',
-    date: '2025-04-25',
-    user: 'Doodle-Med',
-    debugEnabled: debugEnabled
-  });
-});
-</script>
-<script src="voice-visualizer.js"></script>
-</body>
-</html>
+            buffers[index
