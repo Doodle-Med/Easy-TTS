@@ -1,1099 +1,132 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>VoiceCanvas - Google Cloud TTS Playground</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<title>Google Cloud TTS Playground</title>
 <style>
-:root {
-  /* Light theme */
+:root{
   --c1:#4285f4;
   --c2:#34a853;
   --c3:#ea4335;
   --c4:#fbbc04;
-  --bg:#f8f9fa;
-  --card-bg:#ffffff;
+  --bg:#fdfdfd;
   --fg:#202124;
   --bd:#dadce0;
-  --r:12px;
-  --shadow: 0 4px 16px rgba(0,0,0,0.08);
-  --hover-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  --transition: all 0.3s ease;
-}
-
-[data-theme="dark"] {
-  --c1:#66a3ff;
-  --c2:#58cb79;
-  --c3:#ff7d6b;
-  --c4:#ffd56b;
-  --bg:#202124;
-  --card-bg:#292a2d;
-  --fg:#e8eaed;
-  --bd:#5f6368;
-  --shadow: 0 4px 16px rgba(0,0,0,0.25);
-  --hover-shadow: 0 8px 24px rgba(0,0,0,0.3);
-}
-
-* {
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  font-family:"Google Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  transition: var(--transition);
-}
-
-body {
-  background:var(--bg);
-  color:var(--fg);
-  padding:1rem;
-  max-width:1200px;
-  margin:auto;
-  line-height:1.5;
-}
-
-h1 {
-  font-size:clamp(1.7rem,3vw,3rem);
-  text-align:center;
-  margin-bottom:1.2rem;
-  background:linear-gradient(90deg,var(--c1),var(--c2),var(--c4),var(--c3));
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-  font-weight:800;
-}
-
-.subtitle {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  opacity: 0.8;
-  font-size: 1.1rem;
-}
-
-.grid {
-  display:grid;
-  gap:1.2rem;
-}
-
-.two {
-  grid-template-columns:1fr 1fr;
-}
-
-.three {
-  grid-template-columns:repeat(3, 1fr);
-}
-
-@media(max-width:900px) {
-  .two, .three {
-    grid-template-columns:1fr;
-  }
-}
-
-.card {
-  background:var(--card-bg);
-  border:1px solid var(--bd);
-  border-radius:var(--r);
-  box-shadow:var(--shadow);
-  padding:1.5rem;
-  position:relative;
-  transition:var(--transition);
-}
-
-.card:hover {
-  box-shadow:var(--hover-shadow);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1.2rem;
-  gap: 0.5rem;
-}
-
-.card-header h2 {
-  font-size: 1.3rem;
-  margin: 0;
-  flex-grow: 1;
-}
-
-.card-header .actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-label {
-  font-weight:600;
-  margin:.7rem 0 .3rem;
-  display:block;
-}
-
-input, select, textarea, button, .btn {
-  width:100%;
-  padding:.65rem .75rem;
-  border:1px solid var(--bd);
-  border-radius:8px;
-  font-size:1rem;
-  margin-bottom:.8rem;
-  background: var(--card-bg);
-  color: var(--fg);
-}
-
-input:focus, select:focus, textarea:focus {
-  border-color:var(--c1);
-  outline:none;
-  box-shadow:0 0 0 3px rgba(66,133,244,0.2);
-}
-
-textarea {
-  resize:vertical;
-  min-height:140px;
-}
-
-button, .btn {
-  cursor:pointer;
-  background:var(--c1);
-  color:#fff;
-  border:none;
-  font-weight:500;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: var(--transition);
-}
-
-button:not(:disabled):hover, .btn:not(:disabled):hover {
-  background:#3367d6;
-  transform: translateY(-2px);
-}
-
-button:disabled, .btn:disabled {
-  background:var(--bd);
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-button.secondary, .btn.secondary {
-  background: transparent;
-  border: 1px solid var(--bd);
-  color: var(--fg);
-}
-
-button.secondary:not(:disabled):hover, .btn.secondary:not(:disabled):hover {
-  background: rgba(66,133,244,0.1);
-  border-color: var(--c1);
-}
-
-.small-btn {
-  width:auto;
-  padding: .5rem .8rem;
-}
-
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background: transparent;
-  color: var(--fg);
-  border: 1px solid var(--bd);
-  font-size: 1.1rem;
-}
-
-.icon-btn:hover {
-  background: rgba(66,133,244,0.1);
-  border-color: var(--c1);
-  color: var(--c1);
-}
-
-.toggle {
-  display: flex;
-  gap: .5rem;
-  margin: .8rem 0;
-}
-
-.toggle button {
-  flex: 1;
-  background: var(--card-bg);
-  border: 1px solid var(--bd);
-  color: var(--fg);
-}
-
-.toggle .active {
-  background: var(--c2);
-  color: #fff;
-  border-color: var(--c2);
-}
-
-.status {
-  min-height: 1.4em;
-  font-size: .95rem;
-  margin: .5rem 0;
-  padding: .5rem;
-  border-radius: 8px;
-  transition: var(--transition);
-}
-
-.error {
-  color: var(--c3);
-  background: rgba(234, 67, 53, 0.1);
-  font-weight: 500;
-}
-
-.success {
-  color: var(--c2);
-  background: rgba(52, 168, 83, 0.1);
-  font-weight: 500;
-}
-
-.bar {
-  height: 14px;
-  background: var(--bd);
-  border-radius: 7px;
-  overflow: hidden;
-  cursor: pointer;
-  margin: .8rem 0;
-  position: relative;
-}
-
-.fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--c1), var(--c2));
-  width: 0;
-  border-radius: 7px;
-  transition: width 0.2s linear;
-}
-
-.bar .markers {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.bar .marker {
-  position: absolute;
-  height: 100%;
-  width: 1px;
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.audio-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.playback-controls {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
-
-.playback-controls button {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  aspect-ratio: 1/1;
-  font-size: 1.1rem;
-  display: grid;
-  place-items: center;
-  padding: 0;
-}
-
-.volume-control {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  flex: 1;
-}
-
-.volume-control input {
-  margin: 0;
-}
-
-.time {
-  font-family: monospace;
-  font-size: 1rem;
-  white-space: nowrap;
-}
-
-.text-box {
-  background:var(--card-bg);
-  border:1px solid var(--bd);
-  border-radius:var(--r);
-  padding:1rem;
-  max-height:340px;
-  overflow:auto;
-  line-height:1.6;
-}
-
-.word {
-  display:inline-block;
-  cursor:pointer;
-  border-radius:3px;
-  padding:1px 2px;
-  transition: all 0.2s ease;
-}
-
-.word:hover {
-  background:rgba(66,133,244,0.1);
-}
-
-.word.active {
-  background:rgba(66,133,244,0.25);
-  color:var(--c1);
-  font-weight:700;
-}
-
-.word.loading {
-  background: linear-gradient(90deg, rgba(0,0,0,0.05), rgba(0,0,0,0.1), rgba(0,0,0,0.05));
-  background-size: 200% 100%;
-  animation: shine 1.5s infinite;
-  cursor:wait;
-  opacity:0.7;
-}
-
-.waveform {
-  width: 100%;
-  height: 80px;
-  background: var(--card-bg);
-  border: 1px solid var(--bd);
-  border-radius: 8px;
-  margin: .8rem 0;
-  overflow: hidden;
-}
-
-.section {
-  margin-bottom: 1.2rem;
-}
-
-.tabs {
-  display: flex;
-  gap: .5rem;
-  margin-bottom: 1rem;
-  overflow-x: auto;
-  padding-bottom: .5rem;
-}
-
-.tab {
-  padding: .5rem 1rem;
-  border: 1px solid var(--bd);
-  border-radius: 20px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.tab.active {
-  background: var(--c1);
-  color: #fff;
-  border-color: var(--c1);
-}
-
-.row {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.col {
-  flex: 1;
-  min-width: 200px;
-}
-
-.search-box {
-  position: relative;
-  margin-bottom: 1rem;
-}
-
-.search-box input {
-  padding-left: 2.5rem;
-}
-
-.search-box i {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--bd);
-}
-
-.filters {
-  margin-bottom: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-}
-
-.filter {
-  padding: .3rem .8rem;
-  border-radius: 20px;
-  background: rgba(66,133,244,0.1);
-  color: var(--c1);
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.filter.active {
-  background: var(--c1);
-  color: #fff;
-}
-
-.select-wrapper {
-  position: relative;
-}
-
-.select-wrapper:after {
-  content: '\f078';
-  font-family: 'Font Awesome 6 Free';
-  font-weight: 900;
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--bd);
-  pointer-events: none;
-}
-
-.badge {
-  display: inline-block;
-  padding: .2rem .5rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-left: .5rem;
-}
-
-.badge.blue {
-  background: rgba(66,133,244,0.1);
-  color: var(--c1);
-}
-
-.badge.green {
-  background: rgba(52,168,83,0.1);
-  color: var(--c2);
-}
-
-.badge.red {
-  background: rgba(234,67,53,0.1);
-  color: var(--c3);
-}
-
-.badge.yellow {
-  background: rgba(251,188,4,0.1);
-  color: var(--c4);
-}
-
-.voice-list {
-  max-height: 250px;
-  overflow-y: auto;
-  border: 1px solid var(--bd);
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.voice-item {
-  display: flex;
-  align-items: center;
-  padding: .7rem;
-  border-bottom: 1px solid var(--bd);
-  cursor: pointer;
-}
-
-.voice-item:last-child {
-  border-bottom: none;
-}
-
-.voice-item:hover {
-  background: rgba(66,133,244,0.05);
-}
-
-.voice-item.selected {
-  background: rgba(66,133,244,0.1);
-}
-
-.voice-icon {
-  font-size: 1.1rem;
-  color: var(--c1);
-  margin-right: .7rem;
-}
-
-.voice-name {
-  flex: 1;
-}
-
-.voice-gender {
-  opacity: 0.7;
-  font-size: 0.85rem;
-}
-
-.slider-value {
-  width: 40px;
-  text-align: right;
-}
-
-.floating-buttons {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: .7rem;
-  z-index: 100;
-}
-
-.floating-buttons .icon-btn {
-  width: 50px;
-  height: 50px;
-  font-size: 1.2rem;
-  box-shadow: var(--shadow);
-}
-
-.tooltip {
-  position: relative;
-}
-
-.tooltip:hover:after {
-  content: attr(data-tooltip);
-  position: absolute;
-  right: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-right: 10px;
-  background: var(--fg);
-  color: var(--bg);
-  padding: .3rem .7rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  z-index: 101;
-}
-
-.tooltip:hover:before {
-  content: '';
-  position: absolute;
-  right: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-right: 5px;
-  border-left: 5px solid var(--fg);
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  z-index: 101;
-}
-
-.effects-panel {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--bd);
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.modal.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.modal-content {
-  background: var(--card-bg);
-  border-radius: var(--r);
-  padding: 1.5rem;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow);
-  transform: translateY(-20px);
-  transition: transform 0.3s ease;
-}
-
-.modal.show .modal-content {
-  transform: translateY(0);
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--bd);
-}
-
-.modal-header h3 {
-  flex: 1;
-  margin: 0;
-}
-
-.modal-close {
-  background: transparent;
-  border: none;
-  color: var(--fg);
-  font-size: 1.5rem;
-  width: auto;
-  margin: 0;
-  padding: 0;
-  cursor: pointer;
-}
-
-.modal-close:hover {
-  color: var(--c3);
-  transform: none;
-}
-
-.keyboard-shortcuts {
-  margin-top: 1rem;
-}
-
-.shortcut {
-  display: flex;
-  align-items: center;
-  margin-bottom: .7rem;
-}
-
-.shortcut-key {
-  display: inline-block;
-  padding: .3rem .7rem;
-  background: var(--bg);
-  border: 1px solid var(--bd);
-  border-radius: 4px;
-  font-family: monospace;
-  margin-right: 1rem;
-  width: 50px;
-  text-align: center;
-}
-
-.shortcut-desc {
-  flex: 1;
-}
-
-.saved-configs {
-  max-height: 300px;
-  overflow-y: auto;
-  margin-bottom: 1rem;
-}
-
-.config-item {
-  display: flex;
-  align-items: center;
-  padding: .7rem;
-  border: 1px solid var(--bd);
-  border-radius: 8px;
-  margin-bottom: .5rem;
-}
-
-.config-name {
-  flex: 1;
-  font-weight: 500;
-}
-
-.config-actions {
-  display: flex;
-  gap: .5rem;
-}
-
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: var(--card-bg);
-  border: 1px solid var(--bd);
-  border-radius: 8px;
-  min-width: 150px;
-  box-shadow: var(--shadow);
-  z-index: 10;
-  display: none;
-}
-
-.dropdown-menu.show {
-  display: block;
-}
-
-.dropdown-item {
-  padding: .7rem 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
-
-.dropdown-item:hover {
-  background: rgba(66,133,244,0.1);
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: var(--bd);
-  margin: .3rem 0;
-}
-
-.history-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.history-item {
-  padding: .7rem;
-  border: 1px solid var(--bd);
-  border-radius: 8px;
-  margin-bottom: .5rem;
-  cursor: pointer;
-}
-
-.history-item:hover {
-  background: rgba(66,133,244,0.05);
-}
-
-.history-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: .3rem;
-}
-
-.history-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
-  opacity: 0.7;
-}
-
-.spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(66,133,244,0.3);
-  border-radius: 50%;
-  border-top-color: var(--c1);
-  animation: spin 0.8s linear infinite;
-  margin-right: 5px;
-}
-
-.skeleton {
-  background: linear-gradient(90deg, rgba(0,0,0,0.05), rgba(0,0,0,0.1), rgba(0,0,0,0.05));
-  background-size: 200% 100%;
-  animation: shine 1.5s infinite;
-  height: 20px;
-  border-radius: 4px;
-  margin-bottom: .5rem;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes shine {
-  to { background-position: -200% 0; }
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--bd);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--c1);
-}
+  --r:10px;
+  --shadow: 0 4px 12px rgba(0,0,0,.05);
+  --hover: rgba(66,133,244,0.1);
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{background:var(--bg);color:var(--fg);padding:1rem;max-width:1200px;margin:auto}
+h1{font-size:clamp(1.7rem,2.5vw,3rem);text-align:center;margin-bottom:1rem;background:linear-gradient(90deg,var(--c1),var(--c2),var(--c4),var(--c3));-webkit-background-clip:text;color:transparent;font-weight:800}
+.grid{display:grid;gap:1rem}.two{grid-template-columns:1fr 1fr}@media(max-width:800px){.two{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--shadow);padding:1.2rem;position:relative}
+.card-header{display:flex;align-items:center;margin-bottom:1rem;}
+.card-header h2{flex:1;font-size:1.3rem;}
+label{font-weight:600;margin:.6rem 0 .3rem;display:block}
+input,select,textarea,button{width:100%;padding:.55rem .65rem;border:1px solid var(--bd);border-radius:6px;font-size:1rem;margin-bottom:.8rem}
+input:focus,select:focus,textarea:focus{border-color:var(--c1);outline:none}
+textarea{resize:vertical;min-height:140px}
+button{cursor:pointer;background:var(--c1);color:#fff;border:none;font-weight:600}
+button:not(:disabled):hover{background:#3367d6}
+button:disabled{background:var(--bd);cursor:not-allowed;}
+.small-btn{width:auto}
+.toggle{display:flex;gap:.5rem;margin:.6rem 0}.toggle button{flex:1;background:var(--bg);border:1px solid var(--bd);color:var(--fg)}
+.toggle .active{background:var(--c2);color:#fff;border-color:var(--c2)}
+.status{min-height:1.4em;font-size:.95rem;margin:.5rem 0}.error{color:var(--c3);font-weight:700}
+.success{color:var(--c2);font-weight:700}
+.bar{height:12px;background:var(--bd);border-radius:6px;overflow:hidden;cursor:pointer;margin:.8rem 0}
+.fill{height:100%;background:linear-gradient(90deg,var(--c1),var(--c2));width:0}
+.audio{display:flex;align-items:center;gap:.6rem}
+.audio button{width:44px;border-radius:50%;aspect-ratio:1/1;font-size:1.1rem;display:grid;place-items:center}
+.time{font-family:monospace;margin-left:auto}
+.text-box{background:#fff;border:1px solid var(--bd);border-radius:var(--r);padding:1rem;max-height:340px;overflow:auto;line-height:1.6}
+.word{display:inline-block;cursor:pointer;border-radius:3px;padding:1px 2px}
+.word:hover{background:#f1f3f4}
+.word.active{background:rgba(66,133,244,.25);color:var(--c1);font-weight:700}
+.word.loading{background:#f1f3f4;cursor:wait;opacity:0.6}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.1);border-radius:50%;border-top-color:var(--c1);animation:spin 0.8s linear infinite;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.controls{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.8rem;}
+.controls button{margin-bottom:0;}
+.volume-control{display:flex;align-items:center;gap:0.5rem;flex:1;}
+.volume-control input{margin:0;}
+.download-btn{margin-left:auto;}
+.hidden{display:none}
 </style>
 </head>
 <body>
-<h1>VoiceCanvas</h1>
-<p class="subtitle">Advanced Google Cloud TTS Playground</p>
-
+<h1>Google Cloud TTS Playground</h1>
 <div class="grid two">
   <div class="card">
     <div class="card-header">
-      <h2><i class="fas fa-cog"></i> Configuration</h2>
-      <div class="actions">
-        <button id="saveConfig" class="icon-btn tooltip" data-tooltip="Save Config"><i class="fas fa-save"></i></button>
-        <button id="loadConfig" class="icon-btn tooltip" data-tooltip="Load Config"><i class="fas fa-folder-open"></i></button>
+      <h2>🎛️ Configuration</h2>
+    </div>
+    <label>API Key</label>
+    <div class="controls">
+      <input id="k" type="password" placeholder="Enter your Google Cloud API Key"/>
+      <button class="small-btn" id="ld">Load Voices</button>
+    </div>
+    <div id="loading" class="status hidden"><span class="spinner"></span>Loading voices...</div>
+    
+    <label>Text</label>
+    <textarea id="txt" placeholder="Type or paste text here..."></textarea>
+    
+    <label>Voice</label>
+    <select id="v" disabled></select>
+    
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:.8rem">
+      <div>
+        <label>Pitch <span id="pitVal">0</span></label>
+        <input id="pit" type="range" min="-20" max="20" value="0"/>
+      </div>
+      <div>
+        <label>Rate <span id="ratVal">1</span></label>
+        <input id="rat" type="range" min="0.25" max="4" step="0.05" value="1"/>
       </div>
     </div>
     
-    <div class="section">
-      <label for="k">API Key</label>
-      <div class="row">
-        <div style="flex: 1">
-          <input id="k" type="password" placeholder="Enter your Google Cloud API Key"/>
-        </div>
-        <button class="small-btn" id="ld"><i class="fas fa-sync-alt"></i> Load Voices</button>
-      </div>
-      <div id="loading" class="status hidden"><span class="spinner"></span>Loading voices...</div>
+    <label>Chunk Size <span id="chkVal">1000</span></label>
+    <input id="chk" type="range" min="500" max="4500" step="500" value="1000"/>
+    
+    <div class="toggle" id="method">
+      <button data-m="sentence">Sentence</button>
+      <button data-m="paragraph" class="active">Paragraph</button>
+      <button data-m="exact">Exact</button>
     </div>
     
-    <div class="section">
-      <label for="txt">Text</label>
-      <textarea id="txt" placeholder="Type or paste text here..."></textarea>
-    </div>
-    
-    <div class="section">
-      <label>Voice Selection</label>
-      <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" id="voiceSearch" placeholder="Search for voices..."/>
-      </div>
-      
-      <div class="filters">
-        <div class="filter active" data-filter="all">All</div>
-        <div class="filter" data-filter="neural">Neural</div>
-        <div class="filter" data-filter="standard">Standard</div>
-        <div class="filter" data-filter="male">Male</div>
-        <div class="filter" data-filter="female">Female</div>
-      </div>
-      
-      <div class="voice-list" id="voiceList">
-        <div class="voice-item">
-          <span class="voice-icon"><i class="fas fa-microphone-alt"></i></span>
-          <span class="voice-name">Select a voice from the list</span>
-        </div>
-      </div>
-      
-      <div class="select-wrapper hidden">
-        <select id="v" disabled></select>
-      </div>
-    </div>
-    
-    <div class="section">
-      <div class="row">
-        <div class="col">
-          <label for="pit">Pitch <span id="pitVal">0</span></label>
-          <div class="row">
-            <input id="pit" type="range" min="-20" max="20" value="0" step="1"/>
-            <span class="slider-value" id="pitValue">0</span>
-          </div>
-        </div>
-        <div class="col">
-          <label for="rat">Rate <span id="ratVal">1.00</span></label>
-          <div class="row">
-            <input id="rat" type="range" min="0.25" max="4" step="0.05" value="1"/>
-            <span class="slider-value" id="ratValue">1.00</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="section">
-      <div class="row">
-        <div class="col">
-          <label for="chk">Chunk Size <span id="chkVal">1000</span> chars</label>
-          <div class="row">
-            <input id="chk" type="range" min="500" max="5000" step="500" value="1000"/>
-            <span class="slider-value" id="chkValue">1000</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="section">
-      <label>Splitting Method</label>
-      <div class="toggle" id="method">
-        <button data-m="sentence"><i class="fas fa-ellipsis-h"></i> Sentence</button>
-        <button data-m="paragraph" class="active"><i class="fas fa-paragraph"></i> Paragraph</button>
-        <button data-m="exact"><i class="fas fa-ruler"></i> Exact</button>
-      </div>
-    </div>
-    
-    <div class="section effects-panel" id="effectsPanel">
-      <label>Audio Effects <span class="badge blue">New</span></label>
-      <div class="row">
-        <div class="col">
-          <label for="reverbLevel">Reverb</label>
-          <div class="row">
-            <input id="reverbLevel" type="range" min="0" max="1" step="0.01" value="0"/>
-            <span class="slider-value" id="reverbValue">0.00</span>
-          </div>
-        </div>
-        <div class="col">
-          <label for="echoLevel">Echo</label>
-          <div class="row">
-            <input id="echoLevel" type="range" min="0" max="1" step="0.01" value="0"/>
-            <span class="slider-value" id="echoValue">0.00</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <button id="gen" disabled><i class="fas fa-magic"></i> Generate & Play</button>
+    <button id="gen" disabled>🎤 Generate & Play</button>
     <div id="stat" class="status"></div>
   </div>
   
   <div class="card">
     <div class="card-header">
-      <h2><i class="fas fa-headphones"></i> Playback</h2>
-      <div class="actions">
-        <button id="downloadAudio" class="icon-btn tooltip" data-tooltip="Download Audio" disabled><i class="fas fa-download"></i></button>
-        <button id="showHistory" class="icon-btn tooltip" data-tooltip="History"><i class="fas fa-history"></i></button>
-      </div>
+      <h2>🔊 Playback</h2>
     </div>
-    
-    <div id="text" class="text-box">
-      <p style="opacity:.7; text-align: center;">Generated text will appear here...</p>
-    </div>
-    
-    <div class="waveform" id="waveform"></div>
+    <div id="text" class="text-box"><p style="opacity:.6;text-align:center;">Words will appear here...</p></div>
     
     <div class="bar" id="prog">
       <div class="fill" id="fill"></div>
-      <div class="markers" id="markers"></div>
     </div>
     
-    <div class="audio-controls">
-      <div class="playback-controls">
-        <button class="small-btn" id="play" disabled title="Play"><i class="fas fa-play"></i></button>
-        <button class="small-btn" id="pause" disabled title="Pause"><i class="fas fa-pause"></i></button>
-        <button class="small-btn" id="stop" disabled title="Stop"><i class="fas fa-stop"></i></button>
-      </div>
+    <div class="audio">
+      <button class="small-btn" id="play" disabled title="Play">▶</button>
+      <button class="small-btn" id="pause" disabled title="Pause">⏸</button>
+      <button class="small-btn" id="stop" disabled title="Stop">⏹</button>
       
       <div class="volume-control">
-        <i class="fas fa-volume-up"></i>
-        <input type="range" id="volume" min="0" max="1" step="0.01" value="1"/>
+        <span>🔊</span>
+        <input type="range" id="volume" min="0" max="1" step="0.1" value="1"/>
       </div>
       
       <span class="time" id="time">00:00 / 00:00</span>
     </div>
+    
+    <button id="download" class="download-btn" disabled>💾 Download Audio</button>
   </div>
 </div>
 
-<!-- Floating buttons -->
-<div class="floating-buttons">
-  <button class="icon-btn tooltip" id="toggleTheme" data-tooltip="Toggle Theme"><i class="fas fa-moon"></i></button>
-  <button class="icon-btn tooltip" id="showKeyboardShortcuts" data-tooltip="Keyboard Shortcuts"><i class="fas fa-keyboard"></i></button>
-</div>
-
-<!-- Modals -->
-<div class="modal" id="keyboardShortcutsModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h3>
-      <button class="modal-close">&times;</button>
-    </div>
-    <div class="keyboard-shortcuts">
-      <div class="shortcut">
-        <span class="shortcut-key">Space</span>
-        <span class="shortcut-desc">Play/Pause audio</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">Esc</span>
-        <span class="shortcut-desc">Stop playback</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">→</span>
-        <span class="shortcut-desc">Skip forward 5 seconds</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">←</span>
-        <span class="shortcut-desc">Skip backward 5 seconds</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">↑</span>
-        <span class="shortcut-desc">Increase volume</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">↓</span>
-        <span class="shortcut-desc">Decrease volume</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">G</span>
-        <span class="shortcut-desc">Generate audio (when configured)</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">T</span>
-        <span class="shortcut-desc">Toggle dark/light theme</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">S</span>
-        <span class="shortcut-desc">Save current configuration</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">L</span>
-        <span class="shortcut-desc">Load saved configuration</span>
-      </div>
-      <div class="shortcut">
-        <span class="shortcut-key">D</span>
-        <span class="shortcut-desc">Download audio (when available)</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="saveConfigModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fas fa-save"></i> Save Configuration</h3>
-      <button class="modal-close">&times;</button>
-    </div>
-    <label for="configName">Configuration Name</label>
-    <input type="text" id="configName" placeholder="My Configuration">
-    <button id="saveConfigBtn"><i class="fas fa-save"></i> Save</button>
-  </div>
-</div>
-
-<div class="modal" id="loadConfigModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fas fa-folder-open"></i> Load Configuration</h3>
-      <button class="modal-close">&times;</button>
-    </div>
-    <div class="saved-configs" id="savedConfigs">
-      <p style="text-align: center; opacity: 0.7;">No saved configurations found.</p>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="historyModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fas fa-history"></i> History</h3>
-      <button class="modal-close">&times;</button>
-    </div>
-    <div class="history-list" id="historyList">
-      <p style="text-align: center; opacity: 0.7;">No history yet.</p>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', () => {
   // API endpoints & DOM elements
@@ -1106,17 +139,12 @@ window.addEventListener('DOMContentLoaded', () => {
     loading: Q('loading'),
     txt: Q('txt'),
     voice: Q('v'),
-    voiceList: Q('voiceList'),
-    voiceSearch: Q('voiceSearch'),
     pit: Q('pit'),
     rat: Q('rat'),
     pitVal: Q('pitVal'),
     ratVal: Q('ratVal'),
-    pitValue: Q('pitValue'),
-    ratValue: Q('ratValue'),
     chk: Q('chk'),
     chkVal: Q('chkVal'),
-    chkValue: Q('chkValue'),
     gen: Q('gen'),
     stat: Q('stat'),
     methodBtns: [...Q('method').children],
@@ -1124,44 +152,18 @@ window.addEventListener('DOMContentLoaded', () => {
     play: Q('play'),
     pause: Q('pause'),
     stop: Q('stop'),
+    volume: Q('volume'),
+    download: Q('download'),
     prog: Q('prog'),
     fill: Q('fill'),
-    markers: Q('markers'),
-    time: Q('time'),
-    volume: Q('volume'),
-    toggleTheme: Q('toggleTheme'),
-    downloadAudio: Q('downloadAudio'),
-    saveConfig: Q('saveConfig'),
-    loadConfig: Q('loadConfig'),
-    waveform: Q('waveform'),
-    showKeyboardShortcuts: Q('showKeyboardShortcuts'),
-    keyboardShortcutsModal: Q('keyboardShortcutsModal'),
-    saveConfigModal: Q('saveConfigModal'),
-    loadConfigModal: Q('loadConfigModal'),
-    historyModal: Q('historyModal'),
-    showHistory: Q('showHistory'),
-    configName: Q('configName'),
-    saveConfigBtn: Q('saveConfigBtn'),
-    savedConfigs: Q('savedConfigs'),
-    historyList: Q('historyList'),
-    filters: document.querySelectorAll('.filter'),
-    reverbLevel: Q('reverbLevel'),
-    echoLevel: Q('echoLevel'),
-    reverbValue: Q('reverbValue'),
-    echoValue: Q('echoValue'),
-    effectsPanel: Q('effectsPanel')
+    time: Q('time')
   };
 
-  // ==================
   // App state
-  // ==================
   let API = localStorage.getItem('apiKey') || '';
   let ctx;
   let gainNode;
-  let effectNodes = {}; // Store audio effect nodes
   let voices = [];
-  let filteredVoices = [];
-  let selectedVoice = null;
   let buffers = [];
   let rawBuffers = []; // For downloading
   let audioSources = []; // Track all audio sources
@@ -1179,104 +181,21 @@ window.addEventListener('DOMContentLoaded', () => {
   let loadingComplete = false;
   let chunksReceived = 0;
   let totalChunks = 0;
-  let isDarkMode = localStorage.getItem('darkMode') === 'true';
-  let waveform = null;
-  let savedConfigs = JSON.parse(localStorage.getItem('savedConfigs') || '[]');
-  let history = JSON.parse(localStorage.getItem('history') || '[]');
-
-  // ==================
-  // Initialization
-  // ==================
-  
-  // Initialize theme
-  if (isDarkMode) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    E.toggleTheme.querySelector('i').classList.replace('fa-moon', 'fa-sun');
-  }
   
   // Initialize API key if saved
   if (API) {
     E.key.value = API;
-    setTimeout(() => E.load.click(), 500); // Auto-load voices after a short delay
+    // Auto-load voices if API key is saved
+    setTimeout(() => E.load.click(), 500);
   }
-  
-  // Initialize audio context when user interacts
-  const initAudio = () => {
-    if (!ctx) {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Create master gain node for volume control
-      gainNode = ctx.createGain();
-      gainNode.gain.value = E.volume.value;
-      gainNode.connect(ctx.destination);
-      
-      // Create effect nodes
-      createAudioEffects();
-      
-      document.removeEventListener('click', initAudio);
-    }
-  };
-  document.addEventListener('click', initAudio);
-  
-  // Initialize waveform
-  const initWaveform = () => {
-    if (waveform) return;
-    
-    waveform = WaveSurfer.create({
-      container: E.waveform,
-      waveColor: '#4285f4',
-      progressColor: '#34a853',
-      cursorColor: '#ea4335',
-      height: 80,
-      responsive: true,
-      normalize: true,
-      barWidth: 2,
-      barGap: 1,
-      barRadius: 2
-    });
-    
-    waveform.on('ready', () => {
-      log('Waveform visualization ready');
-    });
-    
-    waveform.on('click', (e) => {
-      if (loadingComplete) {
-        const duration = waveform.getDuration();
-        const position = e.clientX / E.waveform.clientWidth;
-        const time = position * duration;
-        seekToTime(time);
-      }
-    });
-  };
 
-  // ==================
   // Utilities
-  // ==================
+  const fmt = s => `${String(Math.floor(s/60)).padStart(2, '0')}:${String(Math.floor(s%60)).padStart(2, '0')}`;
   
-  // Format seconds to MM:SS
-  const fmt = s => {
-    s = Math.max(0, s || 0);
-    return `${String(Math.floor(s/60)).padStart(2, '0')}:${String(Math.floor(s%60)).padStart(2, '0')}`;
-  };
-  
-  // Show status message
-  const status = (m, type = 'info') => {
+  const status = (m, isError) => {
     E.stat.textContent = m;
-    E.stat.className = 'status';
-    
-    if (type === 'error') {
-      E.stat.classList.add('error');
-    } else if (type === 'success') {
-      E.stat.classList.add('success');
-    }
-    
-    log(type === 'error' ? `Error: ${m}` : m);
-  };
-  
-  // Console logging helper
-  const log = (message, data) => {
-    const time = new Date().toLocaleTimeString();
-    console.log(`[${time}] ${message}`, data || '');
+    E.stat.className = 'status' + (isError ? ' error' : isError === false ? ' success' : '');
+    console.log(isError ? `Error: ${m}` : m);
   };
   
   // JSON fetch helper with error handling
@@ -1288,350 +207,41 @@ window.addEventListener('DOMContentLoaded', () => {
         try {
           const errorData = await r.json();
           m = errorData.error?.message || m;
-          log('API Error', errorData);
+          console.log('API Error', errorData);
         } catch (e) {
-          log('Failed to parse error response', e);
+          console.log('Failed to parse error response', e);
         }
         throw new Error(m);
       }
       return r.json();
     } catch (e) {
-      log('Fetch error:', e);
+      console.log('Fetch error:', e);
       throw e;
     }
   };
-  
-  // Show modal
-  const showModal = (modalEl) => {
-    modalEl.classList.add('show');
-  };
-  
-  // Hide modal
-  const hideModal = (modalEl) => {
-    modalEl.classList.remove('show');
-  };
-  
-  // Update history
-  const addToHistory = (text, voice, settings) => {
-    const item = {
-      id: Date.now(),
-      date: new Date().toISOString(),
-      text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
-      voice: voice,
-      settings: settings
-    };
-    
-    history.unshift(item);
-    
-    // Keep max 20 items
-    if (history.length > 20) {
-      history.pop();
-    }
-    
-    localStorage.setItem('history', JSON.stringify(history));
-    updateHistoryList();
-  };
-  
-  // Update history list
-  const updateHistoryList = () => {
-    if (history.length === 0) {
-      E.historyList.innerHTML = '<p style="text-align: center; opacity: 0.7;">No history yet.</p>';
-      return;
-    }
-    
-    E.historyList.innerHTML = history.map(item => `
-      <div class="history-item" data-id="${item.id}">
-        <div class="history-text">${item.text}</div>
-        <div class="history-meta">
-          <span>${item.voice.name}</span>
-          <span>${new Date(item.date).toLocaleString()}</span>
-        </div>
-      </div>
-    `).join('');
-    
-    // Add event listeners
-    document.querySelectorAll('.history-item').forEach(el => {
-      el.addEventListener('click', () => {
-        const id = parseInt(el.dataset.id);
-        const item = history.find(h => h.id === id);
-        if (item) {
-          loadFromHistory(item);
-          hideModal(E.historyModal);
-        }
-      });
-    });
-  };
-  
-  // Load from history
-  const loadFromHistory = (item) => {
-    E.txt.value = item.text;
-    
-    // Find voice in loaded voices
-    if (voices.length > 0) {
-      const voice = voices.find(v => v.name === item.voice.name);
-      if (voice) {
-        selectVoice(voice);
-      }
-    }
-    
-    // Apply settings
-    E.pit.value = item.settings.pitch;
-    E.rat.value = item.settings.rate;
-    E.chk.value = item.settings.chunkSize;
-    E.reverbLevel.value = item.settings.reverb || 0;
-    E.echoLevel.value = item.settings.echo || 0;
-    
-    // Update displays
-    E.pitVal.textContent = E.pitValue.textContent = item.settings.pitch;
-    E.ratVal.textContent = E.ratValue.textContent = parseFloat(item.settings.rate).toFixed(2);
-    E.chkVal.textContent = E.chkValue.textContent = item.settings.chunkSize;
-    E.reverbValue.textContent = parseFloat(item.settings.reverb || 0).toFixed(2);
-    E.echoValue.textContent = parseFloat(item.settings.echo || 0).toFixed(2);
-    
-    // Set method
-    method = item.settings.method;
-    E.methodBtns.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.m === method);
-    });
-    
-    status('Loaded from history', 'success');
-  };
-  
-  // Save current config
-  const saveCurrentConfig = (name) => {
-    if (!name.trim()) {
-      alert('Please enter a name for this configuration');
-      return;
-    }
-    
-    if (!selectedVoice) {
-      alert('Please select a voice first');
-      return;
-    }
-    
-    const config = {
-      id: Date.now(),
-      name: name.trim(),
-      voice: {
-        name: selectedVoice.name,
-        languageCode: selectedVoice.languageCodes[0]
-      },
-      settings: {
-        pitch: parseInt(E.pit.value),
-        rate: parseFloat(E.rat.value),
-        chunkSize: parseInt(E.chk.value),
-        method: method,
-        reverb: parseFloat(E.reverbLevel.value),
-        echo: parseFloat(E.echoLevel.value)
-      }
-    };
-    
-    // Check if config with this name already exists
-    const index = savedConfigs.findIndex(c => c.name === config.name);
-    if (index >= 0) {
-      if (confirm(`A configuration named "${config.name}" already exists. Replace it?`)) {
-        savedConfigs[index] = config;
-      } else {
-        return;
-      }
-    } else {
-      savedConfigs.push(config);
-    }
-    
-    localStorage.setItem('savedConfigs', JSON.stringify(savedConfigs));
-    status(`Configuration "${config.name}" saved`, 'success');
-    updateSavedConfigsList();
-    
-    return true;
-  };
-  
-  // Update saved configs list
-  const updateSavedConfigsList = () => {
-    if (savedConfigs.length === 0) {
-      E.savedConfigs.innerHTML = '<p style="text-align: center; opacity: 0.7;">No saved configurations found.</p>';
-      return;
-    }
-    
-    E.savedConfigs.innerHTML = savedConfigs.map(config => `
-      <div class="config-item">
-        <div class="config-name">${config.name}</div>
-        <div class="config-actions">
-          <button class="small-btn load-config" data-id="${config.id}">Load</button>
-          <button class="small-btn secondary delete-config" data-id="${config.id}">Delete</button>
-        </div>
-      </div>
-    `).join('');
-    
-    // Add event listeners
-    document.querySelectorAll('.load-config').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = parseInt(btn.dataset.id);
-        loadConfig(id);
-      });
-    });
-    
-    document.querySelectorAll('.delete-config').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = parseInt(btn.dataset.id);
-        if (confirm('Are you sure you want to delete this configuration?')) {
-          savedConfigs = savedConfigs.filter(c => c.id !== id);
-          localStorage.setItem('savedConfigs', JSON.stringify(savedConfigs));
-          updateSavedConfigsList();
-        }
-      });
-    });
-  };
-  
-  // Load config
-  const loadConfig = (id) => {
-    const config = savedConfigs.find(c => c.id === id);
-    if (!config) return;
-    
-    // Find voice in loaded voices
-    if (voices.length > 0) {
-      const voice = voices.find(v => v.name === config.voice.name);
-      if (voice) {
-        selectVoice(voice);
-      }
-    }
-    
-    // Apply settings
-    E.pit.value = config.settings.pitch;
-    E.rat.value = config.settings.rate;
-    E.chk.value = config.settings.chunkSize;
-    E.reverbLevel.value = config.settings.reverb || 0;
-    E.echoLevel.value = config.settings.echo || 0;
-    
-    // Update displays
-    E.pitVal.textContent = E.pitValue.textContent = config.settings.pitch;
-    E.ratVal.textContent = E.ratValue.textContent = parseFloat(config.settings.rate).toFixed(2);
-    E.chkVal.textContent = E.chkValue.textContent = config.settings.chunkSize;
-    E.reverbValue.textContent = parseFloat(config.settings.reverb || 0).toFixed(2);
-    E.echoValue.textContent = parseFloat(config.settings.echo || 0).toFixed(2);
-    
-    // Set method
-    method = config.settings.method;
-    E.methodBtns.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.m === method);
-    });
-    
-    hideModal(E.loadConfigModal);
-    status(`Configuration "${config.name}" loaded`, 'success');
-  };
-  
-  // Create and connect audio effects
-  const createAudioEffects = () => {
-    if (!ctx) return;
-    
-    // Reverb
-    const convolver = ctx.createConvolver();
-    createReverbImpulse(2, 0.8).then(impulseBuffer => {
-      convolver.buffer = impulseBuffer;
-    });
-    
-    // Delay for echo
-    const delay = ctx.createDelay(1.0);
-    delay.delayTime.value = 0.3;
-    
-    const delayGain = ctx.createGain();
-    delayGain.gain.value = 0;
-    
-    // Store nodes
-    effectNodes.convolver = convolver;
-    effectNodes.convolverGain = ctx.createGain();
-    effectNodes.convolverGain.gain.value = 0; // Start with 0 reverb
-    
-    effectNodes.delay = delay;
-    effectNodes.delayGain = delayGain;
-    
-    effectNodes.dryGain = ctx.createGain();
-    effectNodes.dryGain.gain.value = 1;
-    
-    // Connection routing
-    effectNodes.dryGain.connect(gainNode);
-    
-    // Reverb path
-    effectNodes.convolverGain.connect(convolver);
-    convolver.connect(gainNode);
-    
-    // Echo path
-    delay.connect(delayGain);
-    delayGain.connect(delay); // Feedback
-    delayGain.connect(gainNode);
-  };
-  
-  // Update audio effects based on slider values
-  const updateAudioEffects = () => {
-    if (!ctx || !effectNodes.convolverGain || !effectNodes.delayGain) return;
-    
-    const reverbLevel = parseFloat(E.reverbLevel.value);
-    const echoLevel = parseFloat(E.echoLevel.value);
-    
-    // Update reverb
-    effectNodes.convolverGain.gain.value = reverbLevel;
-    
-    // Update echo
-    effectNodes.delayGain.gain.value = echoLevel * 0.5; // Reduce feedback to avoid overwhelming echo
-    
-    // Update displays
-    E.reverbValue.textContent = reverbLevel.toFixed(2);
-    E.echoValue.textContent = echoLevel.toFixed(2);
-  };
-  
-  // Create reverb impulse response
-  const createReverbImpulse = async (duration, decay) => {
-    const sampleRate = ctx.sampleRate;
-    const length = sampleRate * duration;
-    const impulse = ctx.createBuffer(2, length, sampleRate);
-    const impulseL = impulse.getChannelData(0);
-    const impulseR = impulse.getChannelData(1);
-    
-    for (let i = 0; i < length; i++) {
-      const n = i / length;
-      // Decay curve
-      const amplitude = Math.pow(1 - n, decay);
-      // Random noise
-      impulseL[i] = (Math.random() * 2 - 1) * amplitude;
-      impulseR[i] = (Math.random() * 2 - 1) * amplitude;
-    }
-    
-    return impulse;
-  };
-  
-  // UI event binding for sliders
-  ['pit', 'rat', 'chk', 'reverbLevel', 'echoLevel'].forEach(id => {
+
+  // UI event binding
+  ['pit', 'rat', 'chk'].forEach(id => {
     E[id].addEventListener('input', e => {
-      const value = parseFloat(e.target.value);
-      
-      // Update value displays
-      if (id === 'pit') {
-        E.pitVal.textContent = E.pitValue.textContent = value;
-      } else if (id === 'rat') {
-        E.ratVal.textContent = E.ratValue.textContent = value.toFixed(2);
-      } else if (id === 'chk') {
-        E.chkVal.textContent = E.chkValue.textContent = value;
-      } else if (id === 'reverbLevel' || id === 'echoLevel') {
-        updateAudioEffects();
+      const span = E[`${id}Val`];
+      if (span) {
+        const val = id === 'rat' ? parseFloat(e.target.value).toFixed(2) : e.target.value;
+        span.textContent = val;
       }
     });
   });
   
-  // Volume control handler
+  // Initialize volume control
   E.volume.addEventListener('input', () => {
     if (gainNode) {
       gainNode.gain.value = E.volume.value;
     }
   });
 
-  // ==================
-  // Voice Loading & Selection
-  // ==================
-  
   // Load voices from Google TTS API
   E.load.onclick = async () => {
     API = E.key.value.trim();
-    if (!API) return status('API key required', 'error');
+    if (!API) return status('API key required', true);
     
     // Save API key to localStorage
     localStorage.setItem('apiKey', API);
@@ -1641,166 +251,864 @@ window.addEventListener('DOMContentLoaded', () => {
     status('Loading voices...');
     
     try {
-      log(`Requesting voices from ${VO}`);
+      console.log(`Requesting voices from ${VO}`);
       const d = await fetchJSON(`${VO}?key=${API}`);
       voices = d.voices || [];
       
       if (!voices.length) throw new Error('No voices returned');
       
-      log(`Loaded ${voices.length} voices`);
+      console.log(`Loaded ${voices.length} voices`);
       
-      // Add voice data for filtering
-      voices.forEach(voice => {
-        voice.isNeural = voice.name.includes('Neural') || voice.name.includes('Wavenet');
-        voice.isStandard = !voice.isNeural;
-        voice.isMale = voice.ssmlGender === 'MALE';
-        voice.isFemale = voice.ssmlGender === 'FEMALE';
+      // Group voices by language
+      const langMap = new Map();
+      voices.forEach(v => {
+        v.languageCodes.forEach(code => {
+          let name;
+          try {
+            name = new Intl.DisplayNames(['en'], { type: 'language' }).of(code);
+          } catch (e) {
+            name = code;
+          }
+          
+          if (!langMap.has(code)) {
+            langMap.set(code, { name, voices: [] });
+          }
+          langMap.get(code).voices.push(v);
+        });
       });
       
-      // Default to showing all voices
-      filteredVoices = [...voices];
+      // Sort languages by name
+      const sortedLangs = [...langMap.entries()]
+        .sort((a, b) => a[1].name.localeCompare(b[1].name));
       
-      // Populate the voice list UI
-      populateVoiceList(filteredVoices);
+      // Group options by language
+      const html = sortedLangs.map(([code, { name, voices }]) => {
+        const options = voices
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(v => {
+            const isNeural = v.name.includes('Neural') || v.name.includes('Wavenet');
+            return `<option value="${v.name}" data-l="${code}">${v.name} ${isNeural ? '(Neural)' : ''}</option>`;
+          })
+          .join('');
+        
+        return `<optgroup label="${name}">${options}</optgroup>`;
+      }).join('');
       
-      // Also populate the traditional dropdown as fallback
-      populateVoiceDropdown(voices);
-      
+      E.voice.innerHTML = html;
+      E.voice.disabled = false;
       E.gen.disabled = false;
-      status('Voices loaded successfully', 'success');
+      
+      status('Voices loaded successfully', false);
     } catch (e) {
-      status(`Failed to load voices: ${e.message}`, 'error');
+      status(`Failed to load voices: ${e.message}`, true);
     } finally {
       E.loading.classList.add('hidden');
       E.load.disabled = false;
     }
   };
-  
-  // Populate voice list UI
-  const populateVoiceList = (voices) => {
-    if (!voices.length) {
-      E.voiceList.innerHTML = '<p style="padding: 1rem; text-align: center; opacity: 0.7;">No voices found matching your filters</p>';
+
+  // Configure chunk splitting method
+  E.methodBtns.forEach(b => b.onclick = () => {
+    E.methodBtns.forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    method = b.dataset.m;
+    console.log(`Splitting method changed to: ${method}`);
+  });
+
+  // Split text into chunks based on selected method
+  const splitText = t => {
+    const m = +E.chk.value;
+    if (t.length <= m) return [t];
+    
+    if (method === 'exact') {
+      const a = [];
+      for (let i = 0; i < t.length; i += m) {
+        a.push(t.slice(i, i + m));
+      }
+      return a;
+    }
+    
+    const re = method === 'paragraph' ? /\n\s*\n/ : /([.!?]+["']?\s+)/;
+    const bits = t.split(re).filter(Boolean);
+    const out = [];
+    let cur = '';
+    
+    for (const p of bits) {
+      if ((cur + p).length > m) {
+        if (cur.trim()) out.push(cur.trim());
+        cur = '';
+        
+        if (p.length > m) {
+          let q = p;
+          while (q.length > m) {
+            out.push(q.slice(0, m));
+            q = q.slice(m);
+          }
+          cur = q;
+        } else {
+          cur = p;
+        }
+      } else {
+        cur += p;
+      }
+    }
+    
+    if (cur.trim()) out.push(cur.trim());
+    
+    console.log(`Split into ${out.length} chunks using ${method} method`);
+    
+    return out;
+  };
+
+  // Decode audio buffer
+  const decodeBuffer = a => new Promise((res, rej) => ctx.decodeAudioData(a, res, rej));
+
+  // Prepare text display with clickable words
+  const prepareTextDisplay = (text, chunks) => {
+    E.textBox.innerHTML = '';
+    wordElements = [];
+    wordOffsets = [];
+    
+    let globalWordIndex = 0;
+    let currentChunk = 0;
+    let chunkStart = 0;
+    let chunkEnd = chunks[0]?.length || 0;
+    
+    // Split text into words and spaces
+    text.split(/(\s+)/).forEach((part, i) => {
+      if (part.trim()) {
+        // This is a word (not whitespace)
+        const span = document.createElement('span');
+        span.textContent = part;
+        span.className = 'word loading'; // Start as loading
+        span.dataset.index = globalWordIndex;
+        
+        // Track which chunk this word belongs to
+        while (i > chunkEnd && currentChunk < chunks.length - 1) {
+          currentChunk++;
+          chunkStart = chunkEnd;
+          chunkEnd += chunks[currentChunk].length;
+        }
+        
+        span.dataset.chunk = currentChunk;
+        wordOffsets[globalWordIndex] = currentChunk;
+        
+        span.addEventListener('click', () => {
+          if (span.classList.contains('loading')) {
+            status('That part is still loading...');
+            return;
+          }
+          seekToWord(globalWordIndex);
+        });
+        
+        wordElements.push(span);
+        E.textBox.appendChild(span);
+        globalWordIndex++;
+      } else {
+        // This is whitespace
+        E.textBox.appendChild(document.createTextNode(part));
+      }
+    });
+    
+    console.log(`Prepared text display with ${globalWordIndex} words`);
+  };
+
+  // Find which chunk and offset to play for a given time
+  const locateTimePosition = (time) => {
+    let currentTime = 0;
+    
+    // Handle case where time is beyond loaded duration
+    if (time >= loadedDuration) {
+      const lastIndex = buffers.findLastIndex(b => b);
+      return { chunk: lastIndex === -1 ? 0 : lastIndex, offset: 0 };
+    }
+    
+    // Find the chunk that contains this time
+    for (let i = 0; i < buffers.length; i++) {
+      const buffer = buffers[i];
+      if (!buffer) continue; // Skip unloaded chunks
+      
+      const duration = buffer.duration;
+      if (time < currentTime + duration) {
+        return { chunk: i, offset: time - currentTime };
+      }
+      
+      currentTime += duration;
+    }
+    
+    // Fallback to beginning of last loaded chunk
+    const lastLoaded = buffers.findLastIndex(b => b);
+    return { chunk: lastLoaded === -1 ? 0 : lastLoaded, offset: 0 };
+  };
+
+  // Seek to a specific time
+  const seekToTime = (time) => {
+    if (!buffers.some(b => b)) return;
+    
+    // Ensure time is within valid range
+    time = Math.max(0, Math.min(time, loadedDuration));
+    
+    console.log(`Seeking to ${time.toFixed(2)}s`);
+    
+    // Find the chunk this time belongs to
+    const { chunk, offset } = locateTimePosition(time);
+    
+    // Cancel any current playback
+    cancelPlayback();
+    
+    if (paused) {
+      // Just update the paused position
+      pausedAt = time;
+      updateUI(time);
+    } else {
+      // Start playback from this position
+      startPlayback(chunk, offset, time);
+    }
+  };
+
+  // Seek to a specific word
+  const seekToWord = (wordIndex) => {
+    if (!buffers.some(b => b) || wordIndex < 0 || wordIndex >= wordElements.length) return;
+    
+    // Make sure the corresponding chunk is loaded
+    const chunkIndex = wordOffsets[wordIndex];
+    if (chunkIndex === undefined || !buffers[chunkIndex]) {
+      console.log(`Word ${wordIndex} is in chunk ${chunkIndex} which is not loaded yet`);
       return;
     }
     
-    // Group voices by language
-    const langMap = new Map();
-    voices.forEach(voice => {
-      voice.languageCodes.forEach(code => {
-        let name;
-        try {
-          name = new Intl.DisplayNames(['en'], { type: 'language' }).of(code);
-        } catch (e) {
-          name = code;
-        }
-        
-        if (!langMap.has(code)) {
-          langMap.set(code, { name, voices: [] });
-        }
-        langMap.get(code).voices.push(voice);
-      });
-    });
+    // Calculate time based on word position in text
+    const time = estimateTimeForWord(wordIndex);
+    console.log(`Seeking to word ${wordIndex} at estimated time ${time.toFixed(2)}s`);
     
-    // Sort languages alphabetically
-    const sortedLangs = [...langMap.entries()].sort((a, b) => 
-      a[1].name.localeCompare(b[1].name)
-    );
-    
-    // Build HTML
-    let html = '';
-    sortedLangs.forEach(([code, { name, voices }]) => {
-      // Sort voices by name
-      voices.sort((a, b) => a.name.localeCompare(b.name));
-      
-      voices.forEach(voice => {
-        const isNeural = voice.isNeural;
-        const genderIcon = voice.isMale ? 'fa-male' : (voice.isFemale ? 'fa-female' : 'fa-user');
-        
-        html += `
-          <div class="voice-item" data-name="${voice.name}" data-code="${code}">
-            <span class="voice-icon"><i class="fas ${isNeural ? 'fa-microphone-alt' : 'fa-microphone'}"></i></span>
-            <div class="voice-name">
-              ${voice.name}
-              <div class="voice-gender">${name} (${voice.ssmlGender}) ${isNeural ? '<span class="badge blue">Neural</span>' : ''}</div>
-            </div>
-            <i class="fas ${genderIcon}" style="opacity:0.5; margin-left: 0.5rem;"></i>
-          </div>
-        `;
-      });
-    });
-    
-    E.voiceList.innerHTML = html;
-    
-    // Add event listeners to voice items
-    document.querySelectorAll('.voice-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const voiceName = item.dataset.name;
-        const voice = voices.find(v => v.name === voiceName);
-        if (voice) {
-          selectVoice(voice);
-        }
-      });
-    });
+    seekToTime(time);
   };
-  
-  // Populate traditional voice dropdown
-  const populateVoiceDropdown = (voices) => {
-    // Group options by language
-    const langMap = new Map();
-    voices.forEach(v => {
-      v.languageCodes.forEach(code => {
-        let name;
-        try {
-          name = new Intl.DisplayNames(['en'], { type: 'language' }).of(code);
-        } catch (e) {
-          name = code;
-        }
-        
-        if (!langMap.has(code)) {
-          langMap.set(code, { name, voices: [] });
-        }
-        langMap.get(code).voices.push(v);
-      });
-    });
+
+  // Estimate time for a word
+  const estimateTimeForWord = (wordIndex) => {
+    if (wordIndex < 0 || wordIndex >= wordElements.length) return 0;
     
-    // Sort languages by name
-    const sortedLangs = [...langMap.entries()]
-      .sort((a, b) => a[1].name.localeCompare(b[1].name));
+    // Get the chunk this word belongs to
+    const chunkIndex = wordOffsets[wordIndex];
+    if (chunkIndex === undefined) return 0;
     
-    // Group options by language
-    const html = sortedLangs.map(([code, { name, voices }]) => {
-      const options = voices
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(v => `<option value="${v.name}" data-l="${code}">${v.name} (${v.ssmlGender})</option>`)
-        .join('');
-      
-      return `<optgroup label="${name}">${options}</optgroup>`;
-    }).join('');
+    // Find all words in this chunk
+    const wordsInChunk = wordElements.filter((_, i) => wordOffsets[i] === chunkIndex);
+    if (!wordsInChunk.length) return 0;
     
-    E.voice.innerHTML = html;
-    E.voice.disabled = false;
+    // Get base time (start of chunk)
+    let baseTime = 0;
+    for (let i = 0; i < chunkIndex; i++) {
+      if (buffers[i]) baseTime += buffers[i].duration;
+    }
     
-    // Add change handler
-    E.voice.addEventListener('change', () => {
-      const selectedName = E.voice.value;
-      const voice = voices.find(v => v.name === selectedName);
-      if (voice) {
-        selectVoice(voice);
-      }
-    });
+    // If we don't have this chunk loaded, estimate based on overall
+    if (!buffers[chunkIndex]) {
+      return baseTime;
+    }
+    
+    // Find position of word within its chunk
+    const chunkWords = wordElements.filter((_, i) => wordOffsets[i] === chunkIndex);
+    const indexInChunk = chunkWords.findIndex(el => +el.dataset.index === wordIndex);
+    
+    if (indexInChunk === -1) return baseTime;
+    
+    // Calculate offset within chunk
+    const chunkDuration = buffers[chunkIndex].duration;
+    const offsetInChunk = chunkDuration * (indexInChunk / chunkWords.length);
+    
+    return baseTime + offsetInChunk;
   };
-  
-  // Select a voice
-  const selectVoice = (voice) => {
-    selectedVoice = voice;
+
+  // Initialize audio context
+  const initAudioContext = () => {
+    if (!ctx) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Create master gain node for volume control
+      gainNode = ctx.createGain();
+      gainNode.gain.value = E.volume.value;
+      gainNode.connect(ctx.destination);
+    }
+    
+    return ctx.resume(); // Ensure it's running
+  };
+
+  // Start playback from a specific position
+  const startPlayback = (chunkIndex, offset = 0, absoluteTime = 0) => {
+    // Ensure audio context is initialized
+    initAudioContext();
+    
+    // Generate a new playback ID to track this session
+    playbackId = Date.now();
+    const currentPlayback = playbackId;
+    
+    // Update state
+    playing = true;
+    paused = false;
+    startTime = ctx.currentTime - absoluteTime;
+    
+    console.log(`Starting playback: chunk ${chunkIndex}, offset ${offset.toFixed(2)}s, abs time ${absoluteTime.toFixed(2)}s`);
     
     // Update UI
-    document.querySelectorAll('.voice-item').forEach(item => {
-      item.classList.toggle('selected', item.dataset.name === voice.name);
+    E.play.disabled = true;
+    E.pause.disabled = false;
+    E.stop.disabled = false;
+    
+    // Start playing from the specified position
+    playChunk(chunkIndex, offset, currentPlayback);
+    
+    // Start the update loop
+    requestAnimationFrame(updatePlayback);
+  };
+
+  // Play a specific chunk
+  const playChunk = (index, offset = 0, id) => {
+    // Check if this playback request is still valid
+    if (id !== playbackId) {
+      console.log(`Ignoring stale playback request: ${id} vs ${playbackId}`);
+      return;
+    }
+    
+    // Check if we've reached the end
+    if (index >= buffers.length) {
+      console.log('Reached end of audio');
+      stopPlayback();
+      return;
+    }
+    
+    // Get the audio buffer for this chunk
+    const buffer = buffers[index];
+    
+    // If the buffer isn't loaded yet, wait and retry
+    if (!buffer) {
+      console.log(`Chunk ${index} not loaded yet, waiting...`);
+      setTimeout(() => {
+        if (playing && id === playbackId) {
+          playChunk(index, offset, id);
+        }
+      }, 300);
+      return;
+    }
+    
+    console.log(`Playing chunk ${index} from offset ${offset.toFixed(2)}s`);
+    
+    // Create a new audio source
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(gainNode);
+    
+    // When this chunk ends, play the next one
+    source.onended = () => {
+      // Only proceed if this is still the active playback
+      if (playing && id === playbackId) {
+        console.log(`Chunk ${index} ended, playing next chunk`);
+        playChunk(index + 1, 0, id);
+      }
+    };
+    
+    // Save the source so we can stop it later
+    audioSources[index] = source;
+    
+    // Start playback with the specified offset
+    source.start(0, Math.min(offset, buffer.duration));
+  };
+
+  // Cancel any current playback
+  const cancelPlayback = () => {
+    // Stop all audio sources
+    audioSources.forEach(source => {
+      if (source) {
+        source.onended = null; // Remove callback
+        try { source.stop(); } catch (e) {}
+      }
     });
     
-    // Update dropdown also
-    E.voice.value = voice.name;
+    // Reset sources array
+    audioSources = [];
     
-    log(`Selected voice: ${voice.name}`);
-    status(`Voice selected: ${voice.name
+    // Generate a new playback ID to invalidate any pending callbacks
+    playbackId = Date.now();
+  };
+
+  // Pause playback
+  const pausePlayback = () => {
+    if (!playing) return;
+    
+    pausedAt = ctx.currentTime - startTime;
+    playing = false;
+    paused = true;
+    
+    console.log(`Pausing at ${pausedAt.toFixed(2)}s`);
+    
+    // Cancel current playback
+    cancelPlayback();
+    
+    // Update UI
+    E.play.disabled = false;
+    E.pause.disabled = true;
+    
+    status(`Paused at ${fmt(pausedAt)}`);
+  };
+
+  // Resume playback
+  const resumePlayback = () => {
+    if (!paused) return;
+    
+    console.log(`Resuming from ${pausedAt.toFixed(2)}s`);
+    
+    // Find the chunk to resume from
+    const { chunk, offset } = locateTimePosition(pausedAt);
+    
+    // Start playback from the pause position
+    startPlayback(chunk, offset, pausedAt);
+  };
+
+  // Stop playback
+  const stopPlayback = (silent = false) => {
+    // Cancel current playback
+    cancelPlayback();
+    
+    // Reset state
+    playing = false;
+    paused = false;
+    pausedAt = 0;
+    
+    // Clear word highlighting
+    if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
+      wordElements[currentWordIndex].classList.remove('active');
+    }
+    currentWordIndex = -1;
+    
+    if (!silent) {
+      console.log('Playback stopped');
+      
+      // Reset UI
+      E.fill.style.width = '0%';
+      E.time.textContent = `00:00 / ${fmt(totalDuration)}`;
+      E.play.disabled = false;
+      E.pause.disabled = true;
+      E.stop.disabled = false;
+    }
+  };
+
+  // Update playback UI (called on each animation frame)
+  const updatePlayback = () => {
+    if (!playing) return;
+    
+    // Calculate current time
+    const currentTime = ctx.currentTime - startTime;
+    
+    // Check if we've reached the end
+    if (currentTime >= totalDuration) {
+      stopPlayback();
+      return;
+    }
+    
+    // Update UI
+    updateUI(currentTime);
+    
+    // Continue updates
+    requestAnimationFrame(updatePlayback);
+  };
+
+  // Update UI with current time
+  const updateUI = (time) => {
+    // Update progress bar
+    const percentage = totalDuration > 0 ? (time / totalDuration) * 100 : 0;
+    E.fill.style.width = `${percentage}%`;
+    
+    // Update time display
+    E.time.textContent = `${fmt(time)} / ${fmt(totalDuration)}`;
+    
+    // Update word highlighting
+    updateWordHighlight(time);
+  };
+
+  // Update word highlighting
+  const updateWordHighlight = (time) => {
+    // Find the appropriate word based on time
+    let wordIndex = -1;
+    
+    // First try to find the word by chunk
+    const { chunk } = locateTimePosition(time);
+    const chunkWords = wordElements.filter((_, i) => wordOffsets[i] === chunk);
+    
+    if (chunkWords.length) {
+      // Find position within chunk
+      let chunkStart = 0;
+      for (let i = 0; i < chunk; i++) {
+        if (buffers[i]) chunkStart += buffers[i].duration;
+      }
+      
+      const chunkDuration = buffers[chunk]?.duration || 0;
+      const relativePosition = (time - chunkStart) / chunkDuration;
+      const indexInChunk = Math.floor(relativePosition * chunkWords.length);
+      
+      // Map back to global index
+      if (indexInChunk >= 0 && indexInChunk < chunkWords.length) {
+        wordIndex = parseInt(chunkWords[indexInChunk].dataset.index);
+      }
+    }
+    
+    // If no word found by chunk or it's invalid, use fallback
+    if (wordIndex < 0 || wordIndex >= wordElements.length) {
+      // Fallback to simple ratio
+      wordIndex = Math.floor((time / totalDuration) * wordElements.length);
+      wordIndex = Math.min(wordIndex, wordElements.length - 1);
+    }
+    
+    // Only update if it's a different word
+    if (wordIndex !== currentWordIndex) {
+      // Remove highlight from previous word
+      if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
+        wordElements[currentWordIndex].classList.remove('active');
+      }
+      
+      // Add highlight to current word
+      if (wordIndex >= 0 && wordIndex < wordElements.length) {
+        const wordEl = wordElements[wordIndex];
+        wordEl.classList.add('active');
+        
+        // Ensure word is visible
+        const container = E.textBox;
+        const wordTop = wordEl.offsetTop;
+        const wordBottom = wordTop + wordEl.offsetHeight;
+        const containerTop = container.scrollTop;
+        const containerBottom = containerTop + container.offsetHeight;
+        
+        if (wordTop < containerTop + 30) {
+          container.scrollTop = wordTop - 30;
+        } else if (wordBottom > containerBottom - 30) {
+          container.scrollTop = wordBottom - container.offsetHeight + 30;
+        }
+      }
+      
+      currentWordIndex = wordIndex;
+    }
+  };
+
+  // Progress bar click handler
+  E.prog.onclick = e => {
+    if (!totalDuration) return;
+    
+    const rect = E.prog.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    const targetTime = ratio * totalDuration;
+    
+    console.log(`Progress bar clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`);
+    seekToTime(targetTime);
+  };
+
+  // Playback control buttons
+  E.play.onclick = () => {
+    if (paused) {
+      resumePlayback();
+    } else {
+      startPlayback(0, 0, 0);
+    }
+  };
+  
+  E.pause.onclick = pausePlayback;
+  E.stop.onclick = stopPlayback;
+
+  // Create download link
+  const createDownloadLink = () => {
+    if (!rawBuffers.length) return;
+    
+    // Create a single MP3 file using Web Audio API
+    mergeAudioBuffers(rawBuffers)
+      .then(mergedBuffer => {
+        // Convert to WAV
+        const wav = bufferToWav(mergedBuffer);
+        const blob = new Blob([wav], { type: 'audio/wav' });
+        
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        
+        // Trigger download
+        const a = document.createElement('a');
+        const fileName = 'speech_' + new Date().toISOString().replace(/[:.]/g, '-') + '.wav';
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        
+        // Clean up
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        
+        status('Download started', false);
+      })
+      .catch(err => {
+        console.error('Error creating download:', err);
+        status('Failed to create download', true);
+      });
+  };
+  
+  // Convert ArrayBuffer to WAV format
+  const bufferToWav = (buffer) => {
+    const numOfChan = buffer.numberOfChannels;
+    const length = buffer.length * numOfChan * 2 + 44;
+    const sampleRate = buffer.sampleRate;
+    const bitsPerSample = 16;
+    const byteRate = sampleRate * numOfChan * bitsPerSample / 8;
+    const blockAlign = numOfChan * bitsPerSample / 8;
+    const data = new DataView(new ArrayBuffer(length));
+    let offset = 0;
+    
+    // RIFF header
+    writeString(data, offset, 'RIFF'); offset += 4;
+    data.setUint32(offset, length - 8, true); offset += 4;
+    writeString(data, offset, 'WAVE'); offset += 4;
+    
+    // fmt chunk
+    writeString(data, offset, 'fmt '); offset += 4;
+    data.setUint32(offset, 16, true); offset += 4;
+    data.setUint16(offset, 1, true); offset += 2; // PCM format
+    data.setUint16(offset, numOfChan, true); offset += 2;
+    data.setUint32(offset, sampleRate, true); offset += 4;
+    data.setUint32(offset, byteRate, true); offset += 4;
+    data.setUint16(offset, blockAlign, true); offset += 2;
+    data.setUint16(offset, bitsPerSample, true); offset += 2;
+    
+    // data chunk
+    writeString(data, offset, 'data'); offset += 4;
+    data.setUint32(offset, length - 44, true); offset += 4;
+    
+    // Write interleaved audio data
+    if (numOfChan === 2) {
+      // Stereo
+      const leftChannel = buffer.getChannelData(0);
+      const rightChannel = buffer.getChannelData(1);
+      for (let i = 0; i < buffer.length; i++) {
+        data.setInt16(offset, leftChannel[i] * 0x7FFF, true); offset += 2;
+        data.setInt16(offset, rightChannel[i] * 0x7FFF, true); offset += 2;
+      }
+    } else {
+      // Mono
+      const channel = buffer.getChannelData(0);
+      for (let i = 0; i < buffer.length; i++) {
+        data.setInt16(offset, channel[i] * 0x7FFF, true); offset += 2;
+      }
+    }
+    
+    return data.buffer;
+  };
+  
+  // Helper to write string to DataView
+  const writeString = (view, offset, string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  };
+  
+  // Merge audio buffers into a single buffer
+  const mergeAudioBuffers = async (audioBuffers) => {
+    // Initialize audio context if not done yet
+    await initAudioContext();
+    
+    // Decode all buffers
+    const decodedBuffers = await Promise.all(
+      audioBuffers.map(buffer => decodeBuffer(buffer))
+    );
+    
+    // Calculate total length
+    let totalLength = 0;
+    decodedBuffers.forEach(buffer => {
+      totalLength += buffer.length;
+    });
+    
+    // Create a new buffer with the total length
+    const numberOfChannels = decodedBuffers[0].numberOfChannels;
+    const sampleRate = decodedBuffers[0].sampleRate;
+    const result = ctx.createBuffer(numberOfChannels, totalLength, sampleRate);
+    
+    // Copy data from each buffer
+    let offset = 0;
+    for (const buffer of decodedBuffers) {
+      // For each channel
+      for (let channel = 0; channel < numberOfChannels; channel++) {
+        const resultData = result.getChannelData(channel);
+        const bufferData = buffer.getChannelData(channel);
+        
+        // Copy data
+        for (let i = 0; i < buffer.length; i++) {
+          resultData[offset + i] = bufferData[i];
+        }
+      }
+      
+      offset += buffer.length;
+    }
+    
+    return result;
+  };
+  
+  // Download button
+  E.download.onclick = createDownloadLink;
+
+  // Generate speech
+  E.gen.onclick = async () => {
+    if (!API) return status('Load voices first', true);
+    if (!E.voice.value) return status('Select a voice', true);
+    
+    // Initialize audio context and ensure it's running
+    await initAudioContext();
+    
+    const text = E.txt.value.trim();
+    if (!text) return status('Enter text', true);
+    
+    // Reset state
+    stopPlayback();
+    buffers = [];
+    rawBuffers = [];
+    audioSources = [];
+    totalDuration = 0;
+    loadedDuration = 0;
+    loadingComplete = false;
+    E.download.disabled = true;
+    
+    // Split text into chunks
+    const chunks = splitText(text);
+    if (!chunks.length) return status('Failed to split text', true);
+    
+    totalChunks = chunks.length;
+    chunksReceived = 0;
+    
+    // Prepare UI
+    status(`Processing ${chunks.length} chunk(s)...`);
+    prepareTextDisplay(text, chunks);
+    E.gen.disabled = true;
+    
+    // Initialize buffers array
+    buffers = new Array(chunks.length);
+    rawBuffers = new Array(chunks.length);
+    
+    // Create request body template
+    const createRequest = chunk => ({
+      input: { text: chunk },
+      voice: {
+        languageCode: E.voice.selectedOptions[0].dataset.l,
+        name: E.voice.value
+      },
+      audioConfig: {
+        audioEncoding: 'MP3',
+        pitch: +E.pit.value,
+        speakingRate: +E.rat.value
+      }
+    });
+    
+    // Process chunks
+    try {
+      // Start processing all chunks in parallel
+      const chunkPromises = chunks.map(async (chunk, index) => {
+        try {
+          console.log(`Generating chunk ${index + 1}/${chunks.length} (${chunk.length} chars)`);
+          
+          const response = await fetchJSON(`${SY}?key=${API}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(createRequest(chunk))
+          });
+          
+          if (!response.audioContent) {
+            throw new Error(`No audio content in response for chunk ${index + 1}`);
+          }
+          
+          // Convert base64 to ArrayBuffer
+          const audioData = atob(response.audioContent);
+          const arrayBuffer = new Uint8Array(audioData.length);
+          for (let i = 0; i < audioData.length; i++) {
+            arrayBuffer[i] = audioData.charCodeAt(i);
+          }
+          
+          // Save raw buffer for downloading
+          rawBuffers[index] = arrayBuffer.buffer;
+          
+          // Decode audio
+          const audioBuffer = await decodeBuffer(arrayBuffer.buffer);
+          
+          // Store the decoded buffer
+          buffers[index] = audioBuffer;
+          
+          // Update durations
+          loadedDuration += audioBuffer.duration;
+          totalDuration += audioBuffer.duration;
+          
+          console.log(`Chunk ${index + 1} decoded: ${audioBuffer.duration.toFixed(2)}s`);
+          
+          // Update word elements to show they're ready
+          wordElements.forEach(word => {
+            if (+word.dataset.chunk === index) {
+              word.classList.remove('loading');
+            }
+          });
+          
+          // Update progress
+          chunksReceived++;
+          
+          // Autoplay first chunk when it's ready
+          if (index === 0 && !playing && !paused) {
+            startPlayback(0, 0, 0);
+          }
+          
+          return index;
+        } catch (error) {
+          console.log(`Error processing chunk ${index + 1}:`, error);
+          status(`Chunk ${index + 1} failed: ${error.message}`, true);
+          return null;
+        }
+      });
+      
+      // Wait for all chunks to complete
+      await Promise.all(chunkPromises);
+      
+      // Check if all chunks were processed successfully
+      const success = chunksReceived === totalChunks;
+      loadingComplete = true;
+      
+      if (success) {
+        status(`All chunks processed. Duration: ${fmt(totalDuration)}`, false);
+        E.download.disabled = false;
+      } else {
+        status(`Completed ${chunksReceived}/${totalChunks} chunks`, true);
+      }
+    } catch (e) {
+      status(`Generation failed: ${e.message}`, true);
+    } finally {
+      E.gen.disabled = false;
+    }
+  };
+  
+  // Add keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    // Don't trigger shortcuts when typing in inputs
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    
+    // Space - Play/Pause
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (playing) E.pause.click();
+      else if (paused || loadingComplete) E.play.click();
+    }
+    
+    // Escape - Stop
+    if (e.code === 'Escape' && (playing || paused)) {
+      e.preventDefault();
+      E.stop.click();
+    }
+    
+    // G - Generate
+    if (e.code === 'KeyG' && !E.gen.disabled) {
+      e.preventDefault();
+      E.gen.click();
+    }
+    
+    // D - Download
+    if (e.code === 'KeyD' && !E.download.disabled) {
+      e.preventDefault();
+      E.download.click();
+    }
+  });
+});
+</script>
+</body>
+</html>
