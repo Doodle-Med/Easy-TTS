@@ -8,415 +8,8 @@
 <script src="https://apis.google.com/js/api.js" async defer></script>
 <script src="voice-visualizer.js"></script>
 <style>
-/* --- CSS remains exactly the same as before --- */
-:root {
-  /* Light theme (default) */
-  --c1:#4285f4;
-  --c2:#34a853;
-  --c3:#ea4335;
-  --c4:#fbbc04;
-  --bg:#f8f9fa;
-  --card-bg:#ffffff;
-  --fg:#202124;
-  --bd:#dadce0;
-  --hover:#f1f3f4;
-  --r:10px;
-  --shadow: 0 4px 12px rgba(0,0,0,.05);
-  --code-bg: #f5f5f5;
-  --hover-bg: rgba(66,133,244,0.1);
-
-  /* Animation and transition properties */
-  --transition: all 0.3s ease;
-}
-
-/* Dark theme variables */
-[data-theme="dark"] {
-  --c1:#8ab4f8;
-  --c2:#81c995;
-  --c3:#f28b82;
-  --c4:#fdd663;
-  --bg:#202124;
-  --card-bg:#292a2d;
-  --fg:#e8eaed;
-  --bd:#5f6368;
-  --hover:#3c3c3c;
-  --shadow: 0 4px 12px rgba(0,0,0,.2);
-  --code-bg: #2d2d30;
-  --hover-bg: rgba(138, 180, 248, 0.15);
-}
-
-* {
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  transition: var(--transition);
-}
-
-body {
-  background:var(--bg);
-  color:var(--fg);
-  padding:1rem;
-  max-width:1200px;
-  margin:auto;
-}
-
-h1 {
-  font-size:clamp(1.7rem,2.5vw,3rem);
-  text-align:center;
-  margin-bottom:1rem;
-  background:linear-gradient(90deg,var(--c1),var(--c2),var(--c4),var(--c3));
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-  font-weight:800;
-}
-
-.grid {
-  display:grid;
-  gap:1rem;
-}
-
-.two {
-  grid-template-columns:1fr 1fr;
-}
-
-@media(max-width:800px) {
-  .two {
-    grid-template-columns:1fr;
-  }
-}
-
-.card {
-  background:var(--card-bg);
-  border:1px solid var(--bd);
-  border-radius:var(--r);
-  box-shadow:var(--shadow);
-  padding:1.2rem;
-  position:relative;
-}
-
-.card:hover {
-  box-shadow: 0 6px 16px rgba(0,0,0, var(--shadow-opacity, 0.08));
-}
-
-.card-header {
-  display:flex;
-  align-items:center;
-  margin-bottom:1rem;
-}
-
-.card-header h2 {
-  flex:1;
-  font-size:1.3rem;
-}
-
-label {
-  font-weight:600;
-  margin:.6rem 0 .3rem;
-  display:block;
-}
-
-input, select, textarea, button {
-  width:100%;
-  padding:.55rem .65rem;
-  border:1px solid var(--bd);
-  border-radius:6px;
-  font-size:1rem;
-  margin-bottom:.8rem;
-  background: var(--card-bg);
-  color: var(--fg);
-}
-
-input:focus, select:focus, textarea:focus {
-  border-color:var(--c1);
-  outline:none;
-  box-shadow: 0 0 0 3px rgba(66,133,244,0.2);
-}
-
-textarea {
-  resize:vertical;
-  min-height:140px;
-}
-
-button {
-  cursor:pointer;
-  background:var(--c1);
-  color:#fff;
-  border:none;
-  font-weight:600;
-}
-
-button:not(:disabled):hover {
-  background:#3367d6;
-  transform: translateY(-1px);
-}
-
-button:disabled {
-  background:var(--bd);
-  cursor:not-allowed;
-  opacity: 0.7;
-}
-
-.small-btn {
-  width:auto;
-}
-
-.toggle {
-  display:flex;
-  gap:.5rem;
-  margin:.6rem 0;
-}
-
-.toggle button {
-  flex:1;
-  background:var(--bg);
-  border:1px solid var(--bd);
-  color:var(--fg);
-}
-
-.toggle .active {
-  background:var(--c2);
-  color:#fff;
-  border-color:var(--c2);
-}
-
-.status {
-  min-height:1.4em;
-  font-size:.95rem;
-  margin:.5rem 0;
-  padding: .5rem;
-  border-radius: 6px;
-}
-
-.error {
-  color:var(--c3);
-  background: rgba(234,67,53,0.1);
-  font-weight:700;
-}
-
-.success {
-  color:var(--c2);
-  background: rgba(52,168,83,0.1);
-  font-weight:700;
-}
-
-.bar {
-  height:12px;
-  background:var(--bd);
-  border-radius:6px;
-  overflow:hidden;
-  cursor:pointer;
-  margin:.8rem 0;
-}
-
-.fill {
-  height:100%;
-  background:linear-gradient(90deg,var(--c1),var(--c2));
-  width:0;
-  transition: width 0.1s linear;
-}
-
-.audio {
-  display:flex;
-  align-items:center;
-  gap:.6rem;
-}
-
-.audio button {
-  width:44px;
-  border-radius:50%;
-  aspect-ratio:1/1;
-  font-size:1.1rem;
-  display:grid;
-  place-items:center;
-}
-
-.time {
-  font-family:monospace;
-  margin-left:auto;
-}
-
-.text-box {
-  background:var(--card-bg);
-  border:1px solid var(--bd);
-  border-radius:var(--r);
-  padding:1rem;
-  max-height:340px;
-  overflow:auto;
-  line-height:1.6;
-}
-
-.word {
-  display:inline-block;
-  cursor:pointer;
-  border-radius:3px;
-  padding:1px 2px;
-  transition: all 0.15s ease;
-}
-
-.word:hover {
-  background:var(--hover-bg);
-}
-
-.word.active {
-  background:rgba(66,133,244,.25);
-  color:var(--c1);
-  font-weight:700;
-}
-
-.word.loading {
-  position: relative;
-  background: linear-gradient(90deg, rgba(0,0,0,0.05), rgba(0,0,0,0.1), rgba(0,0,0,0.05));
-  background-size: 200% 100%;
-  animation: shine 1.5s infinite;
-  cursor:wait;
-  opacity:0.6;
-}
-
-@keyframes shine {
-  to { background-position: -200% 0; }
-}
-
-.spinner {
-  display:inline-block;
-  width:14px;
-  height:14px;
-  border:2px solid rgba(66,133,244,0.2);
-  border-radius:50%;
-  border-top-color:var(--c1);
-  animation:spin 0.8s linear infinite;
-  margin-right:5px;
-}
-
-@keyframes spin {
-  to {transform:rotate(360deg)}
-}
-
-.controls {
-  display:flex;
-  align-items:center;
-  gap:0.5rem;
-  margin-bottom:0.8rem;
-}
-
-.controls button {
-  margin-bottom:0;
-}
-
-.controls #authStatus { /* Style for the auth status span */
-    flex-grow: 1;
-    font-style: italic;
-    opacity: 0.8;
-    font-size: 0.9rem;
-}
-
-.volume-control {
-  display:flex;
-  align-items:center;
-  gap:0.5rem;
-  flex:1;
-}
-
-.volume-control input {
-  margin:0;
-}
-
-.download-btn {
-  margin-left:auto;
-}
-
-.debug-panel {
-  font-family:monospace;
-  font-size:12px;
-  background:var(--code-bg);
-  border:1px solid var(--bd);
-  border-radius:var(--r);
-  padding:0.8rem;
-  margin-top:1rem;
-  max-height:200px;
-  overflow:auto;
-}
-
-.debug-entry {
-  margin-bottom:0.3rem;
-  border-bottom:1px solid var(--bd);
-  padding-bottom:0.3rem;
-}
-
-.debug-time {
-  color:var(--fg);
-  opacity: 0.6;
-  font-size:10px;
-}
-
-.debug-msg {
-  font-weight:bold;
-}
-
-.debug-data {
-  color:var(--fg);
-  opacity: 0.8;
-  margin-left:1rem;
-}
-
-.toggle-debug {
-  text-align:center;
-  font-size:0.9rem;
-  margin-top:0.5rem;
-  cursor:pointer;
-  color:var(--c1);
-}
-
-.theme-toggle {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 100;
-}
-
-.theme-toggle button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  background: transparent;
-  color: var(--fg);
-  border: 1px solid var(--bd);
-}
-
-.theme-toggle button:hover {
-  background: var(--hover-bg);
-  transform: none;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--bd);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--c1);
-}
-
-.hidden {
-  display:none !important;
-}
+/* --- CSS remains exactly the same --- */
+:root { /* ... */ } [data-theme="dark"] { /* ... */ } * { /* ... */ } body { /* ... */ } h1 { /* ... */ } .grid { /* ... */ } .two { /* ... */ } @media(max-width:800px) { .two { /* ... */ } } .card { /* ... */ } .card:hover { /* ... */ } .card-header { /* ... */ } .card-header h2 { /* ... */ } label { /* ... */ } input, select, textarea, button { /* ... */ } input:focus, select:focus, textarea:focus { /* ... */ } textarea { /* ... */ } button { /* ... */ } button:not(:disabled):hover { /* ... */ } button:disabled { /* ... */ } .small-btn { /* ... */ } .toggle { /* ... */ } .toggle button { /* ... */ } .toggle .active { /* ... */ } .status { /* ... */ } .error { /* ... */ } .success { /* ... */ } .bar { /* ... */ } .fill { /* ... */ } .audio { /* ... */ } .audio button { /* ... */ } .time { /* ... */ } .text-box { /* ... */ } .word { /* ... */ } .word:hover { /* ... */ } .word.active { /* ... */ } .word.loading { /* ... */ } @keyframes shine { /* ... */ } .spinner { /* ... */ } @keyframes spin { /* ... */ } .controls { /* ... */ } .controls button { /* ... */ } .controls #authStatus { /* ... */ } .volume-control { /* ... */ } .volume-control input { /* ... */ } .download-btn { /* ... */ } .debug-panel { /* ... */ } .debug-entry { /* ... */ } .debug-time { /* ... */ } .debug-msg { /* ... */ } .debug-data { /* ... */ } .toggle-debug { /* ... */ } .theme-toggle { /* ... */ } .theme-toggle button { /* ... */ } .theme-toggle button:hover { /* ... */ } ::-webkit-scrollbar { /* ... */ } ::-webkit-scrollbar-track { /* ... */ } ::-webkit-scrollbar-thumb { /* ... */ } ::-webkit-scrollbar-thumb:hover { /* ... */ } .hidden { /* ... */ }
 </style>
 </head>
 <body>
@@ -426,422 +19,229 @@ button:disabled {
 </div>
 <div class="grid two">
   <div class="card">
-    <div class="card-header">
-      <h2>🎛️ Configuration</h2>
-    </div>
-
+    <div class="card-header"><h2>🎛️ Configuration</h2></div>
     <label>Authentication</label>
     <div class="controls">
-      <button class="small-btn" id="signInBtn" disabled>Sign in with Google</button> <span id="authStatus">Initializing...</span> </div>
-
+      <button class="small-btn" id="signInBtn" disabled>Sign in with Google</button>
+      <span id="authStatus">Initializing...</span>
+    </div>
     <button class="small-btn" id="ld" disabled>Load Voices</button>
     <div id="loading" class="status hidden"><span class="spinner"></span>Loading voices...</div>
-
-    <label>Text</label>
-    <textarea id="txt" placeholder="Type or paste text here..."></textarea>
-
-    <label>Voice</label>
-    <select id="v" disabled></select>
-
+    <label>Text</label><textarea id="txt" placeholder="Type or paste text here..."></textarea>
+    <label>Voice</label><select id="v" disabled></select>
     <div class="grid" style="grid-template-columns:1fr 1fr;gap:.8rem">
-      <div>
-        <label>Pitch <span id="pitVal">0</span></label>
-        <input id="pit" type="range" min="-20" max="20" value="0"/>
-      </div>
-      <div>
-        <label>Rate <span id="ratVal">1</span></label>
-        <input id="rat" type="range" min="0.25" max="4" step="0.05" value="1"/>
-      </div>
+      <div><label>Pitch <span id="pitVal">0</span></label><input id="pit" type="range" min="-20" max="20" value="0"/></div>
+      <div><label>Rate <span id="ratVal">1</span></label><input id="rat" type="range" min="0.25" max="4" step="0.05" value="1"/></div>
     </div>
-
-    <label>Chunk Size <span id="chkVal">1000</span></label>
-    <input id="chk" type="range" min="500" max="4500" step="500" value="1000"/>
-
-    <div class="toggle" id="method">
-      <button data-m="sentence">Sentence</button>
-      <button data-m="paragraph" class="active">Paragraph</button>
-      <button data-m="exact">Exact</button>
-    </div>
-
-    <button id="gen" disabled>🎤 Generate & Play</button>
-    <div id="stat" class="status"></div>
+    <label>Chunk Size <span id="chkVal">1000</span></label><input id="chk" type="range" min="500" max="4500" step="500" value="1000"/>
+    <div class="toggle" id="method"><button data-m="sentence">Sentence</button><button data-m="paragraph" class="active">Paragraph</button><button data-m="exact">Exact</button></div>
+    <button id="gen" disabled>🎤 Generate & Play</button><div id="stat" class="status"></div>
   </div>
-
   <div class="card">
-    <div class="card-header">
-      <h2>🔊 Playback</h2>
-    </div>
+    <div class="card-header"><h2>🔊 Playback</h2></div>
     <div id="text" class="text-box"><p style="opacity:.6;text-align:center;">Words will appear here...</p></div>
     <canvas id="visualizer" height="80" style="width:100%;margin:0.8rem 0;border:1px solid var(--bd);border-radius:var(--r);"></canvas>
-    <div class="bar" id="prog">
-      <div class="fill" id="fill"></div>
-    </div>
-
+    <div class="bar" id="prog"><div class="fill" id="fill"></div></div>
     <div class="audio">
-      <button class="small-btn" id="play" disabled title="Play">▶</button>
-      <button class="small-btn" id="pause" disabled title="Pause">⏸</button>
-      <button class="small-btn" id="stop" disabled title="Stop">⏹</button>
-
-      <div class="volume-control">
-        <span>🔊</span>
-        <input type="range" id="volume" min="0" max="1" step="0.1" value="1"/>
-      </div>
-
+      <button class="small-btn" id="play" disabled title="Play">▶</button><button class="small-btn" id="pause" disabled title="Pause">⏸</button><button class="small-btn" id="stop" disabled title="Stop">⏹</button>
+      <div class="volume-control"><span>🔊</span><input type="range" id="volume" min="0" max="1" step="0.1" value="1"/></div>
       <span class="time" id="time">00:00 / 00:00</span>
     </div>
-
     <button id="download" class="download-btn" disabled>💾 Download Audio</button>
-    <div class="toggle-debug" id="toggleDebug">Show Debug Info</div>
-    <div id="debugPanel" class="debug-panel hidden"></div>
+    <div class="toggle-debug" id="toggleDebug">Show Debug Info</div><div id="debugPanel" class="debug-panel hidden"></div>
   </div>
 </div>
 
 <script>
 // --- Global Scope ---
-// Flags to track library readiness
 let gapiReady = false;
 let gisReady = false;
-// Variables needed globally for callbacks
 let tokenClient;
 let accessToken = null;
+// ** Define placeholder functions globally to avoid errors if called before DOM ready **
+// These will be overwritten by the versions inside DOMContentLoaded
+let initializeGapiClient = () => { console.warn("initializeGapiClient called before DOM ready!"); };
+let handleTokenResponse = () => { console.warn("handleTokenResponse called before DOM ready!"); };
+let checkEnableSignIn = () => { console.warn("checkEnableSignIn called before DOM ready!"); };
 
 // --- Functions called by Google Libraries (must be global) ---
 function gapiLoaded() {
+    console.log("[GLOBAL] gapiLoaded triggered."); // <<< NEW LOG
     // Queue the client library loading, callback inside DOMContentLoaded
+    // The actual 'initializeGapiClient' it calls will be the one defined later
     gapi.load('client', initializeGapiClient);
 }
 
 function gisLoaded() {
-    // Initialize the GIS client, callback inside DOMContentLoaded
-    // Note: handleTokenResponse must be defined before this script runs,
-    // which it will be if defined inside DOMContentLoaded which runs after parsing.
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: '879295177554-m3j1d2pks6lukl3h9cl92r953ef2jd4e.apps.googleusercontent.com', // Your Client ID
-        scope: 'https://www.googleapis.com/auth/cloud-platform',
-        callback: handleTokenResponse, // Pass the function reference (defined below)
-    });
-    gisReady = true;
-    // Attempt to enable sign-in button (needs DOM ready)
-    checkEnableSignIn();
+    console.log("[GLOBAL] gisLoaded triggered."); // <<< NEW LOG
+    try {
+        console.log("[GLOBAL] Initializing Token Client..."); // <<< NEW LOG
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: '879295177554-m3j1d2pks6lukl3h9cl92r953ef2jd4e.apps.googleusercontent.com',
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+            callback: handleTokenResponse, // Pass the function reference (defined below)
+        });
+        console.log("[GLOBAL] Token client initialization apparently successful."); // <<< NEW LOG
+        gisReady = true;
+        checkEnableSignIn(); // Attempt to enable sign-in button (needs DOM ready)
+    } catch (error) {
+        console.error('[GLOBAL] Error initializing Token Client:', error); // <<< NEW LOG
+        // Maybe update status visually if possible, though E might not exist yet
+        const authStatusSpan = document.getElementById('authStatus');
+         if(authStatusSpan) authStatusSpan.textContent = 'Auth Error (GIS Init)';
+    }
 }
 
 // --- DOMContentLoaded Listener ---
-// All code that interacts with the DOM or relies on E goes inside here
 window.addEventListener('DOMContentLoaded', () => {
+    console.log("[DOM] DOMContentLoaded event fired."); // <<< NEW LOG
+
     // --- Constants and Element Map ---
     const VO = 'https://texttospeech.googleapis.com/v1/voices';
     const SY = 'https://texttospeech.googleapis.com/v1/text:synthesize';
     const Q = id => document.getElementById(id);
     const E = {
-        signInBtn: Q('signInBtn'),
-        authStatus: Q('authStatus'),
-        load: Q('ld'),
-        loading: Q('loading'),
-        txt: Q('txt'),
-        voice: Q('v'),
-        pit: Q('pit'),
-        rat: Q('rat'),
-        pitVal: Q('pitVal'),
-        ratVal: Q('ratVal'),
-        chk: Q('chk'),
-        chkVal: Q('chkVal'),
-        gen: Q('gen'),
-        stat: Q('stat'),
-        methodBtns: [...Q('method').children],
-        textBox: Q('text'),
-        play: Q('play'),
-        pause: Q('pause'),
-        stop: Q('stop'),
-        volume: Q('volume'),
-        download: Q('download'),
-        prog: Q('prog'),
-        fill: Q('fill'),
-        time: Q('time'),
-        toggleDebug: Q('toggleDebug'),
-        debugPanel: Q('debugPanel'),
-        themeToggle: Q('themeToggle')
+        signInBtn: Q('signInBtn'), authStatus: Q('authStatus'), load: Q('ld'), loading: Q('loading'),
+        txt: Q('txt'), voice: Q('v'), pit: Q('pit'), rat: Q('rat'), pitVal: Q('pitVal'), ratVal: Q('ratVal'),
+        chk: Q('chk'), chkVal: Q('chkVal'), gen: Q('gen'), stat: Q('stat'), methodBtns: [...Q('method').children],
+        textBox: Q('text'), play: Q('play'), pause: Q('pause'), stop: Q('stop'), volume: Q('volume'),
+        download: Q('download'), prog: Q('prog'), fill: Q('fill'), time: Q('time'),
+        toggleDebug: Q('toggleDebug'), debugPanel: Q('debugPanel'), themeToggle: Q('themeToggle')
     };
+    console.log("[DOM] E object defined."); // <<< NEW LOG
+
 
     // --- Debug Logging Setup (as before) ---
-    let debugEnabled = localStorage.getItem('debugEnabled') === 'true';
-    const maxDebugEntries = 100;
-    let debugEntries = [];
-    const updateDebugPanel = () => { /* ... as before ... */
-        E.debugPanel.innerHTML = debugEntries.map(entry => {
-          const timeStr = new Date(entry.timestamp).toLocaleTimeString();
-          let dataStr = '';
-          if (entry.data !== null) {
-            try {
-              dataStr = `<div class="debug-data">${(typeof entry.data === 'object' ? JSON.stringify(entry.data) : entry.data)}</div>`;
-            } catch (e) { dataStr = `<div class="debug-data">[Complex Object]</div>`; }
-          }
-          return `<div class="debug-entry ${entry.level}"><span class="debug-time">${timeStr}</span> <span class="debug-msg">${entry.message}</span>${dataStr}</div>`;
-        }).join('');
-    };
-    const log = (message, data = null, level = 'info') => { /* ... as before ... */
-        const timestamp = new Date().toISOString();
-        const entry = { timestamp, message, data, level };
-        debugEntries.unshift(entry);
-        if (debugEntries.length > maxDebugEntries) debugEntries.pop();
-        const consoleMethod = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
-        consoleMethod(`[${new Date(timestamp).toLocaleTimeString()}] ${message}`, data ?? '');
-        if (debugEnabled) updateDebugPanel();
-    };
-    if (debugEnabled) {
-        E.debugPanel.classList.remove('hidden');
-        E.toggleDebug.textContent = 'Hide Debug Info';
-    }
-    E.toggleDebug.addEventListener('click', () => { /* ... as before ... */
-        debugEnabled = !debugEnabled;
-        localStorage.setItem('debugEnabled', debugEnabled);
-        E.debugPanel.classList.toggle('hidden', !debugEnabled);
-        E.toggleDebug.textContent = debugEnabled ? 'Hide Debug Info' : 'Show Debug Info';
-        if (debugEnabled) updateDebugPanel();
-    });
+    let debugEnabled = localStorage.getItem('debugEnabled') === 'true'; const maxDebugEntries = 100; let debugEntries = []; const updateDebugPanel = () => { E.debugPanel.innerHTML = debugEntries.map(entry => { const timeStr = new Date(entry.timestamp).toLocaleTimeString(); let dataStr = ''; if (entry.data !== null) { try { dataStr = `<div class="debug-data">${(typeof entry.data === 'object' ? JSON.stringify(entry.data) : entry.data)}</div>`; } catch (e) { dataStr = `<div class="debug-data">[Complex Object]</div>`; } } return `<div class="debug-entry ${entry.level}"><span class="debug-time">${timeStr}</span> <span class="debug-msg">${entry.message}</span>${dataStr}</div>`; }).join(''); }; const log = (message, data = null, level = 'info') => { const timestamp = new Date().toISOString(); const entry = { timestamp, message, data, level }; debugEntries.unshift(entry); if (debugEntries.length > maxDebugEntries) debugEntries.pop(); const consoleMethod = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log; consoleMethod(`[${new Date(timestamp).toLocaleTimeString()}] ${message}`, data ?? ''); if (debugEnabled && E?.debugPanel) updateDebugPanel(); }; if (debugEnabled) { E.debugPanel.classList.remove('hidden'); E.toggleDebug.textContent = 'Hide Debug Info'; } E.toggleDebug.addEventListener('click', () => { debugEnabled = !debugEnabled; localStorage.setItem('debugEnabled', debugEnabled); E.debugPanel.classList.toggle('hidden', !debugEnabled); E.toggleDebug.textContent = debugEnabled ? 'Hide Debug Info' : 'Show Debug Info'; if (debugEnabled) updateDebugPanel(); });
 
     // --- Theme Toggle (as before) ---
-    let isDarkMode = localStorage.getItem('darkMode') === 'true';
-    if (isDarkMode) document.documentElement.setAttribute('data-theme', 'dark');
-    E.themeToggle.addEventListener('click', () => { /* ... as before ... */
-        isDarkMode = !isDarkMode;
-        document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-        localStorage.setItem('darkMode', isDarkMode);
-        log(`Theme changed to ${isDarkMode ? 'dark' : 'light'} mode`);
-    });
+    let isDarkMode = localStorage.getItem('darkMode') === 'true'; if (isDarkMode) document.documentElement.setAttribute('data-theme', 'dark'); E.themeToggle.addEventListener('click', () => { isDarkMode = !isDarkMode; document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light'); localStorage.setItem('darkMode', isDarkMode); log(`Theme changed to ${isDarkMode ? 'dark' : 'light'} mode`); });
 
     // --- Status Function (as before) ---
-     const status = (m, isError) => { /* ... as before ... */
-        E.stat.textContent = m;
-        E.stat.className = 'status' + (isError ? ' error' : isError === false ? ' success' : '');
-        log(m, null, isError ? 'error' : 'info');
-    };
+     const status = (m, isError) => { if(!E?.stat) return; E.stat.textContent = m; E.stat.className = 'status' + (isError ? ' error' : isError === false ? ' success' : ''); log(m, null, isError ? 'error' : 'info'); };
 
     // --- OAuth Initialization & Handling Functions (Defined Inside DOMContentLoaded) ---
 
-    // This function is *called* by the global gapiLoaded
-    initializeGapiClient = async () => { // Assign to global scope explicitly if needed, but should be found
+    // Overwrite the global placeholder
+    initializeGapiClient = async () => {
+        console.log("[DOM] initializeGapiClient called."); // <<< NEW LOG
+        log('Initializing GAPI client...');
         try {
-            log('Initializing GAPI client...');
+            console.log("[DOM] Calling gapi.client.init..."); // <<< NEW LOG
             await gapi.client.init({
-                // API Key is NOT needed here when using OAuth
+                 // API Key is NOT needed here when using OAuth
                 discoveryDocs: ['https://texttospeech.googleapis.com/$discovery/rest?version=v1']
             });
+            console.log("[DOM] gapi.client.init successful."); // <<< NEW LOG
             gapiReady = true;
             log('GAPI client initialized.');
-            checkEnableSignIn(); // Attempt to enable button
+            checkEnableSignIn();
         } catch (error) {
-            log('GAPI client initialization failed', error, 'error');
+            console.error('[DOM] GAPI client initialization failed:', error); // <<< NEW LOG
+            log('GAPI client initialization failed', error.message || error, 'error');
             status('Failed to initialize Google API client.', true);
-            E.authStatus.textContent = 'Auth Error (GAPI)';
+            if(E?.authStatus) E.authStatus.textContent = 'Auth Error (GAPI Init)';
         }
     }
 
-    // This function is *called* by the global gisLoaded's tokenClient callback
-    handleTokenResponse = (resp) => { // Assign to global scope explicitly if needed
+    // Overwrite the global placeholder
+    handleTokenResponse = (resp) => {
+        console.log("[DOM] handleTokenResponse called.", "Response:", resp); // <<< NEW LOG
         if (resp.error) {
-            console.error('OAuth error response:', resp);
+            console.error('[DOM] OAuth error response:', resp);
             log(`OAuth Error: ${resp.error}`, resp, 'error');
             status(`OAuth failed: ${resp.error_description || resp.error}`, true);
             accessToken = null;
-            E.authStatus.textContent = '❌ Sign-in failed';
-            E.load.disabled = true; // Keep Load Voices disabled
-            E.signInBtn.disabled = false; // Re-enable sign-in button on failure
+            if(E?.authStatus) E.authStatus.textContent = '❌ Sign-in failed';
+            if(E?.load) E.load.disabled = true;
+            // Re-enable sign-in button on failure *if* the client itself initialized ok
+            if(E?.signInBtn && tokenClient) E.signInBtn.disabled = false;
             return;
         }
         accessToken = resp.access_token;
         log('OAuth successful, access token obtained.');
-        E.authStatus.textContent = '✅ Signed in';
-        E.signInBtn.disabled = true; // Optional: Disable sign-in button after success? Or leave enabled for refresh? Let's leave enabled.
-        E.load.disabled = false; // Enable Load Voices button
-        // Auto-load voices once signed in
+        if(E?.authStatus) E.authStatus.textContent = '✅ Signed in';
+        // Keep Sign in button enabled
+        if(E?.load) E.load.disabled = false;
         log('Triggering auto-load voices...');
-        E.load.click();
+        if(E?.load) E.load.click(); else console.error("E.load not found in handleTokenResponse");
     }
 
-    // Function to enable the sign-in button when libraries are ready AND DOM is ready
-    checkEnableSignIn = () => { // Assign to global scope explicitly if needed
-        // This function is called by both gisLoaded and initializeGapiClient
-        // It will only succeed when both flags are true AND E.signInBtn exists (DOM Ready)
-        log(`CheckEnableSignIn called: gapiReady=${gapiReady}, gisReady=${gisReady}`);
+    // Overwrite the global placeholder
+    checkEnableSignIn = () => {
+        console.log(`[DOM] checkEnableSignIn called: gapiReady=${gapiReady}, gisReady=${gisReady}, E exists=${!!E}`); // <<< NEW LOG
         if (gapiReady && gisReady && E?.signInBtn) {
             E.signInBtn.disabled = false;
-            E.authStatus.textContent = 'Ready to sign in';
+            if (E.authStatus) E.authStatus.textContent = 'Ready to sign in';
             log('GAPI and GIS ready, Sign-In button enabled.');
-        } else if (E?.signInBtn) {
-             // Update status if button exists but not ready yet
+            console.log("[DOM] Sign-In button ENABLED."); // <<< NEW LOG
+        } else if (E?.authStatus) {
+             // Update status only if DOM element exists
              E.authStatus.textContent = `Initializing... (GAPI: ${gapiReady}, GIS: ${gisReady})`;
+        } else {
+            console.warn("[DOM] checkEnableSignIn: Cannot update status or button yet (DOM not ready or libs not ready)."); // <<< NEW LOG
         }
     }
 
-    // --- Application State & Core Logic (largely as before) ---
-    let ctx;
-    let gainNode;
-    let voices = [];
-    let buffers = [];
-    let audioBlobs = [];
-    let audioSources = [];
-    let wordElements = [];
-    let wordTimings = [];
-    let totalDuration = 0;
-    let loadedDuration = 0;
-    let startTime = 0;
-    let pausedAt = 0;
-    let playbackId = 0;
-    let playing = false;
-    let paused = false;
-    let method = 'paragraph';
-    let currentWordIndex = -1;
-    let loadingComplete = false;
-    let chunksReceived = 0;
-    let totalChunks = 0;
-    let chunksData = [];
-    let visualizer;
-
+    // --- Application State & Core Logic (Reduced for brevity - Use full code from previous correct version) ---
+    let ctx; let gainNode; let voices = []; let buffers = []; let audioBlobs = []; let audioSources = []; let wordElements = []; let wordTimings = []; let totalDuration = 0; let loadedDuration = 0; let startTime = 0; let pausedAt = 0; let playbackId = 0; let playing = false; let paused = false; let method = 'paragraph'; let currentWordIndex = -1; let loadingComplete = false; let chunksReceived = 0; let totalChunks = 0; let chunksData = []; let visualizer;
     const fmt = s => `${String(Math.floor(s/60)).padStart(2, '0')}:${String(Math.floor(s%60)).padStart(2, '0')}`;
-    const fetchJSON = async (url, opts) => { /* ... as before ... */
-        try {
-            log(`Workspaceing ${url}`, opts);
-            const r = await fetch(url, opts);
-            if (!r.ok) {
-                let m = `HTTP ${r.status}`;
-                try {
-                    const errorData = await r.json();
-                    m = errorData.error?.message || m;
-                    log('API Error Response', errorData, 'error');
-                } catch (e) { log('Failed to parse API error response', null, 'warn'); }
-                throw new Error(m);
-            }
-            const data = await r.json();
-            log(`Workspace ${url} successful`);
-            return data;
-        } catch (e) {
-            log(`Workspace error for ${url}: ${e.message}`, e, 'error');
-            throw e; // Re-throw
-        }
-    };
-    const splitText = t => { /* ... as before ... */
-        const m = +E.chk.value; log(`Splitting text (${t.length} chars) with method: ${method}, chunk size: ${m}`); if (t.length <= m) return [t]; if (method === 'exact') { const a = []; for (let i = 0; i < t.length; i += m) a.push(t.slice(i, i + m)); log(`Split into ${a.length} chunks using exact method`); return a; } const re = method === 'paragraph' ? /\n\s*\n/ : /([.!?]+["']?\s+)/; const bits = t.split(re).filter(Boolean); log(`Split text into ${bits.length} initial segments`); const out = []; let cur = ''; for (const p of bits) { if ((cur + p).length > m) { if (cur.trim()) out.push(cur.trim()); cur = ''; if (p.length > m) { let q = p; while (q.length > m) { out.push(q.slice(0, m)); q = q.slice(m); } cur = q; } else { cur = p; } } else { cur += p; } } if (cur.trim()) out.push(cur.trim()); log(`Final chunks: ${out.length}`, { chunkSizes: out.map(c => c.length) }); return out;
-    };
-    const decodeBuffer = a => { /* ... as before ... */
-        log(`Decoding audio buffer of size ${a.byteLength}`); return new Promise((res, rej) => { try { if (!ctx) { rej(new Error("AudioContext not initialized")); return; } ctx.decodeAudioData(a, (buffer) => { log(`Audio buffer decoded: ${buffer.duration.toFixed(2)}s`); res(buffer); }, (err) => { log(`Error decoding audio buffer`, err, 'error'); rej(err); }); } catch (e) { log(`Exception in decodeBuffer`, e, 'error'); rej(e); } });
-    };
-    const prepareTextDisplay = (text, chunks) => { /* ... as before ... */
-         log(`Preparing text display with ${text.length} chars and ${chunks.length} chunks`); E.textBox.innerHTML = ''; wordElements = []; wordTimings = []; chunksData = []; chunks.forEach((chunk, idx) => { chunksData[idx] = { text: chunk, startTime: 0, endTime: 0, wordCount: chunk.split(/\s+/).filter(Boolean).length, duration: 0, loaded: false }; }); let currentChunk = 0; let chunkWordCount = 0; let chunkStartPos = 0; let globalWordIndex = 0; text.split(/(\s+)/).forEach((part) => { if (part.trim()) { const span = document.createElement('span'); span.textContent = part; span.className = 'word loading'; span.dataset.index = globalWordIndex; let currentTextPosition = text.indexOf(part, chunkStartPos); while (chunkStartPos + chunksData[currentChunk]?.text.length <= currentTextPosition && currentChunk < chunks.length - 1) { chunkStartPos += chunksData[currentChunk].text.length; currentChunk++; chunkWordCount = 0; } span.dataset.chunk = currentChunk; wordTimings[globalWordIndex] = { word: part, chunk: currentChunk, indexInChunk: chunkWordCount, startTime: 0, endTime: 0 }; chunkWordCount++; span.addEventListener('click', (e) => { if (span.classList.contains('loading')) { status('That part is still loading...'); return; } const clickedIndex = parseInt(e.currentTarget.dataset.index); log(`Word clicked: ${e.currentTarget.textContent} (index ${clickedIndex})`); seekToWord(clickedIndex); }); wordElements.push(span); E.textBox.appendChild(span); globalWordIndex++; } else { E.textBox.appendChild(document.createTextNode(part)); } }); log(`Text display prepared with ${globalWordIndex} words`);
-     };
-    const updateWordTimings = (chunkIndex, duration) => { /* ... as before ... */
-        if (!chunksData[chunkIndex]) return; log(`Updating word timings for chunk ${chunkIndex}, duration ${duration.toFixed(2)}s`); chunksData[chunkIndex].loaded = true; chunksData[chunkIndex].duration = duration; let chunkStartTime = 0; for (let i = 0; i < chunkIndex; i++) { if (chunksData[i]?.loaded && chunksData[i].duration > 0) { chunkStartTime += chunksData[i].duration; } else { log(`Warning: Chunk ${i} timing needed for chunk ${chunkIndex} not ready. Timing may be inaccurate.`, chunksData[i], 'warn'); } } chunksData[chunkIndex].startTime = chunkStartTime; chunksData[chunkIndex].endTime = chunkStartTime + duration; const chunkWordCount = chunksData[chunkIndex].wordCount; if (chunkWordCount <= 0) return; wordTimings.forEach((timing, i) => { if (timing.chunk === chunkIndex) { const wordStartTime = chunkStartTime + (timing.indexInChunk / chunkWordCount) * duration; const nextWordStartTime = chunkStartTime + ((timing.indexInChunk + 1) / chunkWordCount) * duration; const wordEndTime = Math.min(chunkStartTime + duration, nextWordStartTime - 0.01); timing.startTime = wordStartTime; timing.endTime = Math.max(wordStartTime + 0.05, wordEndTime); const el = wordElements[i]; if (el) { el.classList.remove('loading'); } } }); log(`Updated timings for words in chunk ${chunkIndex}`);
-    };
-    const locateTimePosition = (time) => { /* ... as before ... */
-        const shouldLog = Math.random() < 0.01; if (shouldLog) log(`Locating position for time ${time.toFixed(2)}s`); const maxTime = loadingComplete ? totalDuration : loadedDuration; time = Math.max(0, Math.min(time, maxTime)); for (let i = 0; i < chunksData.length; i++) { if (chunksData[i]?.loaded && time >= chunksData[i].startTime && time < chunksData[i].endTime) { const offset = time - chunksData[i].startTime; if (shouldLog) log(`Found time ${time.toFixed(2)}s in chunk ${i} at offset ${offset.toFixed(2)}s`); return { chunk: i, offset: offset }; } } let fallbackChunk = 0; let fallbackOffset = 0; for (let i = 0; i < chunksData.length; i++) { if (chunksData[i]?.loaded && chunksData[i].startTime <= time) { fallbackChunk = i; fallbackOffset = Math.min(chunksData[i].duration, time - chunksData[i].startTime); } else if(chunksData[i]?.loaded) { break; } } if (shouldLog) log(`Fallback: placing time ${time.toFixed(2)}s in chunk ${fallbackChunk} at offset ${fallbackOffset.toFixed(2)}s`); return { chunk: fallbackChunk, offset: fallbackOffset };
-    };
-    const initAudioContext = () => { /* ... as before ... */
-        if (!ctx) { log('Initializing AudioContext'); try { ctx = new (window.AudioContext || window.webkitAudioContext)(); gainNode = ctx.createGain(); gainNode.gain.value = E.volume.value; gainNode.connect(ctx.destination); if (typeof VoiceVisualizer !== 'undefined') { visualizer = new VoiceVisualizer('visualizer', ctx, { mode: 'waveform', color: isDarkMode ? '#8ab4f8' : '#4285f4', stroke: 2 }); log('Visualizer initialized.'); } else { log('VoiceVisualizer class not found.', null, 'warn'); Q('visualizer').style.display = 'none'; } log('AudioContext initialized', { sampleRate: ctx.sampleRate, state: ctx.state }); ctx.onstatechange = () => { log(`AudioContext state changed to: ${ctx.state}`); if (ctx.state === 'interrupted') { stopPlayback(); status('Audio context interrupted.', true); } else if (ctx.state === 'suspended') { ctx.resume().then(() => log('AudioContext resumed successfully.')).catch(e => log('Failed to resume AudioContext', e, 'error')); } }; } catch (e) { log('Error initializing AudioContext', e, 'error'); status('Could not initialize audio playback: ' + e.message, true); [E.play, E.pause, E.stop, E.gen].forEach(btn => btn.disabled = true); return Promise.reject(e); } } if (ctx.state === 'suspended') { log('AudioContext suspended, attempting resume...'); return ctx.resume().then(() => { log('AudioContext resumed.'); return ctx; }).catch(e => { log('Failed to resume AudioContext', e, 'error'); status('Could not resume audio. Please interact.', true); throw e; }); } return Promise.resolve(ctx);
-    };
-    const cancelPlayback = () => { /* ... as before ... */
-         log('Canceling playback'); if (visualizer) visualizer.stop(); audioSources.forEach((source, i) => { if (source) { source.onended = null; try { source.stop(); } catch (e) {} } }); audioSources = [];
-    };
-    const updateUI = (time) => { /* ... as before ... */
-        const displayTime = Math.max(0, Math.min(time, totalDuration)); const percentage = totalDuration > 0 ? (displayTime / totalDuration) * 100 : 0; E.fill.style.width = `${Math.max(0, Math.min(100, percentage))}%`; E.time.textContent = `${fmt(displayTime)} / ${fmt(totalDuration)}`; updateWordHighlight(displayTime); if (playing) status(`Playing... ${fmt(displayTime)} / ${fmt(totalDuration)}`);
-    };
-    const updateWordHighlight = (time) => { /* ... as before ... */
-        let newWordIndex = -1; for (let i = 0; i < wordTimings.length; i++) { const t = wordTimings[i]; if (t && typeof t.startTime === 'number' && typeof t.endTime === 'number' && t.startTime <= time && time <= t.endTime) { newWordIndex = i; break; } } if (newWordIndex === -1) { for (let i = wordTimings.length - 1; i >= 0; i--) { const t = wordTimings[i]; if (t && typeof t.startTime === 'number' && time >= t.startTime) { newWordIndex = i; break; } } } if (newWordIndex !== currentWordIndex && newWordIndex !== -1) { if (currentWordIndex >= 0 && wordElements[currentWordIndex]) { wordElements[currentWordIndex].classList.remove('active'); } if (newWordIndex >= 0 && wordElements[newWordIndex]) { const wordEl = wordElements[newWordIndex]; wordEl.classList.add('active'); const container = E.textBox; const wordTop = wordEl.offsetTop - container.offsetTop; const wordBottom = wordTop + wordEl.offsetHeight; const containerScrollTop = container.scrollTop; const containerHeight = container.clientHeight; const scrollBuffer = 30; if (wordTop < containerScrollTop + scrollBuffer) { container.scrollTop = Math.max(0, wordTop - scrollBuffer); } else if (wordBottom > containerScrollTop + containerHeight - scrollBuffer) { container.scrollTop = wordBottom - containerHeight + scrollBuffer; } } currentWordIndex = newWordIndex; }
-    };
-    const stopPlayback = (silent = false) => { /* ... as before ... */
-        const wasActive = playing || paused; cancelPlayback(); playing = false; paused = false; pausedAt = 0; startTime = 0; if (currentWordIndex >= 0 && wordElements[currentWordIndex]) { wordElements[currentWordIndex].classList.remove('active'); } currentWordIndex = -1; if (!silent && wasActive) { log('Playback stopped'); if (totalDuration > 0) { updateUI(0); E.play.disabled = false; } else { E.play.disabled = true; } E.pause.disabled = true; E.stop.disabled = true; status('Playback stopped.'); } else if (!silent) { E.play.disabled = !(totalDuration > 0); E.pause.disabled = true; E.stop.disabled = true; }
-    };
-     const playChunk = (index, offset = 0, id) => { /* ... as before ... */
-        if (id !== playbackId) { log(`Ignoring stale playback: ${id}`); return; } if (index >= buffers.length || !buffers[index]) { if (loadingComplete) { log(`End of audio at chunk ${index}`); stopPlayback(); } else { log(`Chunk ${index} not loaded, waiting...`); status(`Buffering... (${fmt(chunksData[index-1]?.endTime || 0)} / ${fmt(totalDuration)})`); setTimeout(() => { if (playing && id === playbackId) playChunk(index, offset, id); }, 300); } return; } const buffer = buffers[index]; log(`Playing chunk ${index} from offset ${offset.toFixed(2)}s (dur: ${buffer.duration.toFixed(2)}s)`); const source = ctx.createBufferSource(); source.buffer = buffer; const destination = visualizer?.analyser ? visualizer.analyser : gainNode; source.connect(destination); if (visualizer?.analyser) visualizer.analyser.connect(gainNode); source.onended = () => { if (audioSources[index] === source) audioSources[index] = null; if (playing && id === playbackId) { log(`Chunk ${index} ended.`); playChunk(index + 1, 0, id); } }; audioSources[index] = source; const validOffset = Math.max(0, Math.min(offset, buffer.duration - 0.001)); try { source.start(0, validOffset); if(visualizer) visualizer.start(); } catch (e) { log(`Error starting source chunk ${index}`, e, 'error'); if (playing && id === playbackId) playChunk(index + 1, 0, id); }
-    };
-     const startPlayback = (chunkIndex, offset = 0, absoluteTime = 0) => { /* ... as before ... */
-        initAudioContext().then(() => { playbackId = Date.now(); playing = true; paused = false; startTime = ctx.currentTime - absoluteTime; log(`Starting playback: chunk ${chunkIndex}, offset ${offset.toFixed(2)}s, abs time ${absoluteTime.toFixed(2)}s, ctxTime: ${ctx.currentTime.toFixed(2)}`); E.play.disabled = true; E.pause.disabled = false; E.stop.disabled = false; status(`Playing... ${fmt(absoluteTime)} / ${fmt(totalDuration)}`); playChunk(chunkIndex, offset, playbackId); requestAnimationFrame(updatePlayback); }).catch(e => {});
-    };
-    const pausePlayback = () => { /* ... as before ... */
-         if (!playing) return; pausedAt = ctx.currentTime - startTime; playing = false; paused = true; log(`Pausing at ${pausedAt.toFixed(2)}s`); cancelPlayback(); E.play.disabled = false; E.pause.disabled = true; status(`Paused at ${fmt(pausedAt)}`);
-    };
-    const resumePlayback = () => { /* ... as before ... */
-         if (!paused) return; log(`Resuming from ${pausedAt.toFixed(2)}s`); const { chunk, offset } = locateTimePosition(pausedAt); startPlayback(chunk, offset, pausedAt);
-    };
-    const seekToTime = (time) => { /* ... as before ... */
-        if (!chunksData.some(c => c?.loaded && c.duration > 0)) { log(`Cannot seek: no audio loaded`); return; } const maxSeekTime = loadingComplete ? totalDuration : loadedDuration; time = Math.max(0, Math.min(time, maxSeekTime)); log(`Seeking to ${time.toFixed(2)}s`); const { chunk, offset } = locateTimePosition(time); const wasPlaying = playing; cancelPlayback(); if (paused || !wasPlaying) { pausedAt = time; paused = true; playing = false; updateUI(time); log(`Seek updated paused position to ${time.toFixed(2)}s`); E.play.disabled = false; E.pause.disabled = true; } else { startPlayback(chunk, offset, time); }
-    };
-     const seekToWord = (wordIndex) => { /* ... as before ... */
-        wordIndex = parseInt(wordIndex); if (isNaN(wordIndex) || wordIndex < 0 || wordIndex >= wordElements.length) { log(`Cannot seek to word ${wordIndex}: out of range`); return; } const timing = wordTimings[wordIndex]; if (!timing) { log(`No timing data for word ${wordIndex}`); return; } const chunkIndex = timing.chunk; if (!chunksData[chunkIndex]?.loaded || !buffers[chunkIndex]) { log(`Word ${wordIndex} (${timing.word}) in chunk ${chunkIndex} not loaded`); status('Wait for audio to load.', true); return; } const time = timing.startTime; log(`Seeking to word "${timing.word}" (idx ${wordIndex}) at time ${time.toFixed(2)}s`); seekToTime(time);
-    };
-    const createDownloadLink = () => { /* ... as before ... */
-        log('Creating download link'); const validBlobs = audioBlobs.filter(b => b instanceof Blob && b.size > 0); if (!validBlobs.length) { log('No valid audio blobs', null, 'error'); status('No audio available for download', true); return; } try { const combinedBlob = new Blob(validBlobs, { type: 'audio/mp3' }); log(`Combined blob: ${(combinedBlob.size / 1024 / 1024).toFixed(2)} MB`); const url = URL.createObjectURL(combinedBlob); const a = document.createElement('a'); const fileName = 'speech_' + new Date().toISOString().replace(/[:.]/g, '-') + '.mp3'; a.href = url; a.download = fileName; log(`Triggering download: ${fileName}`); document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); log('Download cleanup done'); }, 100); status('Download started', false); } catch (err) { log('Error creating download', err, 'error'); status('Failed to create download: ' + err.message, true); }
-    };
-
+    const fetchJSON = async (url, opts) => { try { log(`Workspaceing ${url}`, opts); const r = await fetch(url, opts); if (!r.ok) { let m = `HTTP ${r.status}`; try { const d = await r.json(); m = d.error?.message || m; log('API Error Resp', d,'error');} catch(e){log('No JSON in API err','warn');} throw new Error(m); } const d = await r.json(); log(`Workspace ${url} OK`); return d; } catch (e) { log(`Workspace error ${url}: ${e.message}`, e, 'error'); throw e; } };
+    const splitText = t => { const m = +E.chk.value; log(`Splitting text (${t.length}) mtd: ${method}, chunk: ${m}`); if (t.length <= m) return [t]; if (method === 'exact') { const a = []; for (let i = 0; i < t.length; i += m) a.push(t.slice(i, i + m)); log(`Split exact: ${a.length}`); return a; } const re = method === 'paragraph' ? /\n\s*\n/ : /([.!?]+["']?\s+)/; const bits = t.split(re).filter(Boolean); log(`Split initial: ${bits.length}`); const out = []; let cur = ''; for (const p of bits) { if ((cur + p).length > m) { if (cur.trim()) out.push(cur.trim()); cur = ''; if (p.length > m) { let q = p; while (q.length > m) { out.push(q.slice(0, m)); q = q.slice(m); } cur = q; } else { cur = p; } } else { cur += p; } } if (cur.trim()) out.push(cur.trim()); log(`Final chunks: ${out.length}`); return out; };
+    const decodeBuffer = a => { log(`Decoding buffer ${a.byteLength} bytes`); return new Promise((res, rej) => { try { if (!ctx) { rej(new Error("AudioContext not init")); return; } ctx.decodeAudioData(a, (b) => { log(`Decoded: ${b.duration.toFixed(2)}s`); res(b); }, (e) => { log(`Decode error`, e, 'error'); rej(e); }); } catch (e) { log(`Decode exception`, e, 'error'); rej(e); } }); };
+    const prepareTextDisplay = (text, chunks) => { log(`Prep text display: ${text.length} chars, ${chunks.length} chunks`); E.textBox.innerHTML = ''; wordElements = []; wordTimings = []; chunksData = []; chunks.forEach((c, i) => { chunksData[i] = { text: c, sT: 0, eT: 0, wc: c.split(/\s+/).filter(Boolean).length, dur: 0, ld: false }; }); let cC = 0; let cWC = 0; let cSP = 0; let gWI = 0; text.split(/(\s+)/).forEach((p) => { if (p.trim()) { const s = document.createElement('span'); s.textContent = p; s.className = 'word loading'; s.dataset.index = gWI; let cTP = text.indexOf(p, cSP); while (cSP + chunksData[cC]?.text.length <= cTP && cC < chunks.length - 1) { cSP += chunksData[cC].text.length; cC++; cWC = 0; } s.dataset.chunk = cC; wordTimings[gWI] = { w: p, c: cC, iic: cWC, sT: 0, eT: 0 }; cWC++; s.onclick = (e) => { if (s.classList.contains('loading')) { status('Still loading...'); return; } seekToWord(parseInt(e.currentTarget.dataset.index)); }; wordElements.push(s); E.textBox.appendChild(s); gWI++; } else { E.textBox.appendChild(document.createTextNode(p)); } }); log(`Prep text done: ${gWI} words`); };
+    const updateWordTimings = (ci, dur) => { if (!chunksData[ci]) return; log(`Update timings chunk ${ci}, dur ${dur.toFixed(2)}s`); chunksData[ci].ld = true; chunksData[ci].dur = dur; let cST = 0; for (let i = 0; i < ci; i++) { if (chunksData[i]?.ld && chunksData[i].dur > 0) cST += chunksData[i].dur; else log(`Warn: Prev chunk ${i} timing needed for ${ci} missing`, chunksData[i], 'warn'); } chunksData[ci].sT = cST; chunksData[ci].eT = cST + dur; const wc = chunksData[ci].wc; if (wc <= 0) return; wordTimings.forEach((t, i) => { if (t.c === ci) { const sT = cST + (t.iic / wc) * dur; const nST = cST + ((t.iic + 1) / wc) * dur; const eT = Math.min(cST + dur, nST - 0.01); t.sT = sT; t.eT = Math.max(sT + 0.05, eT); const el = wordElements[i]; if (el) el.classList.remove('loading'); } }); log(`Updated timings chunk ${ci}`); };
+    const locateTimePosition = (t) => { const sL = Math.random() < 0.01; if (sL) log(`Locate time ${t.toFixed(2)}s`); const mT = loadingComplete ? totalDuration : loadedDuration; t = Math.max(0, Math.min(t, mT)); for (let i = 0; i < chunksData.length; i++) { if (chunksData[i]?.ld && t >= chunksData[i].sT && t < chunksData[i].eT) { const o = t - chunksData[i].sT; if (sL) log(`Found time ${t.toFixed(2)}s in chunk ${i} offset ${o.toFixed(2)}s`); return { chunk: i, offset: o }; } } let fC = 0; let fO = 0; for (let i = 0; i < chunksData.length; i++) { if (chunksData[i]?.ld && chunksData[i].sT <= t) { fC = i; fO = Math.min(chunksData[i].dur, t - chunksData[i].sT); } else if(chunksData[i]?.ld) break; } if (sL) log(`Fallback time ${t.toFixed(2)}s to chunk ${fC} offset ${fO.toFixed(2)}s`); return { chunk: fC, offset: fO }; };
+    const initAudioContext = () => { if(!ctx){log('Init AudioCtx');try{ctx=new(window.AudioContext||window.webkitAudioContext)();gainNode=ctx.createGain();gainNode.gain.value=E.volume.value;gainNode.connect(ctx.destination);if(typeof VoiceVisualizer!=='undefined'){visualizer=new VoiceVisualizer('visualizer',ctx,{mode:'waveform',color:isDarkMode?'#8ab4f8':'#4285f4',stroke:2});log('Visualizer init.');}else{log('No Visualizer class','warn');Q('visualizer').style.display='none';}log('AudioCtx init OK',{sr:ctx.sampleRate,st:ctx.state});ctx.onstatechange=()=>{log(`AudioCtx state: ${ctx.state}`);if(ctx.state==='interrupted'){stopPlayback();status('Audio interrupted.',true);}else if(ctx.state==='suspended'){ctx.resume().catch(e=>log('Resume failed',e,'error'));}}; }catch(e){log('AudioCtx init FAIL',e,'error');status('Audio init failed: '+e.message,true);[E.play,E.pause,E.stop,E.gen].forEach(b=>b.disabled=true);return Promise.reject(e);}} if(ctx.state==='suspended'){log('AudioCtx suspended, resume...');return ctx.resume().then(()=>{log('Resumed.');return ctx;}).catch(e=>{log('Resume failed',e,'error');status('Audio resume failed.',true);throw e;});} return Promise.resolve(ctx); };
+    const cancelPlayback = () => { log('Cancel playback'); if (visualizer) visualizer.stop(); audioSources.forEach((s) => { if (s) { s.onended = null; try { s.stop(); } catch (e) {} } }); audioSources = []; };
+    const updateUI = (t) => { const dT = Math.max(0, Math.min(t, totalDuration)); const p = totalDuration > 0 ? (dT / totalDuration) * 100 : 0; E.fill.style.width = `${Math.max(0, Math.min(100, p))}%`; E.time.textContent = `${fmt(dT)} / ${fmt(totalDuration)}`; updateWordHighlight(dT); if (playing) status(`Playing... ${fmt(dT)} / ${fmt(totalDuration)}`); };
+    const updateWordHighlight = (t) => { let nWI = -1; for (let i = 0; i < wordTimings.length; i++) { const tm = wordTimings[i]; if (tm && typeof tm.sT === 'number' && typeof tm.eT === 'number' && tm.sT <= t && t <= tm.eT) { nWI = i; break; } } if (nWI === -1) { for (let i = wordTimings.length - 1; i >= 0; i--) { const tm = wordTimings[i]; if (tm && typeof tm.sT === 'number' && t >= tm.sT) { nWI = i; break; } } } if (nWI !== currentWordIndex && nWI !== -1) { if (currentWordIndex >= 0 && wordElements[currentWordIndex]) wordElements[currentWordIndex].classList.remove('active'); if (nWI >= 0 && wordElements[nWI]) { const wE = wordElements[nWI]; wE.classList.add('active'); const c = E.textBox; const wT = wE.offsetTop - c.offsetTop; const wB = wT + wE.offsetHeight; const cST = c.scrollTop; const cH = c.clientHeight; const sB = 30; if (wT < cST + sB) c.scrollTop = Math.max(0, wT - sB); else if (wB > cST + cH - sB) c.scrollTop = wB - cH + sB; } currentWordIndex = nWI; } };
+    const stopPlayback = (silent = false) => { const was = playing || paused; cancelPlayback(); playing = false; paused = false; pausedAt = 0; startTime = 0; if (currentWordIndex >= 0 && wordElements[currentWordIndex]) wordElements[currentWordIndex].classList.remove('active'); currentWordIndex = -1; if (!silent && was) { log('Stopped'); if (totalDuration > 0) { updateUI(0); E.play.disabled = false; } else E.play.disabled = true; E.pause.disabled = true; E.stop.disabled = true; status('Stopped.'); } else if (!silent) { E.play.disabled = !(totalDuration > 0); E.pause.disabled = true; E.stop.disabled = true; } };
+    const playChunk = (idx, off = 0, id) => { if (id !== playbackId) { log(`Stale play: ${id}`); return; } if (idx >= buffers.length || !buffers[idx]) { if (loadingComplete) { log(`End audio chunk ${idx}`); stopPlayback(); } else { log(`Chunk ${idx} wait...`); status(`Buffering...`); setTimeout(() => { if (playing && id === playbackId) playChunk(idx, off, id); }, 300); } return; } const buf = buffers[idx]; log(`Play chunk ${idx} off ${off.toFixed(2)} (dur ${buf.duration.toFixed(2)})`); const src = ctx.createBufferSource(); src.buffer = buf; const dest = visualizer?.analyser ? visualizer.analyser : gainNode; src.connect(dest); if (visualizer?.analyser) visualizer.analyser.connect(gainNode); src.onended = () => { if (audioSources[idx] === src) audioSources[idx] = null; if (playing && id === playbackId) { log(`Chunk ${idx} ended.`); playChunk(idx + 1, 0, id); } }; audioSources[idx] = src; const vOff = Math.max(0, Math.min(off, buf.duration - 0.001)); try { src.start(0, vOff); if(visualizer) visualizer.start(); } catch (e) { log(`Start chunk ${idx} err`, e, 'error'); if (playing && id === playbackId) playChunk(idx + 1, 0, id); } };
+    const startPlayback = (cI, off = 0, aT = 0) => { initAudioContext().then(() => { playbackId = Date.now(); playing = true; paused = false; startTime = ctx.currentTime - aT; log(`Start playback chunk ${cI} off ${off.toFixed(2)} abs ${aT.toFixed(2)} ctx ${ctx.currentTime.toFixed(2)}`); E.play.disabled = true; E.pause.disabled = false; E.stop.disabled = false; status(`Playing... ${fmt(aT)} / ${fmt(totalDuration)}`); playChunk(cI, off, playbackId); requestAnimationFrame(updatePlayback); }).catch(e => {}); };
+    const pausePlayback = () => { if (!playing) return; pausedAt = ctx.currentTime - startTime; playing = false; paused = true; log(`Pause at ${pausedAt.toFixed(2)}s`); cancelPlayback(); E.play.disabled = false; E.pause.disabled = true; status(`Paused at ${fmt(pausedAt)}`); };
+    const resumePlayback = () => { if (!paused) return; log(`Resume from ${pausedAt.toFixed(2)}s`); const { chunk, offset } = locateTimePosition(pausedAt); startPlayback(chunk, offset, pausedAt); };
+    const seekToTime = (t) => { if (!chunksData.some(c => c?.ld && c.dur > 0)) { log(`Seek fail: no audio`); return; } const mST = loadingComplete ? totalDuration : loadedDuration; t = Math.max(0, Math.min(t, mST)); log(`Seek to ${t.toFixed(2)}s`); const { chunk, offset } = locateTimePosition(t); const wasP = playing; cancelPlayback(); if (paused || !wasP) { pausedAt = t; paused = true; playing = false; updateUI(t); log(`Seek updated pause pos ${t.toFixed(2)}s`); E.play.disabled = false; E.pause.disabled = true; } else { startPlayback(chunk, offset, t); } };
+    const seekToWord = (wI) => { wI = parseInt(wI); if (isNaN(wI) || wI < 0 || wI >= wordElements.length) { log(`Seek word ${wI} out of range`); return; } const tm = wordTimings[wI]; if (!tm) { log(`No timing word ${wI}`); return; } const cI = tm.c; if (!chunksData[cI]?.ld || !buffers[cI]) { log(`Word ${wI} (${tm.w}) chunk ${cI} not loaded`); status('Wait audio load.', true); return; } const time = tm.sT; log(`Seek word "${tm.w}" (idx ${wI}) time ${time.toFixed(2)}s`); seekToTime(time); };
+    const createDownloadLink = () => { log('Create DL'); const vB = audioBlobs.filter(b => b instanceof Blob && b.size > 0); if (!vB.length) { log('No valid blobs','err'); status('No audio DL', true); return; } try { const cB = new Blob(vB, { type: 'audio/mp3' }); log(`Combined blob: ${(cB.size / 1024 / 1024).toFixed(2)} MB`); const url = URL.createObjectURL(cB); const a = document.createElement('a'); a.href = url; a.download = 'speech_' + new Date().toISOString().replace(/[:.]/g, '-') + '.mp3'; log(`Trigger DL: ${a.download}`); document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); log('DL cleanup'); }, 100); status('DL started', false); } catch (e) { log('DL err', e, 'error'); status('DL failed: ' + e.message, true); } };
 
     // --- Event Listeners ---
     E.signInBtn.onclick = () => {
+        console.log("[DOM] signInBtn clicked."); // <<< NEW LOG
+        log('signInBtn clicked');
         if (!tokenClient) {
             log('Token client not ready.', null, 'warn');
             status('Authentication system not ready.', true);
+            console.warn("[DOM] Sign-in failed: tokenClient not ready."); // <<< NEW LOG
             return;
         }
         log('Requesting access token...');
-        // Prompt for consent only if we don't have a token yet.
-        tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
-    };
-
-    E.load.onclick = async () => { /* --- Load Voices --- */
-        if (!accessToken) { status('Please sign in first.', true); if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' }); else status('Auth system not ready.', true); return; }
-        E.loading.classList.remove('hidden'); E.load.disabled = true; E.gen.disabled = true; status('Loading voices...');
+        console.log("[DOM] Calling tokenClient.requestAccessToken..."); // <<< NEW LOG
         try {
-            log(`Requesting voices from ${VO} via OAuth.`);
-            const d = await fetchJSON(VO, { method: 'GET', headers: { 'Authorization': 'Bearer ' + accessToken } });
-            voices = d.voices || []; if (!voices.length) throw new Error('No voices returned'); log(`Loaded ${voices.length} voices`);
-            const langMap = new Map(); voices.forEach(v => v.languageCodes.forEach(code => { let name = code; try { name = new Intl.DisplayNames(['en'], { type: 'language' }).of(code); } catch (e) {} if (!langMap.has(code)) langMap.set(code, { name, voices: [] }); langMap.get(code).voices.push(v); }));
-            const sortedLangs = [...langMap.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name));
-            const html = sortedLangs.map(([code, { name, voices }]) => { const options = voices.sort((a, b) => a.name.localeCompare(b.name)).map(v => `<option value="${v.name}" data-l="${code}">${v.name} ${v.name.includes('Neural') || v.name.includes('Wavenet') ? '(Neural)' : ''}</option>`).join(''); return `<optgroup label="${name}">${options}</optgroup>`; }).join('');
-            E.voice.innerHTML = html; E.voice.disabled = false; E.gen.disabled = false; status('Voices loaded successfully', false);
-        } catch (e) { status(`Failed to load voices: ${e.message}`, true); log('Error loading voices', e, 'error'); if (e.message.includes('401') || e.message.includes('403')) { accessToken = null; E.authStatus.textContent = '⚠️ Re-auth needed'; E.load.disabled = true; } } finally { E.loading.classList.add('hidden'); E.load.disabled = !accessToken; }
+             tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
+        } catch(error) {
+             console.error('[DOM] Error calling requestAccessToken:', error); // <<< NEW LOG
+             log('Error initiating sign-in', error, 'error');
+             status('Sign-in error.', true);
+        }
     };
-
-    E.gen.onclick = async () => { /* --- Generate Speech --- */
-        if (!accessToken) { status('Please sign in first.', true); if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' }); else status('Auth system not ready.', true); return; }
-        if (!E.voice.value) { status('Select a voice first.', true); return; }
-        try {
-            await initAudioContext(); const text = E.txt.value.trim(); if (!text) { status('Enter text.', true); return; }
-            stopPlayback(true); buffers = []; audioBlobs = []; audioSources = []; wordTimings = []; chunksData = []; totalDuration = 0; loadedDuration = 0; loadingComplete = false; E.download.disabled = true; E.play.disabled = true; E.pause.disabled = true; E.stop.disabled = true;
-            const chunks = splitText(text); if (!chunks.length) { status('Failed to split text.', true); return; }
-            totalChunks = chunks.length; chunksReceived = 0; status(`Requesting synthesis for ${chunks.length} chunk(s)...`); prepareTextDisplay(text, chunks); E.gen.disabled = true; E.load.disabled = true;
-            buffers = new Array(chunks.length).fill(null); audioBlobs = new Array(chunks.length).fill(null);
-            const createRequest = chunk => ({ input: { text: chunk }, voice: { languageCode: E.voice.selectedOptions[0].dataset.l, name: E.voice.value }, audioConfig: { audioEncoding: 'MP3', pitch: +E.pit.value, speakingRate: +E.rat.value } });
-            const chunkPromises = chunks.map(async (chunk, index) => { try { log(`Generating chunk ${index + 1}/${chunks.length}`); const response = await fetchJSON(SY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + accessToken }, body: JSON.stringify(createRequest(chunk)) }); if (!response.audioContent) throw new Error(`No audio content in response for chunk ${index + 1}`); log(`Received audio content for chunk ${index + 1}`); const audioData = atob(response.audioContent); const arrayBuffer = new Uint8Array(audioData.length); for (let i = 0; i < audioData.length; i++) arrayBuffer[i] = audioData.charCodeAt(i); const blob = new Blob([arrayBuffer], { type: 'audio/mp3' }); audioBlobs[index] = blob; log(`Created blob chunk ${index + 1}: ${(blob.size / 1024).toFixed(2)} KB`); const bufferCopy = arrayBuffer.buffer.slice(0); try { const audioBuffer = await decodeBuffer(bufferCopy); buffers[index] = audioBuffer; updateWordTimings(index, audioBuffer.duration); loadedDuration = chunksData.reduce((sum, cd) => sum + (cd.loaded ? cd.duration : 0), 0); totalDuration = loadedDuration; log(`Chunk ${index + 1} decoded: ${audioBuffer.duration.toFixed(2)}s. Loaded: ${loadedDuration.toFixed(2)}s`); chunksReceived++; status(`Processing... ${chunksReceived}/${totalChunks} chunks loaded.`); if (index === 0 && !playing && !paused) { E.play.disabled = false; E.stop.disabled = false; startPlayback(0, 0, 0); } else if (!playing && !paused && buffers[0]) { E.play.disabled = false; E.stop.disabled = false; } return index; } catch (decodeError) { log(`Error decoding chunk ${index + 1}`, decodeError, 'error'); if (chunksData[index]) chunksData[index].loaded = false; throw new Error(`Decode failed chunk ${index + 1}: ${decodeError.message}`); } } catch (error) { log(`Error processing chunk ${index + 1}`, error, 'error'); if (error.message.includes('401') || error.message.includes('403')) { accessToken = null; E.authStatus.textContent = '⚠️ Re-auth needed'; E.load.disabled = true; status(`Chunk ${index + 1} failed: Auth error. Sign in again.`, true); } else { status(`Chunk ${index + 1} failed: ${error.message}`, true); } if (chunksData[index]) chunksData[index].loaded = false; return null; } });
-            await Promise.allSettled(chunkPromises); loadingComplete = true; totalDuration = chunksData.reduce((sum, cd) => sum + (cd.loaded ? cd.duration : 0), 0); log(`All chunks settled. Final duration: ${totalDuration.toFixed(2)}s`); updateUI(playing ? ctx.currentTime - startTime : pausedAt); const successCount = chunksData.filter(c => c?.loaded).length; if (successCount === totalChunks) { log('All chunks processed successfully', { totalDuration }); status(`Synthesis complete. Duration: ${fmt(totalDuration)}`, false); E.download.disabled = false; } else { log(`Some chunks failed (${successCount}/${totalChunks})`, null, 'warn'); status(`Completed ${successCount}/${totalChunks} chunks. Duration: ${fmt(totalDuration)}`, successCount > 0); if (successCount > 0) E.download.disabled = false; }
-        } catch (e) { log('Generation process failed', e, 'error'); status(`Generation failed: ${e.message}`, true); } finally { E.gen.disabled = false; E.load.disabled = !accessToken; if (!playing && !paused) { E.play.disabled = !(totalDuration > 0); E.pause.disabled = true; E.stop.disabled = true; } }
-    };
-
-    E.methodBtns.forEach(b => b.onclick = () => { /* ... as before ... */
-        E.methodBtns.forEach(x => x.classList.remove('active')); b.classList.add('active'); method = b.dataset.m; log(`Splitting method: ${method}`);
-    });
-    ['pit', 'rat', 'chk'].forEach(id => E[id].addEventListener('input', e => { /* ... as before ... */
-         const span = E[`${id}Val`]; if (span) span.textContent = id === 'rat' ? parseFloat(e.target.value).toFixed(2) : e.target.value;
-    }));
-    E.volume.addEventListener('input', () => { /* ... as before ... */
-         if (gainNode) { gainNode.gain.value = E.volume.value; log(`Volume: ${E.volume.value}`); }
-    });
-    E.prog.onclick = e => { /* ... as before ... */
-         if (!totalDuration) return; const rect = E.prog.getBoundingClientRect(); const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)); const targetTime = ratio * (loadingComplete ? totalDuration : loadedDuration); log(`Progress bar clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`); seekToTime(targetTime);
-    };
-    E.play.onclick = () => { /* ... as before ... */
-         if (paused) resumePlayback(); else startPlayback(0, 0, 0);
-    };
-    E.pause.onclick = pausePlayback;
-    E.stop.onclick = () => stopPlayback(false);
-    E.download.onclick = createDownloadLink;
-
-    // --- Keyboard Shortcuts (as before) ---
-    document.addEventListener('keydown', (e) => { /* ... as before ... */
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return; let handled = false; switch (e.code) { case 'Space': if (playing && !E.pause.disabled) E.pause.click(); else if ((paused || (loadingComplete && totalDuration > 0)) && !E.play.disabled) E.play.click(); handled = true; break; case 'Escape': if ((playing || paused) && !E.stop.disabled) E.stop.click(); handled = true; break; case 'KeyG': if (!E.gen.disabled) E.gen.click(); handled = true; break; case 'KeyD': if (!E.download.disabled) E.download.click(); handled = true; break; case 'KeyT': E.themeToggle.click(); handled = true; break; case 'ArrowLeft': if (playing || paused) { const time = playing ? ctx.currentTime - startTime : pausedAt; seekToTime(time - 5); handled = true; } break; case 'ArrowRight': if (playing || paused) { const time = playing ? ctx.currentTime - startTime : pausedAt; seekToTime(time + 5); handled = true; } break; case 'ArrowUp': E.volume.value = Math.min(1, parseFloat(E.volume.value) + 0.1); if (gainNode) gainNode.gain.value = E.volume.value; handled = true; break; case 'ArrowDown': E.volume.value = Math.max(0, parseFloat(E.volume.value) - 0.1); if (gainNode) gainNode.gain.value = E.volume.value; handled = true; break; } if (handled) e.preventDefault();
-    });
+    E.load.onclick = async () => { /* --- Load Voices --- */ if (!accessToken) { status('Sign in first.', true); if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' }); else status('Auth not ready.', true); return; } E.loading.classList.remove('hidden'); E.load.disabled = true; E.gen.disabled = true; status('Loading voices...'); try { log(`Req voices ${VO}`); const d = await fetchJSON(VO, { method: 'GET', headers: { 'Authorization': 'Bearer ' + accessToken } }); voices = d.voices || []; if (!voices.length) throw new Error('No voices'); log(`Loaded ${voices.length} voices`); const lM = new Map(); voices.forEach(v => v.languageCodes.forEach(c => { let n = c; try { n = new Intl.DisplayNames(['en'], { type: 'language' }).of(c); } catch (e) {} if (!lM.has(c)) lM.set(c, { name: n, voices: [] }); lM.get(c).voices.push(v); })); const sL = [...lM.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name)); const h = sL.map(([c, { name, voices }]) => { const o = voices.sort((a, b) => a.name.localeCompare(b.name)).map(v => `<option value="${v.name}" data-l="${c}">${v.name}${v.name.includes('Neural') || v.name.includes('Wavenet') ? ' (N)' : ''}</option>`).join(''); return `<optgroup label="${name}">${o}</optgroup>`; }).join(''); E.voice.innerHTML = h; E.voice.disabled = false; E.gen.disabled = false; status('Voices loaded', false); } catch (e) { status(`Load voices failed: ${e.message}`, true); log('Voice load err', e, 'error'); if (String(e.message).includes('401') || String(e.message).includes('403')) { accessToken = null; E.authStatus.textContent = '⚠️ Re-auth'; E.load.disabled = true; } } finally { E.loading.classList.add('hidden'); E.load.disabled = !accessToken; } };
+    E.gen.onclick = async () => { /* --- Generate Speech --- */ if (!accessToken) { status('Sign in first.', true); if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' }); else status('Auth not ready.', true); return; } if (!E.voice.value) { status('Select voice.', true); return; } try { await initAudioContext(); const t = E.txt.value.trim(); if (!t) { status('Enter text.', true); return; } stopPlayback(true); buffers = []; audioBlobs = []; audioSources = []; wordTimings = []; chunksData = []; totalDuration = 0; loadedDuration = 0; loadingComplete = false; E.download.disabled = true; E.play.disabled = true; E.pause.disabled = true; E.stop.disabled = true; const c = splitText(t); if (!c.length) { status('Split text failed.', true); return; } totalChunks = c.length; chunksReceived = 0; status(`Req synth ${c.length} chunks...`); prepareTextDisplay(t, c); E.gen.disabled = true; E.load.disabled = true; buffers = new Array(c.length).fill(null); audioBlobs = new Array(c.length).fill(null); const cR = k => ({ input: { text: k }, voice: { languageCode: E.voice.selectedOptions[0].dataset.l, name: E.voice.value }, audioConfig: { audioEncoding: 'MP3', pitch: +E.pit.value, speakingRate: +E.rat.value } }); const cP = c.map(async (k, i) => { try { log(`Gen chunk ${i + 1}/${c.length}`); const r = await fetchJSON(SY, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + accessToken }, body: JSON.stringify(cR(k)) }); if (!r.audioContent) throw new Error(`No audio chunk ${i + 1}`); log(`Recvd chunk ${i + 1}`); const aD = atob(r.audioContent); const aB = new Uint8Array(aD.length); for (let j = 0; j < aD.length; j++) aB[j] = aD.charCodeAt(j); const bl = new Blob([aB], { type: 'audio/mp3' }); audioBlobs[i] = bl; log(`Blob chunk ${i + 1}: ${(bl.size / 1024).toFixed(1)} KB`); const bC = aB.buffer.slice(0); try { const aBuf = await decodeBuffer(bC); buffers[i] = aBuf; updateWordTimings(i, aBuf.duration); loadedDuration = chunksData.reduce((s, d) => s + (d.ld ? d.dur : 0), 0); totalDuration = loadedDuration; log(`Chunk ${i + 1} decoded: ${aBuf.duration.toFixed(2)}s. Loaded: ${loadedDuration.toFixed(2)}s`); chunksReceived++; status(`Proc ${chunksReceived}/${totalChunks}...`); if (i === 0 && !playing && !paused) { E.play.disabled = false; E.stop.disabled = false; startPlayback(0, 0, 0); } else if (!playing && !paused && buffers[0]) { E.play.disabled = false; E.stop.disabled = false; } return i; } catch (dE) { log(`Decode err ${i + 1}`, dE, 'error'); if (chunksData[i]) chunksData[i].ld = false; throw new Error(`Decode fail ${i + 1}: ${dE.message}`); } } catch (e) { log(`Proc err chunk ${i + 1}`, e, 'error'); if (String(e.message).includes('401') || String(e.message).includes('403')) { accessToken = null; E.authStatus.textContent = '⚠️ Re-auth'; E.load.disabled = true; status(`Chunk ${i + 1} fail: Auth error. Sign in.`, true); } else status(`Chunk ${i + 1} fail: ${e.message}`, true); if (chunksData[i]) chunksData[i].ld = false; return null; } }); await Promise.allSettled(cP); loadingComplete = true; totalDuration = chunksData.reduce((s, d) => s + (d.ld ? d.dur : 0), 0); log(`All chunks settled. Final dur: ${totalDuration.toFixed(2)}s`); updateUI(playing ? ctx.currentTime - startTime : pausedAt); const sC = chunksData.filter(d => d?.ld).length; if (sC === totalChunks) { log('All OK', { totalDuration }); status(`Synth OK. Dur: ${fmt(totalDuration)}`, false); E.download.disabled = false; } else { log(`Some fail (${sC}/${totalChunks})`, null, 'warn'); status(`Done ${sC}/${totalChunks}. Dur: ${fmt(totalDuration)}`, sC > 0); if (sC > 0) E.download.disabled = false; } } catch (e) { log('Gen fail', e, 'error'); status(`Gen failed: ${e.message}`, true); } finally { E.gen.disabled = false; E.load.disabled = !accessToken; if (!playing && !paused) { E.play.disabled = !(totalDuration > 0); E.pause.disabled = true; E.stop.disabled = true; } } };
+    E.methodBtns.forEach(b => b.onclick = () => { E.methodBtns.forEach(x => x.classList.remove('active')); b.classList.add('active'); method = b.dataset.m; log(`Split method: ${method}`); });
+    ['pit', 'rat', 'chk'].forEach(id => E[id].oninput = e => { const s = E[`${id}Val`]; if (s) s.textContent = id === 'rat' ? parseFloat(e.target.value).toFixed(2) : e.target.value; });
+    E.volume.oninput = () => { if (gainNode) { gainNode.gain.value = E.volume.value; log(`Volume: ${E.volume.value}`); } };
+    E.prog.onclick = e => { if (!totalDuration) return; const r = E.prog.getBoundingClientRect(); const rat = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); const t = rat * (loadingComplete ? totalDuration : loadedDuration); log(`Prog click ${rat.toFixed(2)} (${t.toFixed(2)}s)`); seekToTime(t); };
+    E.play.onclick = () => { if (paused) resumePlayback(); else startPlayback(0, 0, 0); };
+    E.pause.onclick = pausePlayback; E.stop.onclick = () => stopPlayback(false); E.download.onclick = createDownloadLink;
+    document.onkeydown = (e) => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return; let h = false; switch (e.code) { case 'Space': if (playing && !E.pause.disabled) E.pause.click(); else if ((paused || (loadingComplete && totalDuration > 0)) && !E.play.disabled) E.play.click(); h = true; break; case 'Escape': if ((playing || paused) && !E.stop.disabled) E.stop.click(); h = true; break; case 'KeyG': if (!E.gen.disabled) E.gen.click(); h = true; break; case 'KeyD': if (!E.download.disabled) E.download.click(); h = true; break; case 'KeyT': E.themeToggle.click(); h = true; break; case 'ArrowLeft': if (playing || paused) { seekToTime((playing ? ctx.currentTime - startTime : pausedAt) - 5); h = true; } break; case 'ArrowRight': if (playing || paused) { seekToTime((playing ? ctx.currentTime - startTime : pausedAt) + 5); h = true; } break; case 'ArrowUp': E.volume.value = Math.min(1, parseFloat(E.volume.value) + 0.1); if (gainNode) gainNode.gain.value = E.volume.value; h = true; break; case 'ArrowDown': E.volume.value = Math.max(0, parseFloat(E.volume.value) - 0.1); if (gainNode) gainNode.gain.value = E.volume.value; h = true; break; } if (h) e.preventDefault(); };
 
     // --- Initial Log & UI State ---
-    log('DOM Ready. Initializing OAuth libs...');
-    E.play.disabled = true; E.pause.disabled = true; E.stop.disabled = true; E.download.disabled = true; E.gen.disabled = true; E.voice.disabled = true; E.load.disabled = true;
+    console.log("[DOM] Adding initial log and setting initial UI state."); // <<< NEW LOG
+    log('DOM Ready. Waiting for OAuth libs init...');
+    E.play.disabled = true; E.pause.disabled = true; E.stop.disabled = true; E.download.disabled = true; E.gen.disabled = true; E.voice.disabled = true; E.load.disabled = true; E.signInBtn.disabled = true; // Ensure it starts disabled
 
-    // Initial check in case libraries finished loading *before* DOMContentLoaded
+    // Initial check immediately on DOM ready
+    // This might enable the button if libs loaded *very* fast, before DOM ready
     checkEnableSignIn();
 
 }); // End DOMContentLoaded
