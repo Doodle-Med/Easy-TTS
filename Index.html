@@ -4,6 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Google Cloud TTS Playground</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
+<script src="voice-visualizer.js"></script>
 <style>
 :root {
   /* Light theme (default) */
@@ -49,6 +52,7 @@
   transition: var(--transition);
 }
 
+/* 3) Body tag: bootstrap the OAuth callbacks */
 body {
   background:var(--bg);
   color:var(--fg);
@@ -300,6 +304,13 @@ button:disabled {
   margin-bottom:0;
 }
 
+.controls #authStatus { /* Style for the auth status span */
+    flex-grow: 1;
+    font-style: italic;
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
 .volume-control {
   display:flex;
   align-items:center;
@@ -408,7 +419,7 @@ button:disabled {
 }
 </style>
 </head>
-<body>
+<body onload="gapiLoaded(); gisLoaded();">
 <h1>Google Cloud TTS Playground</h1>
 <div class="theme-toggle">
   <button id="themeToggle" title="Toggle Theme">🌓</button>
@@ -418,11 +429,14 @@ button:disabled {
     <div class="card-header">
       <h2>🎛️ Configuration</h2>
     </div>
-    <label>API Key</label>
+    
+    <label>Authentication</label>
     <div class="controls">
-      <input id="k" type="password" placeholder="Enter your Google Cloud API Key"/>
-      <button class="small-btn" id="ld">Load Voices</button>
+      <button class="small-btn" id="signInBtn">Sign in with Google</button>
+      <span id="authStatus">Not signed in</span>
     </div>
+    
+    <button class="small-btn" id="ld" disabled>Load Voices</button>
     <div id="loading" class="status hidden"><span class="spinner"></span>Loading voices...</div>
     
     <label>Text</label>
@@ -485,13 +499,71 @@ button:disabled {
 </div>
 
 <script>
+// 4) Script: add OAuth constants and init functions
+// NOTE: Placed inside DOMContentLoaded to ensure E elements exist for callbacks
+//       but before E is defined, so E can map the new elements.
+
+// ── OAuth setup ───────────────────────────────────────────────────────────
+const CLIENT_ID     = '879295177554-m3j1d2pks6lukl3h9cl92r953ef2jd4e.apps.googleusercontent.com'; // Your Client ID
+const DISCOVERY_DOC = 'https://texttospeech.googleapis.com/$discovery/rest?version=v1';
+const SCOPES        = 'https://www.googleapis.com/auth/cloud-platform';
+let tokenClient;
+let accessToken = null; // Store the access token here
+
+// Called by <script src="…/js/api.js">
+function gapiLoaded() {
+  gapi.load('client', initializeGapiClient);
+}
+
+async function initializeGapiClient() {
+  await gapi.client.init({ discoveryDocs: [DISCOVERY_DOC] });
+  // Check if we can now enable the sign-in button (gapi is ready)
+  if (tokenClient) { // Check if GIS is also ready
+    E.signInBtn.disabled = false;
+  }
+}
+
+// Called by <script src="…/gsi/client">
+function gisLoaded() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => { // Arrow function for 'this' safety, though not strictly needed here
+      if (resp.error) {
+        console.error('OAuth error', resp);
+        log(`OAuth Error: ${resp.error}`, resp, 'error');
+        status(`OAuth failed: ${resp.error}`, true);
+        accessToken = null;
+        E.authStatus.textContent = '❌ Sign-in failed';
+        E.load.disabled = true; // Keep Load Voices disabled
+        return;
+      }
+      accessToken = resp.access_token;
+      log('OAuth successful, access token obtained.');
+      E.authStatus.textContent = '✅ Signed in';
+      E.load.disabled = false; // Enable Load Voices button
+      
+      // Auto-load voices once signed in
+      // Use optional chaining just in case E or E.load isn't fully ready, though unlikely
+      E.load?.click?.();
+    },
+  });
+  // Check if we can now enable the sign-in button (GIS is ready)
+   if (gapi?.client?.oauth2) { // Check if gapi is also ready
+     E.signInBtn.disabled = false; // Enable the button now
+   }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 window.addEventListener('DOMContentLoaded', () => {
   // API endpoints & DOM elements
   const VO = 'https://texttospeech.googleapis.com/v1/voices';
   const SY = 'https://texttospeech.googleapis.com/v1/text:synthesize';
   const Q = id => document.getElementById(id);
   const E = {
-    key: Q('k'),
+    // key: Q('k'), // Removed API Key input
+    signInBtn: Q('signInBtn'), // Added Sign In button
+    authStatus: Q('authStatus'), // Added Auth Status span
     load: Q('ld'),
     loading: Q('loading'),
     txt: Q('txt'),
@@ -519,6 +591,9 @@ window.addEventListener('DOMContentLoaded', () => {
     themeToggle: Q('themeToggle')
   };
   
+  // Disable sign-in button initially, enable it when both GAPI and GIS are loaded
+  E.signInBtn.disabled = true;
+
   // Debug logging
   let debugEnabled = localStorage.getItem('debugEnabled') === 'true';
   const maxDebugEntries = 100;
@@ -618,7 +693,7 @@ window.addEventListener('DOMContentLoaded', () => {
   };
 
   // App state
-  let API = localStorage.getItem('apiKey') || '';
+  // let API = localStorage.getItem('apiKey') || ''; // Removed API Key state
   let ctx;
   let gainNode;
   let voices = [];
@@ -642,13 +717,12 @@ window.addEventListener('DOMContentLoaded', () => {
   let chunksData = []; // NEW: Store detailed data about each chunk
   let visualizer;
   
-  // Initialize API key if saved
-  if (API) {
-    E.key.value = API;
-    // Auto-load voices if API key is saved
-    log('API key found in localStorage, auto-loading voices');
-    setTimeout(() => E.load.click(), 500);
-  }
+  // Removed API key auto-load logic
+  // if (API) {
+  //   E.key.value = API;
+  //   log('API key found in localStorage, auto-loading voices');
+  //   setTimeout(() => E.load.click(), 500);
+  // }
 
   // Utilities
   const fmt = s => `${String(Math.floor(s/60)).padStart(2, '0')}:${String(Math.floor(s%60)).padStart(2, '0')}`;
@@ -659,10 +733,10 @@ window.addEventListener('DOMContentLoaded', () => {
     log(m, null, isError ? 'error' : 'info');
   };
   
-  // JSON fetch helper with error handling
+  // JSON fetch helper with error handling (remains largely the same, Authorization header added in callers)
   const fetchJSON = async (url, opts) => {
     try {
-      log(`Fetching ${url}`, opts);
+      log(`Workspaceing ${url}`, opts);
       const r = await fetch(url, opts);
       
       if (!r.ok) {
@@ -678,7 +752,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
       
       const data = await r.json();
-      log(`Fetch completed successfully`, { url });
+      log(`Workspace completed successfully`, { url });
       return data;
     } catch (e) {
       log('Fetch error', e, 'error');
@@ -704,29 +778,59 @@ window.addEventListener('DOMContentLoaded', () => {
       log(`Volume changed to ${E.volume.value}`);
     }
   });
+  
+  // 5) Wire your “Sign in” button
+  E.signInBtn.onclick = () => {
+    if (!tokenClient) {
+        log('Token client not initialized yet.', null, 'warn');
+        status('Initialization in progress, please wait...', true);
+        return;
+    }
+    // if we already have a token, refresh quietly using prompt: ''
+    // if not, use prompt: 'consent' to show the dialog
+    log('Requesting access token...');
+    tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
+  };
 
-  // Load voices from Google TTS API
+  // 6) Replace your “Load Voices” handler
   E.load.onclick = async () => {
-    API = E.key.value.trim();
-    if (!API) return status('API key required', true);
+    // Check if user is signed in (accessToken is present)
+    if (!accessToken) {
+      status('Please sign in first to load voices.', true);
+      // Prompt for sign-in if not already signed in
+      if (tokenClient) {
+         tokenClient.requestAccessToken({ prompt: 'consent' });
+      } else {
+         log('Token client not ready for sign-in prompt.', null, 'warn');
+         status('Authentication system not ready.', true);
+      }
+      return;
+    }
     
-    // Save API key to localStorage
-    localStorage.setItem('apiKey', API);
+    // Removed API Key logic
+    // API = E.key.value.trim();
+    // if (!API) return status('API key required', true);
+    // localStorage.setItem('apiKey', API);
     
     E.loading.classList.remove('hidden');
     E.load.disabled = true;
+    E.gen.disabled = true; // Also disable generate while loading voices
     status('Loading voices...');
     
     try {
-      log(`Requesting voices from ${VO}`);
-      const d = await fetchJSON(`${VO}?key=${API}`);
+      log(`Requesting voices from ${VO} using OAuth token.`);
+      // fetch voices with Bearer token instead of ?key=
+      const d = await fetchJSON(VO, {
+          method: 'GET',
+          headers: { 'Authorization': 'Bearer ' + accessToken }
+      });
       voices = d.voices || [];
       
-      if (!voices.length) throw new Error('No voices returned');
+      if (!voices.length) throw new Error('No voices returned from API');
       
       log(`Loaded ${voices.length} voices`);
       
-      // Group voices by language
+      // --- Rest of the voice-parsing code unchanged ---
       const langMap = new Map();
       voices.forEach(v => {
         v.languageCodes.forEach(code => {
@@ -744,11 +848,9 @@ window.addEventListener('DOMContentLoaded', () => {
         });
       });
       
-      // Sort languages by name
       const sortedLangs = [...langMap.entries()]
         .sort((a, b) => a[1].name.localeCompare(b[1].name));
-      
-      // Group options by language
+        
       const html = sortedLangs.map(([code, { name, voices }]) => {
         const options = voices
           .sort((a, b) => a.name.localeCompare(b.name))
@@ -763,14 +865,22 @@ window.addEventListener('DOMContentLoaded', () => {
       
       E.voice.innerHTML = html;
       E.voice.disabled = false;
-      E.gen.disabled = false;
+      E.gen.disabled = false; // Enable generate button now
       
       status('Voices loaded successfully', false);
     } catch (e) {
       status(`Failed to load voices: ${e.message}`, true);
+      log('Error loading voices', e, 'error');
+       // If the error might be auth-related (e.g., 401, 403), maybe reset token?
+       if (e.message.includes('401') || e.message.includes('403')) {
+            accessToken = null; // Clear potentially invalid token
+            E.authStatus.textContent = '⚠️ Re-authentication needed';
+            E.load.disabled = true; // Disable load again
+       }
     } finally {
       E.loading.classList.add('hidden');
-      E.load.disabled = false;
+      // Keep E.load enabled if accessToken exists, disable otherwise
+      E.load.disabled = !accessToken;
     }
   };
 
@@ -782,7 +892,7 @@ window.addEventListener('DOMContentLoaded', () => {
     log(`Splitting method changed to: ${method}`);
   });
 
-  // Split text into chunks based on selected method
+  // Split text into chunks based on selected method (code unchanged)
   const splitText = t => {
     const m = +E.chk.value;
     log(`Splitting text (${t.length} chars) with method: ${method}, chunk size: ${m}`);
@@ -834,7 +944,7 @@ window.addEventListener('DOMContentLoaded', () => {
     return out;
   };
 
-  // Decode audio buffer
+  // Decode audio buffer (code unchanged)
   const decodeBuffer = a => {
     log(`Decoding audio buffer of size ${a.byteLength}`);
     return new Promise((res, rej) => {
@@ -856,7 +966,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // NEW: Prepare text display with clickable words and improved timing calculations
+  // Prepare text display with clickable words (code unchanged)
   const prepareTextDisplay = (text, chunks) => {
     log(`Preparing text display with ${text.length} chars and ${chunks.length} chunks`);
     
@@ -877,12 +987,6 @@ window.addEventListener('DOMContentLoaded', () => {
       };
     }
     
-    // Split text into words and spaces, tracking chunk boundaries
-    let currentChunk = 0;
-    let chunkWordCount = 0;
-    let chunkStartPos = 0;
-    let globalWordIndex = 0;
-    
     // Pre-calculate how many words are in each chunk
     chunks.forEach((chunk, idx) => {
       const wordCount = chunk.split(/\s+/).filter(Boolean).length;
@@ -890,6 +994,11 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     
     // Process words with knowledge of which chunk they belong to
+    let currentChunk = 0;
+    let chunkWordCount = 0;
+    let chunkStartPos = 0;
+    let globalWordIndex = 0;
+    
     text.split(/(\s+)/).forEach((part) => {
       if (part.trim()) {
         // This is a word (not whitespace)
@@ -899,13 +1008,14 @@ window.addEventListener('DOMContentLoaded', () => {
         span.dataset.index = globalWordIndex;
         
         // Find which chunk this word belongs to
-        while (chunkStartPos + chunksData[currentChunk].text.length < text.indexOf(part, chunkStartPos) && 
+        let currentTextPosition = text.indexOf(part, chunkStartPos);
+        while (chunkStartPos + chunksData[currentChunk].text.length <= currentTextPosition && 
                currentChunk < chunks.length - 1) {
-          chunkStartPos += chunksData[currentChunk].text.length;
-          currentChunk++;
-          chunkWordCount = 0;
+            chunkStartPos += chunksData[currentChunk].text.length;
+            currentChunk++;
+            chunkWordCount = 0; // Reset word count for the new chunk
         }
-        
+
         // Store chunk association
         span.dataset.chunk = currentChunk;
         
@@ -943,7 +1053,7 @@ window.addEventListener('DOMContentLoaded', () => {
     log(`Text display prepared with ${globalWordIndex} words`);
   };
   
-  // NEW: Update word timings when a chunk is loaded
+  // Update word timings when a chunk is loaded (code unchanged)
   const updateWordTimings = (chunkIndex, duration) => {
     if (!chunksData[chunkIndex]) return;
     
@@ -956,8 +1066,13 @@ window.addEventListener('DOMContentLoaded', () => {
     // Calculate chunk start time (sum of durations of all previous loaded chunks)
     let chunkStartTime = 0;
     for (let i = 0; i < chunkIndex; i++) {
-      if (chunksData[i].loaded) {
+      // Ensure previous chunks are loaded and have duration before adding
+      if (chunksData[i]?.loaded && chunksData[i].duration > 0) {
         chunkStartTime += chunksData[i].duration;
+      } else {
+          // If a previous chunk hasn't loaded, we can't accurately place this one yet.
+          // This might indicate an issue, but we'll proceed cautiously.
+          log(`Warning: Chunk ${i} needed for timing calculation of chunk ${chunkIndex} is not loaded or has zero duration. Timing may be inaccurate.`, chunksData[i], 'warn');
       }
     }
     
@@ -971,37 +1086,15 @@ window.addEventListener('DOMContentLoaded', () => {
     wordTimings.forEach((timing, i) => {
       if (timing.chunk === chunkIndex) {
         // Calculate word timing within the chunk
-        // This uses a more sophisticated approach considering:
-        // 1. Words near the beginning/end have more spacing
-        // 2. The middle of the speech tends to be faster
-        
-        const relPos = timing.indexInChunk / chunkWordCount;
-        let timeRatio;
-        
-        // Apply a curve to simulate natural speech rhythm
-        // Words at beginning and end tend to have more time allocated
-        if (relPos < 0.1) {
-          // First 10% of words get a bit more time (slow start)
-          timeRatio = relPos * 0.8; // Slightly compressed
-        } else if (relPos > 0.9) {
-          // Last 10% of words get a bit more time (slow ending)
-          timeRatio = 0.8 + (relPos - 0.9) * 2; // Slightly expanded
-        } else {
-          // Middle words follow a more linear pattern
-          timeRatio = 0.08 + (relPos - 0.1) * 0.84;
-        }
-        
-        // Allocate time slices
-        const wordStartTime = chunkStartTime + (timeRatio * duration);
-        const nextWordTime = chunkStartTime + (((timing.indexInChunk + 1) / chunkWordCount) * duration);
-        
-        // Apply some smoothing to prevent unrealistic timing
-        const minWordDuration = Math.min(0.2, duration / (chunkWordCount * 2));
-        const wordEndTime = Math.min(nextWordTime, wordStartTime + minWordDuration + (0.5 * duration / chunkWordCount));
-        
+        // Using a simplified linear approach for timing within chunk for now
+        const wordStartTime = chunkStartTime + (timing.indexInChunk / chunkWordCount) * duration;
+        const nextWordStartTime = chunkStartTime + ((timing.indexInChunk + 1) / chunkWordCount) * duration;
+        // Assign end time slightly before the next word starts, or at chunk end for the last word
+        const wordEndTime = Math.min(chunkStartTime + duration, nextWordStartTime - 0.01); // Tiny gap
+
         timing.startTime = wordStartTime;
-        timing.endTime = wordEndTime;
-        
+        timing.endTime = Math.max(wordStartTime + 0.05, wordEndTime); // Ensure minimum duration
+
         // Remove loading state from the word element
         const el = wordElements[i];
         if (el) {
@@ -1013,19 +1106,26 @@ window.addEventListener('DOMContentLoaded', () => {
     log(`Updated timings for words in chunk ${chunkIndex}`);
   };
 
-  // NEW: Find current time position with optimized approach
+  // Find current time position (code unchanged)
   const locateTimePosition = (time) => {
-    // Throttle debug logging for this frequently called function
     const shouldLog = Math.random() < 0.01;
     
     if (shouldLog) {
       log(`Locating position for time ${time.toFixed(2)}s`);
     }
     
-    // Handle case where time is beyond loaded duration
-    if (time >= loadedDuration) {
-      const lastIndex = buffers.findLastIndex(b => b);
-      return { chunk: lastIndex === -1 ? 0 : lastIndex, offset: 0 };
+    // Use loadedDuration which is sum of durations of *loaded* chunks
+    if (time >= loadedDuration && loadingComplete) {
+         // If loading is complete and time is past loaded duration, cap at end
+         time = totalDuration;
+    } else if (time >= loadedDuration && !loadingComplete) {
+         // If time is past what's loaded *so far*, use the last loaded chunk
+         const lastIndex = chunksData.findLastIndex(c => c.loaded && c.duration > 0);
+         if (lastIndex !== -1) {
+             return { chunk: lastIndex, offset: chunksData[lastIndex].duration }; // Go to end of last loaded chunk
+         } else {
+             return { chunk: 0, offset: 0 }; // Fallback to beginning
+         }
     }
     
     // Find the chunk that contains this time using chunksData
@@ -1042,41 +1142,35 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // Fallback: linear search through buffers if chunksData lookup fails
-    let currentTime = 0;
-    for (let i = 0; i < buffers.length; i++) {
-      const buffer = buffers[i];
-      if (!buffer) continue; // Skip unloaded chunks
-      
-      const duration = buffer.duration;
-      if (time < currentTime + duration) {
-        const offset = time - currentTime;
-        if (shouldLog) {
-          log(`Fallback: found time ${time.toFixed(2)}s in chunk ${i} at offset ${offset.toFixed(2)}s`);
-        }
-        return { chunk: i, offset: offset };
-      }
-      
-      currentTime += duration;
-    }
-    
-    // Final fallback: use last loaded chunk
-    const lastLoaded = buffers.findLastIndex(b => b);
-    if (shouldLog) {
-      log(`Could not locate time ${time.toFixed(2)}s, using last loaded chunk`);
-    }
-    return { chunk: lastLoaded === -1 ? 0 : lastLoaded, offset: 0 };
+    // Fallback if time is outside known ranges (e.g., between chunks if timing calc had issues)
+    // Find the last chunk whose start time is before the target time
+     let fallbackChunk = 0;
+     let fallbackOffset = 0;
+     for (let i = 0; i < chunksData.length; i++) {
+         if (chunksData[i].loaded && chunksData[i].startTime <= time) {
+             fallbackChunk = i;
+             fallbackOffset = Math.min(chunksData[i].duration, time - chunksData[i].startTime);
+         } else {
+             break; // Stop once we pass the target time
+         }
+     }
+     if (shouldLog) {
+       log(`Fallback: placing time ${time.toFixed(2)}s in chunk ${fallbackChunk} at offset ${fallbackOffset.toFixed(2)}s`);
+     }
+     return { chunk: fallbackChunk, offset: fallbackOffset };
   };
 
-  // Seek to a specific time
+  // Seek to a specific time (code unchanged)
   const seekToTime = (time) => {
-    if (!buffers.some(b => b)) {
-      log(`Cannot seek: no buffers loaded`);
+    // Check if *any* chunks are loaded and have duration
+    if (!chunksData.some(c => c.loaded && c.duration > 0)) {
+      log(`Cannot seek: no audio loaded yet`);
       return;
     }
     
-    // Ensure time is within valid range
-    time = Math.max(0, Math.min(time, loadedDuration));
+    // Ensure time is within valid range (0 to total *loaded* duration)
+    const maxSeekTime = loadingComplete ? totalDuration : loadedDuration;
+    time = Math.max(0, Math.min(time, maxSeekTime));
     
     log(`Seeking to ${time.toFixed(2)}s`);
     
@@ -1093,11 +1187,12 @@ window.addEventListener('DOMContentLoaded', () => {
       log(`Updated paused position to ${time.toFixed(2)}s`);
     } else {
       // Start playback from this position
+      // The absoluteTime passed to startPlayback should be the target seek time
       startPlayback(chunk, offset, time);
     }
   };
 
-  // NEW: Completely revamped word navigation approach
+  // Seek to a specific word (code unchanged)
   const seekToWord = (wordIndex) => {
     wordIndex = parseInt(wordIndex);
     
@@ -1120,6 +1215,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const chunkIndex = timing.chunk;
     if (!chunksData[chunkIndex]?.loaded || !buffers[chunkIndex]) {
       log(`Word ${wordIndex} (${timing.word}) is in chunk ${chunkIndex} which is not loaded yet`);
+      status('Please wait for audio to load.', true); // User feedback
       return;
     }
     
@@ -1131,159 +1227,223 @@ window.addEventListener('DOMContentLoaded', () => {
     seekToTime(time);
   };
 
-  // Initialize audio context
+  // Initialize audio context (code unchanged)
   const initAudioContext = () => {
     if (!ctx) {
       log('Initializing AudioContext');
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Create master gain node for volume control
-      gainNode = ctx.createGain();
-      gainNode.gain.value = E.volume.value;
-      gainNode.connect(ctx.destination);
-      
-      visualizer = new VoiceVisualizer('visualizer', ctx, {
-        mode: 'waveform',
-        color: 'gradient'
-      });
-      
-      log('AudioContext initialized', {
-        sampleRate: ctx.sampleRate
-      });
+      try {
+         ctx = new (window.AudioContext || window.webkitAudioContext)();
+         
+         // Create master gain node for volume control
+         gainNode = ctx.createGain();
+         gainNode.gain.value = E.volume.value;
+         gainNode.connect(ctx.destination);
+         
+         // Ensure visualizer class is available from voice-visualizer.js
+         if (typeof VoiceVisualizer !== 'undefined') {
+             visualizer = new VoiceVisualizer('visualizer', ctx, {
+               mode: 'waveform', // or 'frequencybars'
+               color: isDarkMode ? '#8ab4f8' : '#4285f4', // Use theme color
+               stroke: 2
+             });
+             log('Visualizer initialized.');
+         } else {
+            log('VoiceVisualizer class not found. Skipping visualizer setup.', null, 'warn');
+            // Hide canvas if visualizer fails
+            Q('visualizer').style.display = 'none';
+         }
+
+         log('AudioContext initialized', {
+           sampleRate: ctx.sampleRate,
+           state: ctx.state
+         });
+
+         // Handle state changes (e.g., interrupted context)
+         ctx.onstatechange = () => {
+            log(`AudioContext state changed to: ${ctx.state}`);
+            if (ctx.state === 'interrupted') {
+                stopPlayback();
+                status('Audio context interrupted.', true);
+            } else if (ctx.state === 'suspended') {
+                // Attempt to resume if suspended (e.g., after page backgrounding)
+                ctx.resume().then(() => log('AudioContext resumed successfully.')).catch(e => log('Failed to resume AudioContext', e, 'error'));
+            }
+         };
+
+      } catch (e) {
+         log('Error initializing AudioContext', e, 'error');
+         status('Could not initialize audio playback: ' + e.message, true);
+         // Disable relevant buttons if context fails
+         [E.play, E.pause, E.stop, E.gen].forEach(btn => btn.disabled = true);
+         return Promise.reject(e); // Propagate error
+      }
     }
     
-    return ctx.resume(); // Ensure it's running
+    // Resume context if it's suspended (required after user interaction)
+    if (ctx.state === 'suspended') {
+        log('AudioContext is suspended, attempting to resume...');
+        return ctx.resume().then(() => {
+            log('AudioContext resumed successfully.');
+            return ctx;
+        }).catch(e => {
+            log('Failed to resume AudioContext', e, 'error');
+            status('Could not resume audio. Please interact with the page.', true);
+            throw e; // Propagate error
+        });
+    }
+    
+    return Promise.resolve(ctx); // Already running or initialized
   };
 
-  // Start playback from a specific position
+  // Start playback from a specific position (code unchanged)
   const startPlayback = (chunkIndex, offset = 0, absoluteTime = 0) => {
-    // Ensure audio context is initialized
-    initAudioContext();
-    
-    // Generate a new playback ID to track this session
-    playbackId = Date.now();
-    const currentPlayback = playbackId;
-    
-    // Update state
-    playing = true;
-    paused = false;
-    startTime = ctx.currentTime - absoluteTime;
-    
-    log(`Starting playback: chunk ${chunkIndex}, offset ${offset.toFixed(2)}s, abs time ${absoluteTime.toFixed(2)}s`);
-    
-    // Update UI
-    E.play.disabled = true;
-    E.pause.disabled = false;
-    E.stop.disabled = false;
-    
-    // Start playing from the specified position
-    playChunk(chunkIndex, offset, currentPlayback);
-    
-    // Start the update loop
-    requestAnimationFrame(updatePlayback);
+    initAudioContext().then(() => { // Ensure context is running
+        playbackId = Date.now();
+        const currentPlayback = playbackId;
+        
+        playing = true;
+        paused = false;
+        // Make sure startTime reflects the *actual* start time in the context's clock
+        startTime = ctx.currentTime - absoluteTime;
+        
+        log(`Starting playback: chunk ${chunkIndex}, offset ${offset.toFixed(2)}s, abs time ${absoluteTime.toFixed(2)}s, ctxTime: ${ctx.currentTime.toFixed(2)}`);
+        
+        E.play.disabled = true;
+        E.pause.disabled = false;
+        E.stop.disabled = false;
+        status(`Playing... ${fmt(absoluteTime)} / ${fmt(totalDuration)}`);
+        
+        playChunk(chunkIndex, offset, currentPlayback);
+        requestAnimationFrame(updatePlayback);
+    }).catch(e => {
+        // Error handled in initAudioContext
+    });
   };
 
-  // Play a specific chunk
+  // Play a specific chunk (code unchanged)
   const playChunk = (index, offset = 0, id) => {
-    // Check if this playback request is still valid
     if (id !== playbackId) {
       log(`Ignoring stale playback request: ${id} vs ${playbackId}`);
       return;
     }
     
-    // Check if we've reached the end
-    if (index >= buffers.length) {
-      log('Reached end of audio');
-      stopPlayback();
+    if (index >= buffers.length || !buffers[index]) { // Also check if buffer exists
+      // Check if loading is complete
+      if (loadingComplete) {
+        log(`Reached end of available audio at chunk ${index}`);
+        stopPlayback();
+      } else {
+         // Buffer not loaded yet, wait and retry
+         log(`Chunk ${index} not loaded yet, waiting...`);
+         status(`Buffering... (${fmt(chunksData[index-1]?.endTime || 0)} / ${fmt(totalDuration)})`);
+         setTimeout(() => {
+           if (playing && id === playbackId) {
+             playChunk(index, offset, id);
+           }
+         }, 300); // Wait a bit longer
+      }
       return;
     }
     
-    // Get the audio buffer for this chunk
     const buffer = buffers[index];
+    log(`Playing chunk ${index} from offset ${offset.toFixed(2)}s (duration: ${buffer.duration.toFixed(2)}s)`);
     
-    // If the buffer isn't loaded yet, wait and retry
-    if (!buffer) {
-      log(`Chunk ${index} not loaded yet, waiting...`);
-      setTimeout(() => {
-        if (playing && id === playbackId) {
-          playChunk(index, offset, id);
-        }
-      }, 300);
-      return;
-    }
-    
-    log(`Playing chunk ${index} from offset ${offset.toFixed(2)}s`);
-    
-    // Create a new audio source
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     
-    // Connect to visualizer
-    source.connect(visualizer.analyser);
-    visualizer.analyser.connect(gainNode);
-    
-    // When this chunk ends, play the next one
+    // Connect to visualizer only if it exists
+    if (visualizer?.analyser) {
+        source.connect(visualizer.analyser);
+        visualizer.analyser.connect(gainNode);
+    } else {
+        source.connect(gainNode); // Connect directly to gain if no visualizer
+    }
+
     source.onended = () => {
-      // Only proceed if this is still the active playback
+       // Clean up the reference to the source now that it's ended
+       if (audioSources[index] === source) {
+            audioSources[index] = null;
+       }
+
+       // Only proceed if this is still the active playback and not paused
       if (playing && id === playbackId) {
-        log(`Chunk ${index} ended, playing next chunk`);
+        log(`Chunk ${index} ended naturally.`);
+        // Calculate time elapsed in this chunk to adjust start time for next
+        const chunkElapsedTime = buffer.duration - offset;
+        // Ensure the next chunk starts immediately without gap/overlap issues
+        // The absolute time should have advanced by chunkElapsedTime
+        const nextAbsoluteTime = (ctx.currentTime - startTime); // Use context time for accuracy
+        log(`Advancing to next chunk. Elapsed in chunk: ${chunkElapsedTime.toFixed(2)}. Next abs time: ${nextAbsoluteTime.toFixed(2)}`);
         playChunk(index + 1, 0, id);
+      } else {
+          log(`Chunk ${index} ended, but playback stopped or paused (id: ${id}, current: ${playbackId}, playing: ${playing})`);
       }
     };
     
-    // Save the source so we can stop it later
     audioSources[index] = source;
     
-    // Start playback with the specified offset
-    source.start(0, Math.min(offset, buffer.duration));
+    // Start playback with the specified offset, ensuring offset is valid
+    const validOffset = Math.max(0, Math.min(offset, buffer.duration - 0.001)); // Prevent starting exactly at the end
+     if (offset > validOffset) {
+         log(`Corrected invalid offset ${offset.toFixed(2)} to ${validOffset.toFixed(2)} for chunk ${index}`, null, 'warn');
+     }
+    try {
+        source.start(0, validOffset);
+        if(visualizer) visualizer.start(); // Start visualizer drawing loop
+    } catch (e) {
+        log(`Error starting source for chunk ${index} at offset ${validOffset}`, e, 'error');
+        // Attempt to play next chunk if this one fails immediately
+        if (playing && id === playbackId) {
+            playChunk(index + 1, 0, id);
+        }
+    }
   };
 
-  // Cancel any current playback
+  // Cancel any current playback (code unchanged)
   const cancelPlayback = () => {
     log('Canceling current playback');
+    if (visualizer) visualizer.stop(); // Stop visualizer drawing loop
     
-    // Stop all audio sources
     audioSources.forEach((source, i) => {
       if (source) {
         log(`Stopping audio source for chunk ${i}`);
         source.onended = null; // Remove callback
         try { source.stop(); } catch (e) {
-          log(`Error stopping source for chunk ${i}`, e, 'warn');
+          // Ignore errors often caused by stopping already stopped sources
+          // log(`Error stopping source for chunk ${i}`, e, 'warn');
         }
       }
     });
     
-    // Reset sources array
-    audioSources = [];
+    audioSources = []; // Reset sources array immediately
     
-    // Generate a new playback ID to invalidate any pending callbacks
-    playbackId = Date.now();
+    // Don't generate a new playbackId here, as that should only happen when *starting* playback
+    // We just want to stop the current one.
   };
 
-  // Pause playback
+  // Pause playback (code unchanged)
   const pausePlayback = () => {
     if (!playing) {
       log('Cannot pause: not playing');
       return;
     }
     
+    // Calculate pausedAt based on AudioContext time for accuracy
     pausedAt = ctx.currentTime - startTime;
     playing = false;
     paused = true;
     
-    log(`Pausing at ${pausedAt.toFixed(2)}s`);
+    log(`Pausing at ${pausedAt.toFixed(2)}s (ctxTime: ${ctx.currentTime.toFixed(2)})`);
     
-    // Cancel current playback
-    cancelPlayback();
+    cancelPlayback(); // Stop the audio nodes
     
-    // Update UI
     E.play.disabled = false;
     E.pause.disabled = true;
     
     status(`Paused at ${fmt(pausedAt)}`);
   };
 
-  // Resume playback
+  // Resume playback (code unchanged)
   const resumePlayback = () => {
     if (!paused) {
       log('Cannot resume: not paused');
@@ -1292,175 +1452,202 @@ window.addEventListener('DOMContentLoaded', () => {
     
     log(`Resuming from ${pausedAt.toFixed(2)}s`);
     
-    // Find the chunk to resume from
+    // Find the chunk and offset to resume from
     const { chunk, offset } = locateTimePosition(pausedAt);
     
-    // Start playback from the pause position
+    // Start playback from the calculated position
+    // Pass the pausedAt time as the absolute time reference
     startPlayback(chunk, offset, pausedAt);
   };
 
-  // Stop playback
+  // Stop playback (code unchanged)
   const stopPlayback = (silent = false) => {
-    // Cancel current playback
-    cancelPlayback();
+    cancelPlayback(); // Stop audio nodes
     
-    // Reset state
+    const wasPlaying = playing;
+    const wasPaused = paused;
+
     playing = false;
     paused = false;
     pausedAt = 0;
+    startTime = 0; // Reset start time reference
     
     // Clear word highlighting
     if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
-      wordElements[currentWordIndex].classList.remove('active');
+       if (wordElements[currentWordIndex]) { // Check element exists
+           wordElements[currentWordIndex].classList.remove('active');
+       }
     }
     currentWordIndex = -1;
     
-    if (!silent) {
+    if (!silent && (wasPlaying || wasPaused)) { // Only log/update UI if something was actually stopped
       log('Playback stopped');
       
-      // Reset UI
-      E.fill.style.width = '0%';
-      E.time.textContent = `00:00 / ${fmt(totalDuration)}`;
-      E.play.disabled = false;
+      // Reset UI only if audio has been loaded
+       if (totalDuration > 0) {
+           E.fill.style.width = '0%';
+           E.time.textContent = `00:00 / ${fmt(totalDuration)}`;
+           E.play.disabled = false; // Enable play if audio is loaded
+       } else {
+           E.play.disabled = true; // Keep play disabled if no audio loaded
+       }
       E.pause.disabled = true;
-      E.stop.disabled = false;
+      E.stop.disabled = true; // Disable stop when not playing/paused
+      status('Playback stopped.');
+    } else if (!silent) {
+        // If stop is called when already stopped, just ensure UI is correct
+        E.play.disabled = !(totalDuration > 0);
+        E.pause.disabled = true;
+        E.stop.disabled = true;
     }
   };
 
-  // Update playback UI (called on each animation frame)
+  // Update playback UI (code unchanged)
   const updatePlayback = () => {
     if (!playing) return;
     
-    // Calculate current time
     const currentTime = ctx.currentTime - startTime;
     
-    // Check if we've reached the end
-    if (currentTime >= totalDuration) {
+    // Use a small buffer to prevent stopping slightly too early due to float precision
+    if (currentTime >= totalDuration - 0.05) {
       log(`Reached end of playback (${currentTime.toFixed(2)}s >= ${totalDuration.toFixed(2)}s)`);
+      // Ensure UI updates fully before stopping
+      updateUI(totalDuration);
       stopPlayback();
       return;
     }
     
-    // Update UI
     updateUI(currentTime);
-    
-    // Continue updates
     requestAnimationFrame(updatePlayback);
   };
 
-  // Update UI with current time
+  // Update UI with current time (code unchanged)
   const updateUI = (time) => {
-    // Update progress bar
-    const percentage = totalDuration > 0 ? (time / totalDuration) * 100 : 0;
-    E.fill.style.width = `${percentage}%`;
+    // Ensure time doesn't exceed total duration for UI display
+     const displayTime = Math.min(time, totalDuration);
+    
+    // Update progress bar, prevent NaN if totalDuration is 0
+    const percentage = totalDuration > 0 ? (displayTime / totalDuration) * 100 : 0;
+    E.fill.style.width = `${Math.max(0, Math.min(100, percentage))}%`; // Clamp between 0 and 100
     
     // Update time display
-    E.time.textContent = `${fmt(time)} / ${fmt(totalDuration)}`;
+    E.time.textContent = `${fmt(displayTime)} / ${fmt(totalDuration)}`;
     
     // Update word highlighting
-    updateWordHighlight(time);
+    updateWordHighlight(displayTime);
+
+     // Update status message during playback
+     if (playing) {
+       status(`Playing... ${fmt(displayTime)} / ${fmt(totalDuration)}`);
+     }
   };
 
-  // NEW: Improved word highlighting based on actual word timings
+  // Update word highlighting based on actual word timings (code unchanged)
   const updateWordHighlight = (time) => {
-    // Find the word that should be highlighted at the current time
-    // using the timing data we calculated
     let newWordIndex = -1;
     
     // Find the word whose timing range contains the current time
     for (let i = 0; i < wordTimings.length; i++) {
       const timing = wordTimings[i];
-      if (timing.startTime <= time && time <= timing.endTime) {
-        newWordIndex = i;
-        break;
+      // Check if timing data exists and is valid before using
+      if (timing && typeof timing.startTime === 'number' && typeof timing.endTime === 'number') {
+         if (timing.startTime <= time && time <= timing.endTime) {
+           newWordIndex = i;
+           break;
+         }
       }
     }
     
-    // If no exact match, find the closest word
+    // If no exact match, find the *last* word whose start time is *before* the current time
     if (newWordIndex === -1) {
-      // Find the word that will be spoken next
-      for (let i = 0; i < wordTimings.length; i++) {
-        if (time < wordTimings[i].startTime) {
-          newWordIndex = i;
-          break;
+        for (let i = wordTimings.length - 1; i >= 0; i--) {
+            const timing = wordTimings[i];
+             if (timing && typeof timing.startTime === 'number' && time >= timing.startTime) {
+                 newWordIndex = i;
+                 break;
+             }
         }
-      }
-      
-      // If we're past all words, highlight the last one
-      if (newWordIndex === -1 && wordTimings.length > 0) {
-        newWordIndex = wordTimings.length - 1;
-      }
     }
-    
+
     // Only update if it's a different word
-    if (newWordIndex !== currentWordIndex) {
-      // Remove highlight from previous word
-      if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
-        wordElements[currentWordIndex].classList.remove('active');
-      }
-      
-      // Add highlight to current word
-      if (newWordIndex >= 0 && newWordIndex < wordElements.length) {
-        const wordEl = wordElements[newWordIndex];
-        wordEl.classList.add('active');
-        
-        // Ensure word is visible
-        const container = E.textBox;
-        const wordTop = wordEl.offsetTop;
-        const wordBottom = wordTop + wordEl.offsetHeight;
-        const containerTop = container.scrollTop;
-        const containerBottom = containerTop + container.offsetHeight;
-        
-        if (wordTop < containerTop + 30) {
-          container.scrollTop = wordTop - 30;
-        } else if (wordBottom > containerBottom - 30) {
-          container.scrollTop = wordBottom - container.offsetHeight + 30;
+    if (newWordIndex !== currentWordIndex && newWordIndex !== -1) {
+        // Remove highlight from previous word
+        if (currentWordIndex >= 0 && currentWordIndex < wordElements.length) {
+            if (wordElements[currentWordIndex]) { // Check element exists
+                wordElements[currentWordIndex].classList.remove('active');
+            }
         }
-      }
-      
-      currentWordIndex = newWordIndex;
+        
+        // Add highlight to current word
+        if (newWordIndex >= 0 && newWordIndex < wordElements.length) {
+            const wordEl = wordElements[newWordIndex];
+            if (wordEl) { // Check element exists
+                wordEl.classList.add('active');
+                
+                // Ensure word is visible (scroll into view logic)
+                 const container = E.textBox;
+                 const wordTop = wordEl.offsetTop - container.offsetTop; // Position relative to container
+                 const wordBottom = wordTop + wordEl.offsetHeight;
+                 const containerScrollTop = container.scrollTop;
+                 const containerHeight = container.clientHeight;
+                 const scrollBuffer = 30; // Pixels buffer from top/bottom
+
+                 if (wordTop < containerScrollTop + scrollBuffer) {
+                     // Word is above viewport
+                     container.scrollTop = Math.max(0, wordTop - scrollBuffer);
+                 } else if (wordBottom > containerScrollTop + containerHeight - scrollBuffer) {
+                     // Word is below viewport
+                     container.scrollTop = wordBottom - containerHeight + scrollBuffer;
+                 }
+            }
+        }
+        
+        currentWordIndex = newWordIndex;
     }
   };
 
-  // Progress bar click handler
+  // Progress bar click handler (code unchanged)
   E.prog.onclick = e => {
-    if (!totalDuration) return;
+    if (!totalDuration) return; // Don't allow seeking if no audio loaded
     
     const rect = E.prog.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    const targetTime = ratio * totalDuration;
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)); // Clamp ratio 0-1
+    const targetTime = ratio * (loadingComplete ? totalDuration : loadedDuration); // Seek within loaded duration if not complete
     
     log(`Progress bar clicked at ${ratio.toFixed(2)} (${targetTime.toFixed(2)}s)`);
     seekToTime(targetTime);
   };
 
-  // Playback control buttons
+  // Playback control buttons (code unchanged)
   E.play.onclick = () => {
     if (paused) {
       resumePlayback();
     } else {
-      startPlayback(0, 0, 0);
+      startPlayback(0, 0, 0); // Start from beginning if not paused
     }
   };
   
   E.pause.onclick = pausePlayback;
-  E.stop.onclick = stopPlayback;
+  E.stop.onclick = () => stopPlayback(false); // Pass false to ensure UI updates
 
-  // Create download link
+  // Create download link (code unchanged)
   const createDownloadLink = () => {
     log('Creating download link');
     
-    if (!audioBlobs.length) {
-      log('No audio blobs to download', null, 'error');
+    // Check if there are actually blobs to download
+    const validBlobs = audioBlobs.filter(blob => blob instanceof Blob && blob.size > 0);
+
+    if (!validBlobs.length) {
+      log('No valid audio blobs to download', null, 'error');
       status('No audio available for download', true);
       return;
     }
     
     try {
-      log(`Creating combined blob from ${audioBlobs.length} chunks`);
+      log(`Creating combined blob from ${validBlobs.length} chunks`);
       
-      // Create a single blob from all chunks
-      const combinedBlob = new Blob(audioBlobs, { type: 'audio/mp3' });
+      // Create a single blob from all valid chunks
+      const combinedBlob = new Blob(validBlobs, { type: 'audio/mp3' });
       
       log(`Combined blob created: ${(combinedBlob.size / 1024 / 1024).toFixed(2)} MB`);
       
@@ -1496,43 +1683,59 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Generate speech
   E.gen.onclick = async () => {
-    if (!API) return status('Load voices first', true);
-    if (!E.voice.value) return status('Select a voice', true);
+    // Check for access token instead of API key
+    if (!accessToken) {
+         status('Please sign in first to generate speech.', true);
+         if (tokenClient) {
+            tokenClient.requestAccessToken({ prompt: 'consent' });
+         } else {
+            log('Token client not ready for sign-in prompt.', null, 'warn');
+            status('Authentication system not ready.', true);
+         }
+         return;
+    }
+    if (!E.voice.value) return status('Select a voice first (Load Voices if needed).', true);
     
     try {
       // Initialize audio context and ensure it's running
       await initAudioContext();
       
       const text = E.txt.value.trim();
-      if (!text) return status('Enter text', true);
+      if (!text) return status('Enter text to synthesize.', true);
       
       // Reset state
-      stopPlayback();
+      stopPlayback(true); // Stop silently
       buffers = [];
       audioBlobs = [];
       audioSources = [];
+      wordTimings = []; // Reset timings
+      chunksData = []; // Reset chunk details
       totalDuration = 0;
-      loadedDuration = 0;
+      loadedDuration = 0; // Reset loaded duration
       loadingComplete = false;
       E.download.disabled = true;
-      
+      E.play.disabled = true; // Disable playback buttons until first chunk loads
+      E.pause.disabled = true;
+      E.stop.disabled = true;
+
       // Split text into chunks
       const chunks = splitText(text);
-      if (!chunks.length) return status('Failed to split text', true);
+      if (!chunks.length) return status('Failed to split text into processable chunks.', true);
       
       totalChunks = chunks.length;
       chunksReceived = 0;
       
       // Prepare UI
-      status(`Processing ${chunks.length} chunk(s)...`);
-      prepareTextDisplay(text, chunks);
-      E.gen.disabled = true;
+      status(`Requesting synthesis for ${chunks.length} chunk(s)...`);
+      prepareTextDisplay(text, chunks); // Prepare text display with loading words
+      E.gen.disabled = true; // Disable generate button during processing
+      E.load.disabled = true; // Disable load voices during processing
       
       // Initialize buffers array
-      buffers = new Array(chunks.length);
-      audioBlobs = new Array(chunks.length);
+      buffers = new Array(chunks.length).fill(null); // Use null as placeholder
+      audioBlobs = new Array(chunks.length).fill(null);
       
-      // Create request body template
+      // Create request body template (remains the same)
       const createRequest = chunk => ({
         input: { text: chunk },
         voice: {
@@ -1540,21 +1743,24 @@ window.addEventListener('DOMContentLoaded', () => {
           name: E.voice.value
         },
         audioConfig: {
-          audioEncoding: 'MP3',
+          audioEncoding: 'MP3', // Keep MP3 for broad compatibility
           pitch: +E.pit.value,
           speakingRate: +E.rat.value
         }
       });
       
-      // Process chunks
-      // Start processing all chunks in parallel
+      // Process chunks in parallel
       const chunkPromises = chunks.map(async (chunk, index) => {
         try {
           log(`Generating chunk ${index + 1}/${chunks.length} (${chunk.length} chars)`);
           
-          const response = await fetchJSON(`${SY}?key=${API}`, {
+          // 7) Replace your synthesis calls - Use Authorization header
+          const response = await fetchJSON(SY, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + accessToken // Use the stored token
+            },
             body: JSON.stringify(createRequest(chunk))
           });
           
@@ -1571,15 +1777,14 @@ window.addEventListener('DOMContentLoaded', () => {
             arrayBuffer[i] = audioData.charCodeAt(i);
           }
           
-          // Store the audio blob for downloading (prevent detached buffer issue)
+          // Store the audio blob for downloading
           const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
           audioBlobs[index] = blob;
           
           log(`Created blob for chunk ${index + 1}: ${(blob.size / 1024).toFixed(2)} KB`);
           
           // Create a copy of the array buffer for decoding
-          // This is important to prevent the "detached ArrayBuffer" issue
-          const bufferCopy = arrayBuffer.slice(0).buffer;
+          const bufferCopy = arrayBuffer.buffer.slice(0); // Ensure it's a copy
           
           // Decode audio
           try {
@@ -1588,72 +1793,117 @@ window.addEventListener('DOMContentLoaded', () => {
             // Store the decoded buffer
             buffers[index] = audioBuffer;
             
-            // Update word timings with actual audio duration
+            // Update word timings with actual audio duration for this chunk
             updateWordTimings(index, audioBuffer.duration);
             
-            // Update durations
-            loadedDuration += audioBuffer.duration;
-            totalDuration += audioBuffer.duration;
-            
-            log(`Chunk ${index + 1} decoded: ${audioBuffer.duration.toFixed(2)}s`);
+            // Update cumulative loaded duration
+            // Recalculate total loaded duration accurately based on loaded chunks
+             loadedDuration = chunksData.reduce((sum, chunkData) => {
+                 return sum + (chunkData.loaded ? chunkData.duration : 0);
+             }, 0);
+
+            // Update overall total duration (only needed once all chunks are processed,
+            // but we update progressively here for intermediate UI)
+            // This might be slightly inaccurate until all chunks finish, but useful for progress.
+            totalDuration = loadedDuration; // Temporarily update total duration for UI
+
+            log(`Chunk ${index + 1} decoded: ${audioBuffer.duration.toFixed(2)}s. Loaded duration: ${loadedDuration.toFixed(2)}s`);
             
             // Update progress
             chunksReceived++;
-            
-            // Autoplay first chunk when it's ready
+            status(`Processing... ${chunksReceived}/${totalChunks} chunks loaded. (${fmt(loadedDuration)} loaded)`);
+
+            // Autoplay first chunk when it's ready and enable playback controls
             if (index === 0 && !playing && !paused) {
-              startPlayback(0, 0, 0);
+                E.play.disabled = false; // Enable play now that first chunk is ready
+                E.stop.disabled = false; // Enable stop as well
+                startPlayback(0, 0, 0);
+            } else if (index > 0 && !playing && !paused && buffers[0]) {
+                 // If first chunk is loaded, but we aren't playing (e.g. user stopped), ensure play is enabled
+                 E.play.disabled = false;
+                 E.stop.disabled = false;
             }
-            
-            return index;
+
+            return index; // Indicate success for this chunk
           } catch (decodeError) {
             log(`Error decoding chunk ${index + 1}`, decodeError, 'error');
+            // Mark chunk as failed in chunksData?
+             if (chunksData[index]) chunksData[index].loaded = false; // Mark as not loaded
             throw new Error(`Failed to decode audio for chunk ${index + 1}: ${decodeError.message}`);
           }
         } catch (error) {
           log(`Error processing chunk ${index + 1}`, error, 'error');
-          status(`Chunk ${index + 1} failed: ${error.message}`, true);
-          return null;
+          // If error is 401/403, suggest re-auth
+           if (error.message.includes('401') || error.message.includes('403')) {
+                accessToken = null; // Clear potentially invalid token
+                E.authStatus.textContent = '⚠️ Re-authentication needed';
+                E.load.disabled = true; // Disable load again
+                status(`Chunk ${index + 1} failed: Authentication error. Please sign in again.`, true);
+           } else {
+               status(`Chunk ${index + 1} failed: ${error.message}`, true);
+           }
+           if (chunksData[index]) chunksData[index].loaded = false; // Mark as not loaded
+          return null; // Indicate failure for this chunk
         }
       });
       
-      // Wait for all chunks to complete
-      await Promise.all(chunkPromises);
-      
-      // Check if all chunks were processed successfully
-      const success = chunksReceived === totalChunks;
+      // Wait for all chunk processing promises to settle
+      await Promise.allSettled(chunkPromises); // Use allSettled to wait for all, even failures
+
       loadingComplete = true;
-      
-      if (success) {
+
+       // Final calculation of total duration based on successfully loaded chunks
+       totalDuration = chunksData.reduce((sum, chunkData) => {
+           return sum + (chunkData.loaded ? chunkData.duration : 0);
+       }, 0);
+       log(`All chunks settled. Final total duration: ${totalDuration.toFixed(2)}s`);
+
+      // Update UI based on final state
+      updateUI(playing ? ctx.currentTime - startTime : pausedAt); // Update progress bar/time for final duration
+
+      const successCount = chunksData.filter(c => c.loaded).length;
+      if (successCount === totalChunks) {
         log('All chunks processed successfully', { totalDuration });
-        status(`All chunks processed. Duration: ${fmt(totalDuration)}`, false);
-        E.download.disabled = false;
+        status(`Synthesis complete. Total duration: ${fmt(totalDuration)}`, false);
+        E.download.disabled = false; // Enable download only if all succeed
       } else {
-        log(`Some chunks failed (${chunksReceived}/${totalChunks})`, null, 'warn');
-        status(`Completed ${chunksReceived}/${totalChunks} chunks`, true);
+        log(`Some chunks failed (${successCount}/${totalChunks})`, null, 'warn');
+        status(`Completed ${successCount}/${totalChunks} chunks. Total duration: ${fmt(totalDuration)}`, successCount > 0); // Show success if at least one worked
+        // Enable download even if some chunks failed, it will download the successful ones
+        if (successCount > 0) E.download.disabled = false;
       }
+
     } catch (e) {
-      log('Generation failed', e, 'error');
+      log('Generation process failed', e, 'error');
       status(`Generation failed: ${e.message}`, true);
     } finally {
-      E.gen.disabled = false;
+       // Re-enable buttons based on state
+      E.gen.disabled = false; // Always re-enable generate button
+      E.load.disabled = !accessToken; // Re-enable load voices only if signed in
+       // Ensure playback buttons are correctly set based on whether audio is loaded/playing/paused
+       if (!playing && !paused) {
+           E.play.disabled = !(totalDuration > 0); // Enable play only if some audio was loaded
+           E.pause.disabled = true;
+           E.stop.disabled = true;
+       }
     }
   };
   
-  // Add keyboard shortcuts
+  // Add keyboard shortcuts (code unchanged, but ensure targets like E.gen still work)
   document.addEventListener('keydown', (e) => {
-    // Don't trigger shortcuts when typing in inputs
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    // Don't trigger shortcuts when typing in inputs/textareas or contenteditable elements
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
     
     // Space - Play/Pause
     if (e.code === 'Space') {
       e.preventDefault();
-      if (playing) E.pause.click();
-      else if (paused || loadingComplete) E.play.click();
+      // Check if play/pause buttons are enabled before clicking them
+       if (playing && !E.pause.disabled) E.pause.click();
+       else if ((paused || (loadingComplete && totalDuration > 0)) && !E.play.disabled) E.play.click();
     }
     
     // Escape - Stop
-    if (e.code === 'Escape' && (playing || paused)) {
+    if (e.code === 'Escape' && (playing || paused) && !E.stop.disabled) {
       e.preventDefault();
       E.stop.click();
     }
@@ -1680,36 +1930,49 @@ window.addEventListener('DOMContentLoaded', () => {
     if (e.code === 'ArrowLeft' && (playing || paused)) {
       e.preventDefault();
       const currentTime = playing ? ctx.currentTime - startTime : pausedAt;
-      seekToTime(Math.max(0, currentTime - 5));
+      seekToTime(currentTime - 5);
     }
     if (e.code === 'ArrowRight' && (playing || paused)) {
       e.preventDefault();
       const currentTime = playing ? ctx.currentTime - startTime : pausedAt;
-      seekToTime(Math.min(totalDuration, currentTime + 5));
+      seekToTime(currentTime + 5);
     }
     
     // Up/Down arrow - Adjust volume
     if (e.code === 'ArrowUp') {
       e.preventDefault();
-      E.volume.value = Math.min(1, parseFloat(E.volume.value) + 0.1);
+      const currentVolume = parseFloat(E.volume.value);
+      E.volume.value = Math.min(1, currentVolume + 0.1);
       if (gainNode) gainNode.gain.value = E.volume.value;
+      log(`Volume up: ${E.volume.value}`);
     }
     if (e.code === 'ArrowDown') {
       e.preventDefault();
-      E.volume.value = Math.max(0, parseFloat(E.volume.value) - 0.1);
+      const currentVolume = parseFloat(E.volume.value);
+      E.volume.value = Math.max(0, currentVolume - 0.1);
       if (gainNode) gainNode.gain.value = E.volume.value;
+      log(`Volume down: ${E.volume.value}`);
     }
   });
   
   // Log initial state
-  log('Application initialized', {
-    version: '1.2.0',
-    date: '2025-04-25',
+  log('Application initialized - OAuth Version', {
+    version: '1.3.0-oauth', // Updated version
+    date: '2025-04-26',
     user: 'Doodle-Med',
     debugEnabled: debugEnabled
   });
-});
+
+  // Initial UI state after setup
+  E.play.disabled = true;
+  E.pause.disabled = true;
+  E.stop.disabled = true;
+  E.download.disabled = true;
+  E.gen.disabled = true; // Keep Generate disabled until voices loaded
+  E.voice.disabled = true; // Keep voice disabled until loaded
+  E.load.disabled = true; // Keep Load disabled until signed in
+
+}); // End DOMContentLoaded
 </script>
-<script src="voice-visualizer.js"></script>
 </body>
 </html>
